@@ -61,11 +61,11 @@ python tools/install_mod.py out/stage2 <ReSkate install> SkateBIRD_Rooftop --dis
 - Type tree package: `data/typetrees.tpk` (copy of `work/primase/pm-core/w9/typetrees.tpk` = AssetRipper
   TPK, covers 2019.4.20f1 exactly).
 - Studio: copy at `ds-modding/tools/ReSkateStudio-20261012` (never run binaries out of `modding`).
-- Game: `Downloads/ReSkate-1.1.5`; mods under `Mods/`, enabled in `Mods/mods.json`.
+- Game: `reskate`; mods under `Mods/`, enabled in `Mods/mods.json`.
 
 ## Running skate. for tests (isolated install)
 
-- `ds-modding/game`: copy of `Downloads/ReSkate-1.1.5` root files, `Data` and `__Installer` **junctions** to the
+- `ds-modding/game`: copy of `reskate` root files, `Data` and `__Installer` **junctions** to the
   real install, own `Mods/`, own `logs/`. `ds-modding/appdata/seed` is a copy of the ReSkate offline profile
   seed (cache + settings); each run gets a fresh `appdata/run`.
 - Run straight into a level:
