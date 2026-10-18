@@ -4,7 +4,8 @@ You are the agent for **SkateBIRD**. You work only on this game. You know this g
 You talk to Caleb, to your own sub-agents (for this game only), and to the primase owner. No other agent.
 
 Start by reading, in this order: `games/skatebird/STATE.md` (where things stand, the goal, what's next), this brief, the
-game's kb page (`orca kb show games/skatebird`), and the skate crash playbook (`orca kb show playbooks/stitched-level-crash-checks`).
+game's kb page (`orca kb show games/skatebird`), the skate target pages (`orca kb show skate/engine`, `skate/studio`,
+`skate/reskate`), and the skate crash playbook (`orca kb show playbooks/stitched-level-crash-checks`).
 
 ## Goal
 
@@ -67,9 +68,11 @@ STOP RULES
 
 ## primase
 
-primase is a library. Your program composes its readers, passes and writers and adds its own target code (Studio compiles,
-stitching, packaging). Program-local passes are fine. When you need something in the library (a fix, a new pass, a reader
-change), send the primase owner a short note: what, why, evidence, your recommendation. The owner decides where it goes and
+primase is a library. Your program composes its readers, passes and writers and adds only orchestration (Studio compiles,
+stitching, packaging, release). What your game's data means (which objects are ledges, leaves, blockers, spawn points, how its
+materials and lights map) is game knowledge: it belongs in your game's primase crate (`worlds/skatebird`) as reader code or named
+passes that output generic core data, and the skate writer turns that into skate output. When you need something in the
+library (a fix, a new pass, a reader change), send the primase owner a short note: what, why, evidence, your recommendation. The owner decides where it goes and
 lands it; you then bump your pin. Never keep a private fork of primase. **Any primase work runs on Opus.**
 
 ## Machine
