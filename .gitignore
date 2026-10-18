@@ -1,3 +1,9 @@
+# Worktrees, cargo output and release zips never go in the repo (zips live in modding\releases\skatebird\).
+.wt/
 target/
+*.zip
+# Build output of the BepInEx plugin (rebuild from tools/skatebird-teleport-plugin).
+bin/
+obj/
 __pycache__/
 *.pyc

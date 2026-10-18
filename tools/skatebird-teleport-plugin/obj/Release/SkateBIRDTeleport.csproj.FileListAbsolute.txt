@@ -1,7 +1,0 @@
-C:\Users\kalmarv\ds-modding\tools\skatebird-teleport-plugin\obj\Release\SkateBIRDTeleport.csproj.AssemblyReference.cache
-C:\Users\kalmarv\ds-modding\tools\skatebird-teleport-plugin\obj\Release\SkateBIRDTeleport.GeneratedMSBuildEditorConfig.editorconfig
-C:\Users\kalmarv\ds-modding\tools\skatebird-teleport-plugin\obj\Release\SkateBIRDTeleport.csproj.CoreCompileInputs.cache
-C:\Users\kalmarv\ds-modding\tools\skatebird-teleport-plugin\bin\Release\SkateBIRDTeleport.dll
-C:\Users\kalmarv\ds-modding\tools\skatebird-teleport-plugin\bin\Release\SkateBIRDTeleport.pdb
-C:\Users\kalmarv\ds-modding\tools\skatebird-teleport-plugin\obj\Release\SkateBIRDTeleport.dll
-C:\Users\kalmarv\ds-modding\tools\skatebird-teleport-plugin\obj\Release\SkateBIRDTeleport.pdb
