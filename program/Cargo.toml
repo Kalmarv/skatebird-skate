@@ -1,0 +1,17 @@
+[package]
+name = "skatebird-export"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[dependencies]
+primase-core = { path = "../primase/core" }
+primase-unity = { path = "../primase/worlds/unity" }
+primase-meshops = { path = "../primase/toolkit/meshops" }
+primase-image = { path = "../primase/toolkit/image" }
+primase-skate-scene = { path = "../primase/formats/skate-scene" }
+primase-gltf = { path = "../primase/formats/gltf" }
+primase-web = { path = "../primase/formats/web", features = ["ktx2"] }
+serde_json = "=1.0.154"
+
+[workspace]

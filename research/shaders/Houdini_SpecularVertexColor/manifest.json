@@ -1,0 +1,27 @@
+{
+  "shader": "Houdini/SpecularVertexColor",
+  "material": "sharedassets1.assets:76",
+  "pass": "FORWARD",
+  "shader_file": "sharedassets0.assets",
+  "shader_path_id": 1207,
+  "programs": [
+    {
+      "file": "platform4_program0",
+      "kind": "15",
+      "keywords": [
+        "DIRECTIONAL"
+      ],
+      "local_keywords": [],
+      "sha256": "337da3887b79679dc50ede08d245283b0a01ce6a0499a9ae5b37cb118124e1e8"
+    },
+    {
+      "file": "platform4_program16",
+      "kind": "17",
+      "keywords": [
+        "DIRECTIONAL"
+      ],
+      "local_keywords": [],
+      "sha256": "5d577ec7a928b405965d9e003229a430fd5221a935b1b6896faf9a42ca073489"
+    }
+  ]
+}

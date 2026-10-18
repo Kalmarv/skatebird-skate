@@ -1,0 +1,8 @@
+{
+  "default": "concrete",
+  "SkateBase Frictionless": "default",
+  "SkateBase InAir": "default",
+  "SkateBase Tumbling": "default",
+  "SkateWheels": "rubber",
+  "Bouncy Birb": "rubber"
+}

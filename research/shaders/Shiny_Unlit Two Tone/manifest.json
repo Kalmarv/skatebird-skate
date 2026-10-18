@@ -1,0 +1,27 @@
+{
+  "shader": "Shiny/Unlit Two Tone",
+  "material": "sharedassets1.assets:74",
+  "pass": "FORWARD",
+  "shader_file": "sharedassets0.assets",
+  "shader_path_id": 1194,
+  "programs": [
+    {
+      "file": "platform4_program0",
+      "kind": "15",
+      "keywords": [
+        "DIRECTIONAL"
+      ],
+      "local_keywords": [],
+      "sha256": "7627b9fe03f1eac871d7a180773bff1526d83d31f6fd65aabda39ab4a3754eae"
+    },
+    {
+      "file": "platform4_program8",
+      "kind": "17",
+      "keywords": [
+        "DIRECTIONAL"
+      ],
+      "local_keywords": [],
+      "sha256": "6b14733e66e5c3b1ccccc8523475301d434baeb889b9fb92cb513f1ea928f2a8"
+    }
+  ]
+}

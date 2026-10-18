@@ -1,0 +1,16 @@
+[package]
+name = "bird-tint-policy-check"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[lib]
+path = "tint_policy.rs"
+
+[dependencies]
+primase-core = { path = "../../primase/core" }
+primase-unity = { path = "../../primase/worlds/unity" }
+primase-skate-scene = { path = "../../primase/formats/skate-scene" }
+primase-reskate = { path = "../../primase/worlds/reskate" }
+
+[workspace]

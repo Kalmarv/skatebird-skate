@@ -1,0 +1,27 @@
+{
+  "shader": "Bumped Specular Voronoi",
+  "material": "sharedassets12.assets:10",
+  "pass": "FORWARD",
+  "shader_file": "sharedassets0.assets",
+  "shader_path_id": 1196,
+  "programs": [
+    {
+      "file": "platform4_program0",
+      "kind": "15",
+      "keywords": [
+        "DIRECTIONAL"
+      ],
+      "local_keywords": [],
+      "sha256": "fc44853acbff086d7b6c3a3e61f0bcc32370ae9d4bdf13d9bbc5b8abe44334c0"
+    },
+    {
+      "file": "platform4_program8",
+      "kind": "17",
+      "keywords": [
+        "DIRECTIONAL"
+      ],
+      "local_keywords": [],
+      "sha256": "aea2a5a8e2370d3a53701470e9e59f989a0285dafdeb0d40674d74748b9c22c0"
+    }
+  ]
+}
