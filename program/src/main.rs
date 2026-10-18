@@ -7,6 +7,7 @@
 //! an object of the game's surface names (its physic materials, `default` for none) onto skate surfaces. Prints every
 //! pass's counts and approximations.
 
+mod settings;
 mod uv_policy;
 mod variants;
 
@@ -204,23 +205,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         report.textures_not_decoded, report.not_reproduced
     );
     // the lowering, as a pipeline: each pass whose input the level has, verified after each
-    let passes: Vec<Box<dyn Pass>> = vec![
-        // the level as stored: what is off stays off, LOD 0 draws
-        Box::new(primase_core::state::ResolveState::default()),
-        Box::new(primase_core::SelectLod {
-            choice: primase_core::LodChoice::Finest,
-        }),
-        Box::new(primase_unity::drawn::UnityDrawn),
-        Box::new(primase_unity::lower::LowerUnityPbr),
-        Box::new(primase_unity::lower_terrain::LowerUnityTerrain),
-        Box::new(primase_unity::lower_collision::LowerUnityCollision),
-        Box::new(primase_unity::lower_lights::LowerUnityLights),
-        Box::new(primase_image::NormalizeNormals),
-        // the writers here take collision as triangles
-        Box::new(primase_meshops::TessellateColliders),
-        // last before the writers: authored mirrors and shears into geometry, so every placement is rigid
-        Box::new(primase_meshops::BakeNonrigid::default()),
-    ];
+    let passes = settings::lowering();
     let mut lowering = Vec::new();
     for p in passes {
         // a pass's input may come from an earlier pass (terrain textures for normalize-normals)
@@ -269,21 +254,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         return Ok(());
     }
     let glb = out.join(format!("{level}.glb"));
-    let r = primase_gltf::write_file(
-        &w,
-        &primase_gltf::WriteOptions {
-            scene_name: Some(level.clone()),
-            ..Default::default()
-        },
-        &glb,
-    )?;
+    let r = primase_gltf::write_file(&w, &settings::gltf(level), &glb)?;
     println!("glTF {}: {r:?}", glb.display());
     if web {
-        let options = primase_web::Options {
-            ktx2,
-            ..Default::default()
-        };
-        let set = primase_web::write(&w, &options)?;
+        let set = primase_web::write(&w, &settings::web(ktx2))?;
         let folder = out.join("web");
         set.write_to(&folder)?;
         for o in &set.over_budget {
@@ -338,16 +312,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         "raise-skate",
         &primase_skate_scene::raise_skate(
             &mut w,
-            &primase_skate_scene::RaiseOptions {
-                name: level.replace(
+            &settings::raise(
+                level.replace(
                     |c: char| !(c.is_ascii_alphanumeric() || c == '_' || c == '-'),
                     "_",
                 ),
                 surfaces,
-                spawn: spawn.map(|s| s.0),
-                spawn_yaw: spawn.map_or(0.0, |s| s.1),
-                ..Default::default()
-            },
+                spawn,
+            ),
         )?,
     );
     if let Some(path) = travel {
