@@ -85,7 +85,7 @@ python tools/install_mod.py out/stage2 <ReSkate install> SkateBIRD_Rooftop --dis
   set the display name, enable it in `mods.json` (with a backup).
 - `compare_shots.py out.png left.png right.png` - side-by-side verification sheet.
 - `skatebird_shot.sh <level> <out.png>` - SkateBIRD reference screenshot (windowed 1920x1080, dev console
-  `MissionManager.LoadLevel <level>`); runbook in `notes/skatebird-screenshot-runbook.md`.
+  `MissionManager.LoadLevel <level>`); runbook in `docs/screenshot-runbook.md`.
 - `unitypy_census.py` - the independent census used to gate the v21 container reader.
 - **Shell trap**: a child `bash` started from an agent's own shell is *WSL* bash (C:\WINDOWS\system32\bash.exe is
   first on PATH), which has no `python`/`powershell`/`um` and cannot run `C:/...` paths. `orca job run -- bash ...`

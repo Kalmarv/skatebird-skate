@@ -56,7 +56,7 @@ Rollout results reviewed so far:
 | level13 skate heaven | 8b611bae / ec1e2a62 | Solid stone floor/wall and white ramp visible; camera/player moved during capture, so correspondence is limited. Full parity unproven. [Pair](../out/alpha-fix/compare_level13.png). |
 
 The program-side office UV correction and restricted Houdini vertex-tint composition remain unverified
-in game. Investigation and exact artifact evidence: [alpha/runtime notes](../notes/alpha-runtime-2026-10-18.md).
+in game. Investigation and exact artifact evidence: [alpha/runtime notes](investigations/alpha-runtime.md).
 Office UV capture e6cb801f cancelled before launch: the alpha control is too dark to judge the intended
 effect. Its build remains queued; inspect source lighting and select a valid lit view before the next capture.
 

@@ -108,7 +108,7 @@ truth; the old `docs/history/STATE-ds-modding-2026-10-18.md` is a stack of check
 
 First steps
 1. Read `STATE.md`, `docs/AUDIT-2026-10-18.md` (SkateBIRD and ds-modding dossiers), `docs/VERIFICATION.md`,
-   `notes/alpha-runtime-2026-10-18.md`, `docs/KNOWLEDGE.md`.
+   `docs/investigations/alpha-runtime.md`, `docs/KNOWLEDGE.md`.
 2. Ask the primase owner what of the Unity stack has landed; pin primase by rev in `program/Cargo.toml` (no path deps).
 3. Smallest useful step: the canopy check (compiled leaf OSK opacity pixels and card facing on the playground), offline.
 

@@ -1,11 +1,11 @@
-"""Render SkateBIRD level data: data/skatebird-levels.json + notes/skatebird-levels.md."""
+"""Render SkateBIRD level data: data/skatebird-levels.json + docs/levels.md."""
 import json
 import os
 
 ROOT = r"C:\Users\kalmarv\ds-modding"
 SCAN = os.path.join(ROOT, "out", "skatebird-scan.json")
 OUT_JSON = os.path.join(ROOT, "data", "skatebird-levels.json")
-OUT_MD = os.path.join(ROOT, "notes", "skatebird-levels.md")
+OUT_MD = os.path.join(ROOT, "docs", "levels.md")
 
 GAME_ROOT = r"C:\Program Files (x86)\Steam\steamapps\common\SkateBIRD"
 DATA_DIR = os.path.join(GAME_ROOT, "SkateBIRD_Data")

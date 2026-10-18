@@ -21,7 +21,7 @@ Nothing. No zip, release or tag.
 Nothing running. Paused 2026-10-18 ("Drop all skate bird shit for now, focus only on gta"). Resume point
 (`docs/history/STATE-ds-modding-2026-10-18.md`, top): canopy geometry and leaf texture bindings survive compilation; next,
 inspect the compiled leaf OSK opacity pixels and card facing before choosing a runtime experiment. Then UV (office),
-ambient lighting (needs a core field), Houdini tint, gravel, Shiny Two Tone. Details: `notes/alpha-runtime-2026-10-18.md`,
+ambient lighting (needs a core field), Houdini tint, gravel, Shiny Two Tone. Details: `docs/investigations/alpha-runtime.md`,
 `docs/VERIFICATION.md`.
 - Library, all unlanded: primase-work `archive/ds-skatebird` 7b81a686 (the six ds-modding fork commits on 7da1c6a;
   review TAKE/DROP table `archive\primase-review-2026-10\archive\work-2026-10\review\ds-modding-primase.md`, kept for Caleb's primase review), `gate/unity-v21` 9435a217, `gate/unity-alpha` 989a5009,
