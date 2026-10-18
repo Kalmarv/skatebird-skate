@@ -6,7 +6,7 @@ import zipfile
 from pathlib import Path
 from PIL import Image
 root = Path(__file__).resolve().parents[1]
-lab = Path('C:/Users/kalmarv/modding/work/sledding/lab/v2')
+lab = Path('C:/Users/kalmarv/modding/cache/sledding/lab/lab/v2')
 doc = json.loads((lab / 'out/manifest.json').read_text())
 mats = doc['materials']
 trees = {k:v for k,v in mats.items() if 'tree' in v.get('name','').lower() or 'speedtree' in v.get('shader','').lower()}

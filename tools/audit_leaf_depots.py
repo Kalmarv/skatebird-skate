@@ -20,7 +20,7 @@ audit = json.loads((root / 'out/playground-leaf-audit.json').read_text())
 keys = {int(r['key'], 16) for r in audit['compiled_leaf_named_sections']}
 output_name = 'playground-leaf-depots.json'
 if len(sys.argv) > 1 and sys.argv[1] == 'sledding':
-    patch = Path('C:/Users/kalmarv/modding/work/sledding/lab/v2/stage/Patch')
+    patch = Path('C:/Users/kalmarv/modding/cache/sledding/lab/lab/v2/stage/Patch')
     F = fp.Folder(str(patch))
     census = json.loads((root / 'out/sledding-sections.json').read_text())
     keys = {int('eb6d7639ba8a93a4', 16)}
