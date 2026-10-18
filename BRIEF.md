@@ -68,12 +68,15 @@ STOP RULES
 
 ## primase
 
-primase is a library. Your program composes its readers, passes and writers and adds only orchestration (Studio compiles,
-stitching, packaging, release). What your game's data means (which objects are ledges, leaves, blockers, spawn points, how its
-materials and lights map) is game knowledge: it belongs in your game's primase crate (`worlds/skatebird`) as reader code or named
-passes that output generic core data, and the skate writer turns that into skate output. When you need something in the
-library (a fix, a new pass, a reader change), send the primase owner a short note: what, why, evidence, your recommendation. The owner decides where it goes and
-lands it; you then bump your pin. Never keep a private fork of primase. **Any primase work runs on Opus.**
+primase is a library; its model is `kit/briefs/PRIMASE-MODEL.md` (Caleb's, one page: read it). Your program, in your game repo,
+owns the conversion recipe and every choice in it (region, time of day, detail level, texture size, spawn, floor): it reads
+with primase's readers, runs the passes it chooses, including the "prepare for ReSkate" passes, calls the writer, and then runs
+explicit later stages (Studio compile, stitching, packaging). It may hold custom steps; when one turns out reusable, or it's
+your game's own meaning (which objects are ledges, leaves, blockers, spawn points; how its materials and lights map), it moves
+into primase: game meaning into your game's crate (`worlds/skatebird`) as reader code or passes, shared meaning into core,
+mechanisms into toolkit, skate preparation into the ReSkate crate. Ask the primase owner with a short note: what, why,
+evidence, your recommendation. The owner decides where it goes and lands it; you then bump your pin. Never keep a private
+fork of primase. **Any primase work runs on Opus.**
 
 ## Machine
 
@@ -115,7 +118,7 @@ Commands that matter
 - Studio compile: `reskate_cli compile-map ... --no-gi --time-of-day noon` (20 s to 5 min per level).
 - One level in game: `RESKATE_STARTUP_COMMANDS="load levels/game/<level>/<level>"` +
   `ReSkateLauncher.exe --no-gui --no-update --offline --windowed` on an isolated copy (never Caleb's install, which has
-  55 mods). Use the maintained runner in `reskate\reskate-tools` (kb `playbooks/skate-test-harness`) rather than the
+  55 mods). Use the maintained runner in `reskate\reskate-ports` (kb `playbooks/skate-test-harness`) rather than the
   hand-rolled `tools/run_skate.sh`; lock `screen,heavy=45`. The 8-level compile + capture pass is ~14 min of screen time.
 - Reference shots in SkateBIRD: the BepInEx plugin (`tools/skatebird-teleport-plugin`, build it; bin/obj are not tracked)
   in a lab copy of the game (junctions into Steam; never recurse through them).
@@ -124,5 +127,5 @@ Commands that matter
 References to read
 - kb (no `games/skatebird` page exists yet): `projects/primase` (SkateBIRD sections), `topics/windows-shell-traps`
   (PowerShell wrapper traps that cost this port four jobs).
-- `archive\primase-review-2026-10\archive\work-2026-10\review\ds-modding-primase.md` (TAKE/DROP for the fork commits), `work\primase\unity-reader\{STATUS,RESUME,AMBIENT-EVIDENCE}.md`.
+- `work\review\ds-modding-primase.md` (TAKE/DROP for the fork commits), `work\primase\unity-reader\{STATUS,RESUME,AMBIENT-EVIDENCE}.md`.
 - Unity built-in shader source 2019.4.20f1: `work\primase\unity-reader\ext`; extracted DXBC in `research/shaders`.
