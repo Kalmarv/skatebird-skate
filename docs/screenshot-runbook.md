@@ -17,8 +17,8 @@ sequence, capture, kill); it was not run end-to-end after the game was closed.
 ## TL;DR (one level, one shot)
 
 ```bash
-# 1. Display/lock check (games here are coordinated through the heavy lock).
-orca lock status heavy | head -1
+# 1. Display/lock check (game windows here are coordinated through the screen lock).
+orca lock status screen | head -1
 
 # 2. Launch windowed at 1920x1080 with the dev console enabled. This call blocks until the game exits.
 um win launch "C:\Program Files (x86)\Steam\steamapps\common\SkateBIRD\SkateBIRD.exe" -- \
@@ -259,7 +259,7 @@ tools/skatebird_shot.sh capture out/now.png
 tools/skatebird_shot.sh capture out/now.png --ffmpeg
 ```
 
-The script checks that no SkateBIRD is running, prints `orca lock status heavy` (warns if busy/paused),
+The script checks that no SkateBIRD is running, prints `orca lock status screen` (warns if held/paused),
 launches with the fixed flags, waits for the window, sends `F1` + `MissionManager.LoadLevel <level>` +
 Enter, waits, optionally dismisses first-run screens / toggles the HUD, captures, restores the UI toggle,
 and kills the game by PID. `--settle N` changes the post-load wait (default 12 s), `--keep` leaves it open.
@@ -281,7 +281,7 @@ Run it with Git Bash (`C:\Program Files\Git\bin\bash.exe`), not WSL bash: the co
   into normal gameplay and can open/close menus; omit it for repeat runs.
 - HUD toggle is persisted in `saved_bools.sav`; the script toggles it back, but a killed run can leave
   `__options_disable_ui = true`.
-- The desktop is shared: check `orca lock status heavy`; do not drive the `Skate` window, and release the
+- The desktop is shared: check `orca lock status screen`; do not drive the `Skate` window, and release the
   display by killing SkateBIRD when done.
 - Nothing here writes to the game install. Changes are limited to screenshots, the LocalLow save folder,
   and Unity's `HKCU\Software\Glass Bottom Games\SkateBIRD` registry key.

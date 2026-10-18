@@ -70,7 +70,7 @@ python tools/install_mod.py out/stage2 <ReSkate install> SkateBIRD_Rooftop --dis
   seed (cache + settings); each run gets a fresh `appdata/run`.
 - Run straight into a level:
   `LOCALAPPDATA=<abs appdata/run> RESKATE_STARTUP_COMMANDS="load levels/game/<level>/<level>" ReSkateLauncher.exe --no-gui --no-update --offline --windowed --width=1920 --height=1080`
-  (`tools/run_skate.sh` wraps it with screenshots; run it in `orca job run --lock heavy=20,screen -- ...`).
+  (`tools/run_skate.sh` wraps it with screenshots; run it as `kit/run game --job -- ...`).
 - Caleb's own install has 55 mods enabled; loading it produces a black HUB screen, so never judge a map there.
   Never leave a test mod enabled in his install.
 - Screenshots: ffmpeg gfxcapture with `timeout 90` (um's 20 s is too short under load); the game window is
