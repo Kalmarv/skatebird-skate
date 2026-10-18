@@ -3,7 +3,7 @@
 #   bash tools/run_skate.sh <level asset> <out dir> [settle seconds]
 # Isolated install: ds-modding/game (hardlinked/copied binaries, Data + __Installer junctions to the real
 # install, its own Mods/ and LOCALAPPDATA). Caleb's install is never written. Run inside a job:
-#   orca job run --lock heavy=20,screen -- bash tools/run_skate.sh <level> <out dir>
+#   kit/run game --job -- bash tools/run_skate.sh <level> <out dir>
 set -u
 G=/c/Users/kalmarv/ds-modding/game
 A=/c/Users/kalmarv/ds-modding/appdata

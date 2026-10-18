@@ -80,8 +80,11 @@ fork of primase. **Any primase work runs on Opus.**
 
 ## Machine
 
-- Game runs: `orca job run --lock screen,heavy=45 -- ...` (one game at a time). Studio compiles: `heavy=60` for city tiles,
-  `heavy=10` for a single mod. Cargo builds and Python scripts: no lock.
+- Locks only for the screen and for memory (`reskate-tools/docs/kit/LOCKS.md`), always through
+  `kit/run <kind> [--job] -- <command>`: game runs `kit/run game --job -- ...` (screen + its RAM share, one game at a
+  time); city-tile Studio compiles `compile-city`, city-tile exports `export-city` (kinds and GB:
+  `kit/run-policy.toml`). Everything else takes no lock: cargo, Python stages, checks, small exports, small mods'
+  compiles. Never `heavy`, `--hold` or a whole-machine lock.
 - Long work runs as `orca job run`; you're told when it ends. Use `orca on job:<id> end`; never poll in a loop.
 - Disk: your game's budget is in STATE.md. Never delete outside your own folders. Superseded outputs go at milestones.
 - Windows: write scripts with the Write tool and run `python -I file.py`; heredocs and `python -c` lose backslashes. Use
@@ -119,7 +122,7 @@ Commands that matter
 - One level in game: `RESKATE_STARTUP_COMMANDS="load levels/game/<level>/<level>"` +
   `ReSkateLauncher.exe --no-gui --no-update --offline --windowed` on an isolated copy (never Caleb's install, which has
   55 mods). Use the maintained runner in `reskate\reskate-ports` (kb `playbooks/skate-test-harness`) rather than the
-  hand-rolled `tools/run_skate.sh`; lock `screen,heavy=45`. The 8-level compile + capture pass is ~14 min of screen time.
+  hand-rolled `tools/run_skate.sh`; as `kit/run game --job`. The 8-level compile + capture pass is ~14 min of screen time.
 - Reference shots in SkateBIRD: the BepInEx plugin (`tools/skatebird-teleport-plugin`, build it; bin/obj are not tracked)
   in a lab copy of the game (junctions into Steam; never recurse through them).
 - Publish: only with Caleb.

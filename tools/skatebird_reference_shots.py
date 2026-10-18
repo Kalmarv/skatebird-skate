@@ -2,10 +2,10 @@
 """Capture SkateBIRD reference shots for every level.
 
     # spawn + first travel point >= 20 m
-    orca job run --lock screen -- python tools/skatebird_reference_shots.py
+    kit/run game --job -- python tools/skatebird_reference_shots.py
 
     # spawn only, with the W-nudge camera settle (rewrites skatebird_<name>_spawn.png)
-    orca job run --lock screen -- python tools/skatebird_reference_shots.py --spawn-only --nudge
+    kit/run game --job -- python tools/skatebird_reference_shots.py --spawn-only --nudge
 
 Reads data/skatebird-levels.json, drives tools/skatebird_teleport.py, and writes
 out/skatebird_<name>_spawn.png / _tp1.png plus a JSON summary and log.

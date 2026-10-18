@@ -90,11 +90,12 @@ if um win ps | awk '{print $2}' | grep -qx "$PROC"; then
   exit 2
 fi
 
-lock_first=$(orca lock status heavy 2>/dev/null | head -1 || true)
+lock_first=$(orca lock status screen 2>/dev/null | head -1 || true)
 if [ -n "$lock_first" ]; then
-  echo "heavy lock: $lock_first"
+  echo "screen lock: $lock_first"
   case "$lock_first" in
-    *paused*|*"in use"*[1-9]*) echo "WARNING: heavy lock is not free; the run will share the display/GPU." >&2 ;;
+    *": free"*) ;;
+    *) echo "WARNING: the screen lock is held or paused; another game window may share the display/GPU." >&2 ;;
   esac
 fi
 
