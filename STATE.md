@@ -24,7 +24,7 @@ inspect the compiled leaf OSK opacity pixels and card facing before choosing a r
 ambient lighting (needs a core field), Houdini tint, gravel, Shiny Two Tone. Details: `notes/alpha-runtime-2026-10-18.md`,
 `docs/VERIFICATION.md`.
 - Library, all unlanded: primase-work `archive/ds-skatebird` 7b81a686 (the six ds-modding fork commits on 7da1c6a;
-  review TAKE/DROP table `work\review\ds-modding-primase.md`), `gate/unity-v21` 9435a217, `gate/unity-alpha` 989a5009,
+  review TAKE/DROP table `archive\primase-review-2026-10\archive\work-2026-10\review\ds-modding-primase.md`, kept for Caleb's primase review), `gate/unity-v21` 9435a217, `gate/unity-alpha` 989a5009,
   `archive/unity/material-usage` b0158258 (cull), `archive/wt/unity-reader/tree3` 770e236e (vertex colour producer),
   `gate/vertex-color` 4053fbe8 (GitHub primase), `gate/depth-write` ec25950b. Order: `work\primase\unity-reader\RESUME.md`.
 
@@ -62,7 +62,7 @@ install, `library-targets` 2.5, `primase/target` 1.6); source and evidence < 0.4
 
 ## Where things are
 - Code: this repo (from `ds-modding`, phase 0 rescue); library on primase-work as above; review of the fork
-  `work\review\ds-modding-primase.md`.
+  `archive\primase-review-2026-10\archive\work-2026-10\review\ds-modding-primase.md`.
 - Old workspace (not a repo; do not write there): `C:\Users\kalmarv\ds-modding` (outputs `out/`, game copy `game/` with
   junctions `Data`, `__Installer` into the ReSkate install, lab copy `skatebird-lab/` with junctions into Steam).
 - Library worktree `ds-modding\library-worktrees\unity-v21` belongs to `modding\primase` (prune there after removing).
