@@ -5,7 +5,7 @@ import struct
 import sys
 from pathlib import Path
 
-ports = Path('C:/Users/kalmarv/modding/reskate/reskate-ports')
+ports = Path('C:/Users/kalmarv/modding/reskate/reskate-tools')
 sys.path[:0] = [str(ports / 'kit/gpl'), str(ports / 'ports/gta/stitch')]
 import fbpatch as fp
 import fbebx

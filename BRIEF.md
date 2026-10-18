@@ -115,7 +115,7 @@ Commands that matter
 - Studio compile: `reskate_cli compile-map ... --no-gi --time-of-day noon` (20 s to 5 min per level).
 - One level in game: `RESKATE_STARTUP_COMMANDS="load levels/game/<level>/<level>"` +
   `ReSkateLauncher.exe --no-gui --no-update --offline --windowed` on an isolated copy (never Caleb's install, which has
-  55 mods). Use the maintained runner in `reskate\reskate-ports` (kb `playbooks/skate-test-harness`) rather than the
+  55 mods). Use the maintained runner in `reskate\reskate-tools` (kb `playbooks/skate-test-harness`) rather than the
   hand-rolled `tools/run_skate.sh`; lock `screen,heavy=45`. The 8-level compile + capture pass is ~14 min of screen time.
 - Reference shots in SkateBIRD: the BepInEx plugin (`tools/skatebird-teleport-plugin`, build it; bin/obj are not tracked)
   in a lab copy of the game (junctions into Steam; never recurse through them).
