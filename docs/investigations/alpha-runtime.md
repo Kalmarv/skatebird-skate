@@ -264,3 +264,28 @@ constant unlit colour despite its name. Current fallback loses this view/light-d
 Private disassemblies/manifests stored in research/shaders/Shiny_Unlit Two Tone. No speculative
 shader implementation added; faithful gravel texture baking needs UV-domain sampling (not merely
 changing its normal texture), and Shiny cannot be faithfully collapsed to one constant base colour.
+
+## Playground canopy: cause (offline, 2026-10-19, skatebird-ref)
+
+Inputs: `cache/skatebird/build/level12/map/SkateBIRD_level12` and its compile `.../stage/Patch` (current build).
+
+1. Material: `alpha_branch_tex_685601f602` = alpha `blend` / blend_method `blend`, cutoff 0.5 (unused by blend),
+   `double_sided: false`, domain `surface`, shader_override `surface`, texture `branch_tex_15ae21ca.dds` 256x256: a
+   leafy branch card (49,617 px alpha 0, 3,720 in 1-127, 3,332 in 128-254, 8,867 at 255). One object,
+   `t_0_0.glb` primitive 38, 3,714 triangles.
+2. Facing (`python -I tools/audit_facing.py <map> alpha_branch_tex m_Default_22d0de6549 cut_Grid_pattern --camera X Y Z`):
+   89% of leaf triangles (3,312) wind opposite to their stored normals (trunks 97% agree, grate 100%); none face up,
+   1,290 face down. Yet 59% (2,188) face skate's level12 spawn camera (-58.8, 2.6, -62.7 scene) and 57% the Ramp
+   view: single-sided culling hides about 40% per view, so it cannot explain all canopies missing.
+3. Compile (`python -I tools/audit_compiled_materials.py <Patch> --texture branch`): the leaf key `4a754129ba60f6e2`
+   binds branch base colour + OSK + flat normal to programs (1444, 3612), the stock decal/blend pair; the level's
+   other blend materials (glass `52a81d3dccfc62b1`, soda can `5bde45500f0a9cc3`) get the same pair; its mask
+   materials (grid `c7c9cdbe9cf0438f`, galvanized steel `c88df29f09149acb`) get (825, 1891, 3096), the cutout
+   programs of Sledding's rendered statues, and the grid drain renders in skate's level12 spawn shot.
+
+Cause: blended materials compile to the decal/blend programs, which skate. does not draw as world geometry here.
+The earlier rooftop A/B is the runtime evidence: surfaces exported as blend were missing and came back as opaque
+(job 73cde79a above). Proposed test: the leaf material as alpha-tested cutout (`AlphaMode::Mask { cutoff: 0.5 }`,
+still single-sided like the source's Cull Back), set by the program after lowering; offline check that the key moves
+to (825, 1891, 3096), then one level12 run. The same applies to every blend material (glass, soda can, rooftop
+clouds): none is drawn.
