@@ -7,8 +7,9 @@ A view is a place on the ground in Unity coordinates (metres) and the Unity yaw 
 coordinates are the scene's: Unity (x, y, z) is skate (x, y, -z) (`trainer where` at level2's spawn, Unity
 (-18.7, 1.189, 84.8), reads (-18.70, 1.95, -84.80)). skate gives no console way to turn the skater: the spawn view is
 shot where the level starts (facing the spawn's yaw), and `trainer tp` leaves the skater at heading 0 (skate +z,
-Unity -z: Unity yaw 180), so every other view looks along Unity yaw 180. All in first person (`firstperson 1`: the
-camera at the skater's eyes); SkateBIRD's camera is put at the same eye point and yaw.
+Unity -z: Unity yaw 180), so every other view looks along Unity yaw 180. All with skate's third-person chase camera
+(its first-person camera looks sideways: the skater stands across the board); SkateBIRD's camera is put where that
+chase camera is (behind and above the view point, calibrated: tools/skatebird_views.sh --chase).
 """
 import json
 import sys
@@ -41,13 +42,12 @@ def make():
 def skate_commands(level):
     views = json.loads((ROOT / "data/skatebird-views.json").read_text(encoding="utf-8"))[level]["views"]
     asset = f"levels/game/dingolevel_reskate_skatebird_{level}/dingolevel_reskate_skatebird_{level}"
-    # settle at the spawn, one third-person shot, then first person: the spawn view where the level starts, then one
-    # teleport per other view (each `trainer where` is a shot)
-    c = ["wait 100", f"load {asset}", "wait 45", "trainer option hud 0", "hideui 1", "trainer where", "wait 6",
-         "firstperson 1", "wait 6", "trainer where", "wait 6"]
+    # settle at the spawn: the spawn view where the level starts, then one teleport per other view (each
+    # `trainer where` is a shot; the chase camera needs a few seconds to swing in behind the skater)
+    c = ["wait 100", f"load {asset}", "wait 45", "trainer option hud 0", "hideui 1", "trainer where", "wait 6"]
     for v in views[1:]:
         x, y, z = v["position"]
-        c += [f"trainer tp {x} {y + LIFT:.3f} {-z}", "wait 10", "trainer where", "wait 6"]
+        c += [f"trainer tp {x} {y + LIFT:.3f} {-z}", "wait 12", "trainer where", "wait 6"]
     print(";".join(c))
 
 
