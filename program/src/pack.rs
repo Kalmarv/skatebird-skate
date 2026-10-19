@@ -174,7 +174,7 @@ mod tests {
             width: w,
             height: h,
             format: TexFormat::Rgba8Unorm,
-            levels: vec![(0..n).flat_map(|i| f(i)).collect()],
+            levels: vec![(0..n).flat_map(f).collect()],
             color_space: ColorSpace::Linear,
             role: TexRole::Mask,
             normal: None,
@@ -189,9 +189,11 @@ mod tests {
         let ao = w.spawn();
         w.insert(ao, px(2, 1, |i| [200 + i as u8, 0, 0, 255]));
         let e = w.spawn();
-        let mut m = PbrMaterial::default();
-        m.metallic_roughness_texture = Some(TextureRef::new(mr));
-        m.occlusion_texture = Some(TextureRef::new(ao));
+        let m = PbrMaterial {
+            metallic_roughness_texture: Some(TextureRef::new(mr)),
+            occlusion_texture: Some(TextureRef::new(ao)),
+            ..Default::default()
+        };
         w.insert(e, m);
         pack_orm(&mut w).unwrap();
         let m = w.get::<PbrMaterial>(e).unwrap();
@@ -213,9 +215,11 @@ mod tests {
         w.insert(ao, px(1, 1, |_| [30, 0, 0, 255]));
         for _ in 0..3 {
             let e = w.spawn();
-            let mut m = PbrMaterial::default();
-            m.metallic_roughness_texture = Some(TextureRef::new(mr));
-            m.occlusion_texture = Some(TextureRef::new(ao));
+            let m = PbrMaterial {
+                metallic_roughness_texture: Some(TextureRef::new(mr)),
+                occlusion_texture: Some(TextureRef::new(ao)),
+                ..Default::default()
+            };
             w.insert(e, m);
         }
         let log = pack_orm(&mut w).unwrap();

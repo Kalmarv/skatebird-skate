@@ -48,9 +48,9 @@ pub fn specialize(world: &mut World) -> Result<PassLog, String> {
         }
         for (target, variant, instances) in targets {
             let mut mesh = source.clone();
-            for (part, choices) in mesh.primitives_mut().iter_mut().zip(&variants.0) {
+            for (mut part, choices) in mesh.primitives_mut().zip(&variants.0) {
                 if let Some(material) = choices.get(&variant) {
-                    part.material = Some(*material);
+                    *part.material_mut() = Some(*material);
                 }
             }
             world.insert(target, mesh);

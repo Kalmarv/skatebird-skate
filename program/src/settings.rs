@@ -94,29 +94,29 @@ pub fn gltf(level: &str) -> primase_gltf::WriteOptions {
 }
 
 /// The web tile set: [`WEB_TILE`] cells split to [`WEB_TILE_BYTES`], GPU instancing, compressed vertex streams;
-/// with `ktx2` textures as KTX2 at most 512 px (colour, normal) and 256 px (mask), encoded every run, encodings held
-/// in at most 512 MiB; no viewer records, no camera.
-pub fn web(ktx2: bool) -> primase_web::Options {
-    primase_web::Options {
-        tile_size: WEB_TILE,
-        gpu_instancing: true,
-        compress: true,
+/// with `ktx2` textures as KTX2, encoded every run, encodings held in at most 512 MiB; no viewer records, no camera.
+/// The textures' sizes are [`web_textures`]'.
+pub fn web(ktx2: bool) -> Result<primase_web::Options, String> {
+    Ok(primase_web::Options {
         ktx2,
-        texture_caps: primase_web::ktx2::TextureCaps {
-            colour: 512,
-            normal: 512,
-            mask: 256,
-        },
-        texture_caps_by_name: Vec::new(),
-        cache: None,
-        cache_verify: false,
         encoding_memory: 512 << 20,
-        viewer_items: Vec::new(),
-        split_by_tile: BTreeSet::new(),
-        base_dir: PathBuf::new(),
         tile_byte_budget: Some(WEB_TILE_BYTES),
-        camera: None,
-    }
+        ..primase_web::Options::new(
+            primase_web::TileSize::new(WEB_TILE).map_err(|e| e.to_string())?,
+        )
+    })
+}
+
+/// With KTX2, the web textures at most 512 px (colour, normal) and 256 px (mask), the fork's KTX2 caps (the fork's
+/// web writer applied them while encoding KTX2 and left PNGs at their size; main's writer never resizes, so the
+/// program runs this pass before writing KTX2 tiles).
+pub fn web_textures() -> Result<primase_web::prepare::PrepareWebTextures, String> {
+    use primase_web::prepare::{PrepareWebTextures, RoleCaps, WebCap};
+    Ok(PrepareWebTextures::new(RoleCaps {
+        color: WebCap::new(512)?,
+        normal: WebCap::new(512)?,
+        mask: WebCap::new(256)?,
+    }))
 }
 
 /// raise-skate's options: the scene `name`, the game's surfaces onto skate's (`surfaces`; an unmapped surface with no

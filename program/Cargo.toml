@@ -7,13 +7,13 @@ publish = false
 # primase is a library this program uses, pinned to a revision of its public main by git (no path checkout, no fork).
 # The previous pin, for rollback: the ds-modding fork, primase-work archive/ds-skatebird 7b81a686, as a path checkout.
 [dependencies]
-primase-core = { git = "https://github.com/kalmarv/primase.git", rev = "a8ddf9f7f992d29734daf90c17565dec4f747033" }
-primase-unity = { git = "https://github.com/kalmarv/primase.git", rev = "a8ddf9f7f992d29734daf90c17565dec4f747033" }
-primase-meshops = { git = "https://github.com/kalmarv/primase.git", rev = "a8ddf9f7f992d29734daf90c17565dec4f747033" }
-primase-image = { git = "https://github.com/kalmarv/primase.git", rev = "a8ddf9f7f992d29734daf90c17565dec4f747033" }
-primase-reskate = { git = "https://github.com/kalmarv/primase.git", rev = "a8ddf9f7f992d29734daf90c17565dec4f747033" }
-primase-gltf = { git = "https://github.com/kalmarv/primase.git", rev = "a8ddf9f7f992d29734daf90c17565dec4f747033" }
-primase-web = { git = "https://github.com/kalmarv/primase.git", rev = "a8ddf9f7f992d29734daf90c17565dec4f747033", features = ["ktx2"] }
+primase-core = { git = "https://github.com/kalmarv/primase.git", rev = "0871f9340f43915ce9968110b8720e3bb0971867" }
+primase-unity = { git = "https://github.com/kalmarv/primase.git", rev = "0871f9340f43915ce9968110b8720e3bb0971867" }
+primase-meshops = { git = "https://github.com/kalmarv/primase.git", rev = "0871f9340f43915ce9968110b8720e3bb0971867" }
+primase-image = { git = "https://github.com/kalmarv/primase.git", rev = "0871f9340f43915ce9968110b8720e3bb0971867" }
+primase-reskate = { git = "https://github.com/kalmarv/primase.git", rev = "0871f9340f43915ce9968110b8720e3bb0971867" }
+primase-gltf = { git = "https://github.com/kalmarv/primase.git", rev = "0871f9340f43915ce9968110b8720e3bb0971867" }
+primase-web = { git = "https://github.com/kalmarv/primase.git", rev = "0871f9340f43915ce9968110b8720e3bb0971867", features = ["ktx2"] }
 serde_json = "=1.0.154"
 
 [workspace]

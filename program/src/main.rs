@@ -312,7 +312,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     drop(for_gltf);
     println!("glTF {}: {r:?}", glb.display());
     if web {
-        let set = primase_web::write(&w, &settings::web(ktx2))?;
+        // the web's texture sizes on a copy, as the glTF's needs: the skate scene is made from the world as lowered
+        let mut for_web = w.clone();
+        if ktx2 {
+            run(&mut for_web, vec![Box::new(settings::web_textures()?)])?;
+        }
+        let set = primase_web::write(&for_web, &settings::web(ktx2)?)?;
+        drop(for_web);
         let folder = out.join("web");
         set.write_to(&folder)?;
         for o in &set.over_budget {
@@ -392,7 +398,7 @@ fn write_the_map(w: &mut World, out: &Path, name: &str) -> Result<(), Box<dyn st
     run(w, settings::map_preparation(&encoding)?)?;
     let r = primase_reskate::write_map(w, Path::new(""), &encoding)?;
     println!(
-        "map '{}': {} tiles, {} merged placements / {:.2} M tris, {} instances of {} prototypes, {} object records,          {} materials, {} textures, collision {:.2} M tris",
+        "map '{}': {} tiles, {} merged placements / {:.2} M tris, {} instances of {} prototypes, {} object records, {} materials, {} textures, collision {:.2} M tris",
         r.out_dir.display(),
         r.tiles,
         r.merged_entities,
