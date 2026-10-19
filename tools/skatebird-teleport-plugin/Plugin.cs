@@ -17,7 +17,8 @@
 //                                                        off; screen/camera-space canvases and the player's
 //                                                        renderers hidden (unless "show_player":true); depth of
 //                                                        field, lens distortion, chromatic aberration, vignette
-//                                                        and motion blur off (unless "keep_post":true);
+//                                                        and motion blur off (unless "keep_post":true); with
+//                                                        "flat_sky":true the sky is cleared to black, no skybox;
 //                                                        re-asserted every frame until release; replies with the
 //                                                        read-back pose after the settle
 //   {"seq":5,"op":"shot","path":"C:/out/0_spawn.png"}    reads the rendered frame back at the end of a frame, writes
@@ -61,6 +62,7 @@ namespace SkateBIRDTeleport
         public float settle_seconds = 1f;
         public bool show_player;
         public bool keep_post;
+        public bool flat_sky;
         public int width;
         public int height;
     }
@@ -124,6 +126,9 @@ namespace SkateBIRDTeleport
         private readonly List<string> playerRoots = new List<string>();
         private bool showPlayer;
         private bool keepPost;
+        private bool flatSky;
+        private CameraClearFlags savedClearFlags;
+        private Color savedBackground;
         // Effects that make a frame differ from a pinhole render of the scene (blur, lens warp, colour fringes, dark
         // corners). The game's own options (Options DisableDoF/DisableVignette) do the same but persist to the save.
         private static readonly Type[] PostEffectsOff =
@@ -142,8 +147,7 @@ namespace SkateBIRDTeleport
             TryDelete(replyPath);
             var ready = Path.Combine(controlDir, "ready.json");
             File.WriteAllText(ready + ".tmp", "{\"pid\":" + System.Diagnostics.Process.GetCurrentProcess().Id + "}");
-            TryDelete(ready);
-            File.Move(ready + ".tmp", ready);
+            ReplaceFile(ready + ".tmp", ready);
             // Keep rendering and reading commands while the window is not focused.
             Application.runInBackground = true;
             Camera.onPreCull += OnAnyPreCull;
@@ -219,29 +223,39 @@ namespace SkateBIRDTeleport
                 case "readback": body = DoReadback(cmd); break;
                 case "release": body = DoRelease(cmd); break;
                 case "quit": body = DoQuit(cmd); break;
-                default:
-                    Fail(cmd, "unknown op '" + cmd.op + "'");
-                    busy = false;
-                    yield break;
+                default: body = DoUnknown(cmd); break;
             }
-            // Nested iteration instead of StartCoroutine so an exception in an op becomes a failed reply.
-            while (true)
+            // Nested iteration instead of StartCoroutine so an exception in an op becomes a failed reply; the finally
+            // frees the command loop whatever happens (a stuck busy flag ignores every later command).
+            try
             {
-                object current;
-                try
+                while (true)
                 {
-                    if (!body.MoveNext()) break;
-                    current = body.Current;
+                    object current;
+                    try
+                    {
+                        if (!body.MoveNext()) break;
+                        current = body.Current;
+                    }
+                    catch (Exception e)
+                    {
+                        Logger.LogError("OP " + cmd.op + " THREW " + e);
+                        Fail(cmd, e.GetType().Name + ": " + e.Message);
+                        break;
+                    }
+                    yield return current;
                 }
-                catch (Exception e)
-                {
-                    Logger.LogError("OP " + cmd.op + " THREW " + e);
-                    Fail(cmd, e.GetType().Name + ": " + e.Message);
-                    break;
-                }
-                yield return current;
             }
-            busy = false;
+            finally
+            {
+                busy = false;
+            }
+        }
+
+        private IEnumerator DoUnknown(Command cmd)
+        {
+            Fail(cmd, "unknown op '" + cmd.op + "'");
+            yield break;
         }
 
         // ---- ops -------------------------------------------------------------------------------------------------
@@ -337,6 +351,8 @@ namespace SkateBIRDTeleport
                 lockBrain = cam.GetComponent<CinemachineBrain>();
                 if (lockBrain == null) lockBrain = FindObjectOfType<CinemachineBrain>();
                 if (lockBrain != null) lockBrain.enabled = false;
+                savedClearFlags = cam.clearFlags;
+                savedBackground = cam.backgroundColor;
             }
             lockPosition = pos;
             lockRotation = Quaternion.Euler(cmd.pitch, cmd.yaw, 0f);
@@ -345,6 +361,7 @@ namespace SkateBIRDTeleport
             showPlayer = cmd.show_player;
             if (cmd.keep_post && !keepPost) RestorePost();
             keepPost = cmd.keep_post;
+            flatSky = cmd.flat_sky;
             HoldLock();
             var until = Time.unscaledTime + Math.Max(cmd.settle_seconds, 0f);
             for (var i = 0; i < cmd.settle_frames || Time.unscaledTime < until; i++) yield return null;
@@ -364,8 +381,7 @@ namespace SkateBIRDTeleport
                 if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
                 var tmp = cmd.path + ".tmp";
                 File.WriteAllBytes(tmp, tex.EncodeToPNG());
-                if (File.Exists(cmd.path)) File.Delete(cmd.path);
-                File.Move(tmp, cmd.path);
+                ReplaceFile(tmp, cmd.path);
             }
             finally
             {
@@ -403,6 +419,9 @@ namespace SkateBIRDTeleport
             var t = lockCamera.transform;
             t.SetPositionAndRotation(lockPosition, lockRotation);
             lockCamera.fieldOfView = lockFov;
+            // A flat sky has no edges: image matching against another game's sky (other clouds, other colours).
+            lockCamera.clearFlags = flatSky ? CameraClearFlags.SolidColor : savedClearFlags;
+            lockCamera.backgroundColor = flatSky ? Color.black : savedBackground;
         }
 
         private void HoldLock()
@@ -487,6 +506,9 @@ namespace SkateBIRDTeleport
         {
             if (lockCamera == null) return;
             if (lockBrain != null) lockBrain.enabled = true;
+            lockCamera.clearFlags = savedClearFlags;
+            lockCamera.backgroundColor = savedBackground;
+            flatSky = false;
             foreach (var c in hiddenCanvases) if (c != null) c.enabled = true;
             hiddenCanvases.Clear();
             ShowPlayer();
@@ -574,8 +596,25 @@ namespace SkateBIRDTeleport
             Logger.LogInfo("REPLY " + json);
             var tmp = replyPath + ".tmp";
             File.WriteAllText(tmp, json);
-            if (File.Exists(replyPath)) File.Delete(replyPath);
-            File.Move(tmp, replyPath);
+            ReplaceFile(tmp, replyPath);
+        }
+
+        // The runner may have the old file open for reading (no delete sharing on Windows): retry for up to 2 s.
+        private static void ReplaceFile(string tmp, string dest)
+        {
+            for (var attempt = 0; ; attempt++)
+            {
+                try
+                {
+                    if (File.Exists(dest)) File.Delete(dest);
+                    File.Move(tmp, dest);
+                    return;
+                }
+                catch (IOException) when (attempt < 200)
+                {
+                    System.Threading.Thread.Sleep(10);
+                }
+            }
         }
 
         // ---- helpers ---------------------------------------------------------------------------------------------

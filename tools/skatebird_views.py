@@ -1,12 +1,14 @@
 """SkateBIRD reference shots at exact camera poses, one per view of data/skatebird-views.json.
 
-  python -I tools/skatebird_views.py LEVEL OUTDIR [--eye H] [--fov F] [--pitch P] [--settle S] [--keep]
+  python -I tools/skatebird_views.py LEVEL OUTDIR [--chase] [--back D] [--eye H] [--fov F] [--pitch P] [--yaw-offset Y]
+                                     [--settle S] [--keep-post] [--keep]
 
 (Run it through tools/skatebird_views.sh inside `kit/run game`: it opens a game window.)
 
 Launches the lab copy (tools/skatebird_lab.sh makes it) windowed at 1024x576, loads the level's scene through the lab
-plugin, and for each view locks Camera.main at (view position + H metres up), yaw = the view's yaw_deg (Unity: degrees
-from +Z towards +X), pitch P (Unity Euler x, positive looks down), vertical FOV F, with the HUD/menus and the player's
+plugin, and for each view locks Camera.main at (view position - D metres along the yaw + H metres up), yaw = the view's
+yaw_deg + Y (Unity: degrees from +Z towards +X), pitch P (Unity Euler x, positive looks down), vertical FOV F; defaults
+from the preset, "eye" (D 0, H 1.6, P 0, F 60) or with --chase skate.'s third-person camera (MODES), with the HUD/menus and the player's
 renderers hidden. After the settle it saves OUTDIR/<view index>_<name>.png (the rendered frame, read back in game) and
 writes OUTDIR/poses.json: per shot the requested pose, the plugin's read-back of the frame that was saved, a read-back
 after the save, and the checks. OUTDIR/checks/player_{shown,hidden}.png are the control for the bird hiding (one pose
@@ -35,6 +37,16 @@ READY = CONTROL / "ready.json"
 REPLY = CONTROL / "reply.json"
 LOG = LAB / "BepInEx" / "LogOutput.log"
 WIDTH, HEIGHT = 1024, 576
+# Camera presets: back = metres behind the view point along its yaw, eye = metres above it, pitch (Unity, positive looks
+# down), fov (vertical), yaw_offset (added to the view's yaw). "chase" is skate.'s third-person camera as fitted at
+# level2's spawn (tools/skatebird_chase_fit.py, job 0da1c4ce, cache/skatebird/chase-fit/level2/fit.json): two skate
+# launches agree on the position (D -0.25/-0.35, H 1.5, L -0.2/0.0; the score is flat over +-0.15 m in D and L) and FOV
+# (55.4/55.2) but not on the orientation (P +1.2, dY -0.3 in t1; P -6.2, dY +4.2 in t2); the preset takes t1, whose
+# camera looks along the skater's heading.
+MODES = {
+    "eye": {"back": 0.0, "eye": 1.6, "pitch": 0.0, "fov": 60.0, "yaw_offset": 0.0},
+    "chase": {"back": -0.3, "eye": 1.5, "pitch": 1.2, "fov": 55.3, "yaw_offset": 0.0},
+}
 POS_TOL = 1e-3  # metres
 ANGLE_TOL = 0.05  # degrees
 # What the plugin turns off unless --keep-post: they make a frame differ from a pinhole render of the scene.
@@ -77,7 +89,14 @@ class Game:
         CONTROL.mkdir(parents=True, exist_ok=True)
         tmp = COMMAND.with_suffix(".tmp")
         tmp.write_text(json.dumps(cmd), encoding="utf-8")
-        os.replace(tmp, COMMAND)
+        for attempt in range(200):  # the plugin may be reading the old command (no delete sharing on Windows)
+            try:
+                os.replace(tmp, COMMAND)
+                break
+            except PermissionError:
+                if attempt == 199:
+                    raise
+                time.sleep(0.01)
         end = time.time() + timeout
         while time.time() < end:
             if self.proc.poll() is not None:
@@ -103,7 +122,10 @@ class Game:
             pass
         if self.proc.poll() is None:
             subprocess.run(["taskkill", "/PID", str(self.proc.pid), "/F"], capture_output=True)
-            self.proc.wait(timeout=10)
+            try:
+                self.proc.wait(timeout=30)
+            except subprocess.TimeoutExpired:
+                print(f"warning: SkateBIRD pid {self.proc.pid} still running after taskkill", flush=True)
 
 
 def running():
@@ -193,15 +215,22 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("level")
     ap.add_argument("outdir")
-    ap.add_argument("--eye", type=float, default=1.6, help="camera height above the view position, metres")
-    ap.add_argument("--fov", type=float, default=60.0, help="vertical field of view, degrees")
-    ap.add_argument("--pitch", type=float, default=0.0, help="Unity pitch, degrees (positive looks down)")
+    ap.add_argument("--chase", action="store_true", help="skate.'s third-person camera preset instead of the eye")
+    ap.add_argument("--back", type=float, help="camera distance behind the view point along its yaw, metres")
+    ap.add_argument("--eye", type=float, help="camera height above the view point, metres")
+    ap.add_argument("--fov", type=float, help="vertical field of view, degrees")
+    ap.add_argument("--pitch", type=float, help="Unity pitch, degrees (positive looks down)")
+    ap.add_argument("--yaw-offset", type=float, help="degrees added to each view's yaw")
     ap.add_argument("--settle", type=float, default=2.0, help="seconds each camera pose is held before the shot")
     ap.add_argument("--load-settle", type=float, default=8.0, help="seconds after the scene is active")
     ap.add_argument("--keep-post", action="store_true",
                     help="keep the game's depth of field, lens distortion, chromatic aberration, vignette, motion blur")
     ap.add_argument("--keep", action="store_true", help="leave the game running")
     args = ap.parse_args()
+    args.mode = "chase" if args.chase else "eye"
+    for k, v in MODES[args.mode].items():
+        if getattr(args, k) is None:
+            setattr(args, k, v)
 
     level = json.loads((ROOT / "data/skatebird-views.json").read_text(encoding="utf-8")).get(args.level)
     if level is None:
@@ -211,7 +240,8 @@ def main():
     out = Path(args.outdir)
     out.mkdir(parents=True, exist_ok=True)
 
-    record = {"level": args.level, "scene": level["name"], "eye": args.eye, "fov": args.fov, "pitch": args.pitch,
+    record = {"level": args.level, "scene": level["name"], "mode": args.mode, "back": args.back, "eye": args.eye,
+              "fov": args.fov, "pitch": args.pitch, "yaw_offset": args.yaw_offset,
               "post_effects_kept": args.keep_post,
               "settle_s": args.settle, "screen": [WIDTH, HEIGHT], "lab": str(LAB), "started": time.strftime("%Y-%m-%dT%H:%M:%S"),
               "shots": []}
@@ -224,7 +254,9 @@ def main():
         print(f"loaded {r['scene']}; player at {r.get('player_position')}", flush=True)
         for i, view in enumerate(level["views"]):
             x, y, z = view["position"]
-            want = {"position": [x, y + args.eye, z], "yaw": view["yaw_deg"], "pitch": args.pitch, "fov": args.fov}
+            a = math.radians(view["yaw_deg"])
+            want = {"position": [x - args.back * math.sin(a), y + args.eye, z - args.back * math.cos(a)],
+                    "yaw": view["yaw_deg"] + args.yaw_offset, "pitch": args.pitch, "fov": args.fov}
             name = re.sub(r"[^A-Za-z0-9]+", "_", view["name"]).strip("_")
             path = (out / f"{i}_{name}.png").resolve()
             game.send("camera", position=want["position"], yaw=want["yaw"], pitch=want["pitch"], fov=want["fov"],
