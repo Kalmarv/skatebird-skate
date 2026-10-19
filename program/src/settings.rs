@@ -22,9 +22,13 @@ use primase_reskate::prepare::{
     PrepareReskateWater, RaiseOptions, SnapReskateMarkers, WaterExtent,
 };
 
-/// raise-skate's light calibration (Studio watts per candela over 4 pi^2): skate's standard one, fitted against San
-/// Vansterdam's own lights (primase's `SKATE_LIGHT_SCALE`, 3.007e-4, the same at the fork and at main).
-pub const LIGHTS: LightCalibration = LightCalibration::Standard;
+/// raise-skate's light calibration: SkateBIRD's lights (and its ambient's fill lights) are in Unity built-in units,
+/// relative to its sun (intensity 1), not physical candela, so primase's standard calibration (3.007e-4, fitted to
+/// GTA's physical lights) leaves its interiors black. 10,000 times the standard, chosen by in-game comparison of x100,
+/// x1000 and x10000 on the office, server room and bedroom 2 (run light1; Caleb, 2026-10-19: "x10000").
+pub const LIGHTS: LightCalibration = LightCalibration::Scale(3.007);
+/// The ambient's fill lights' spacing, metres ([`crate::ambient`]).
+pub const AMBIENT_FILL: f64 = 15.0;
 /// The web tile set's cell, metres.
 pub const WEB_TILE: f64 = 200.0;
 /// The largest file a web tile may carry before its cell is split, bytes: 96 MiB.
@@ -51,6 +55,7 @@ pub fn lowering() -> Vec<Box<dyn Pass>> {
     vec![
         Box::new(primase_core::state::ResolveState {
             assign: BTreeMap::new(),
+            assign_class: BTreeMap::from([("lod".to_owned(), "lod0".to_owned())]),
             keep: BTreeSet::new(),
         }),
         Box::new(primase_core::SelectLod {
@@ -90,7 +95,6 @@ pub fn gltf_preparation() -> Result<Vec<Box<dyn Pass>>, String> {
 pub fn gltf(level: &str) -> primase_gltf::WriteOptions {
     primase_gltf::WriteOptions {
         group_by: primase_gltf::GroupBy::Prototype,
-        base_dir: PathBuf::new(),
         include_unplaced: false,
         scene_name: Some(level.to_owned()),
         selection: None,
@@ -258,7 +262,7 @@ mod tests {
     fn the_raise_options_state_the_light_calibration() {
         let surfaces = BTreeMap::from([("default".to_owned(), "concrete".to_owned())]);
         let o = raise("level2", surfaces, LIGHTS).unwrap();
-        assert_eq!(o.options()["light_scale"], "standard");
+        assert_eq!(o.options()["light_scale"], "3.007");
         assert!(raise("level 2", BTreeMap::new(), LIGHTS).is_err());
     }
 }

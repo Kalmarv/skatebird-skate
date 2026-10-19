@@ -55,7 +55,7 @@ struct Outputs {
     scene: bool,
     /// `--light-scale S`: lights calibrated by this scale instead of [`settings::LIGHTS`].
     light_scale: Option<f64>,
-    /// `--ambient-fill SPACING`: the scene's ambient as fill lights this many metres apart ([`ambient`]).
+    /// `--ambient-fill SPACING`: the ambient's fill lights this many metres apart instead of [`settings::AMBIENT_FILL`].
     fill: Option<f64>,
     /// `--tag T`: the level's folder, map and mod named `..._T`, so variants of a level stand side by side.
     tag: Option<String>,
@@ -314,8 +314,8 @@ fn map_from_scene(args: Vec<String>) -> Result<()> {
     // a skate scene folder (this program's, or another's) -> the map, prepared as this program prepares it
     let scene = Path::new(scene);
     let mut w = World::new();
-    primase_reskate::interchange::read(scene, &mut w)?;
-    primase_reskate::interchange::load(scene, &mut w)?;
+    primase_reskate::read::interchange::read(scene, &mut w)?;
+    primase_reskate::read::interchange::load(scene, &mut w)?;
     write_the_map(&mut w, Path::new(out), &name).map(|_| ())
 }
 
@@ -376,12 +376,11 @@ fn convert(
     if outputs.web {
         write_web(&w, outputs.ktx2, out)?;
     }
-    if let Some(spacing) = outputs.fill {
-        let bounds = l
-            .bounds
-            .ok_or("--ambient-fill needs the level's bounds in the scan")?;
-        show("ambient-fill", &ambient::add_fill(&mut w, bounds, spacing));
-    }
+    let spacing = outputs.fill.unwrap_or(settings::AMBIENT_FILL);
+    let bounds = l
+        .bounds
+        .ok_or("the ambient fill needs the level's bounds in the scan")?;
+    show("ambient-fill", &ambient::add_fill(&mut w, bounds, spacing));
     let lights = match outputs.light_scale {
         Some(s) => primase_reskate::passes::LightCalibration::Scale(s),
         None => settings::LIGHTS,
@@ -414,7 +413,7 @@ fn convert(
         l.spawn.position, l.spawn.yaw_deg
     );
     if outputs.scene {
-        let r = primase_reskate::interchange::write(&w, &out.join("skate").join("scene"))?;
+        let r = primase_reskate::write::interchange::write(&w, &out.join("skate").join("scene"))?;
         println!("skate scene: {} tables written", r.tables.len());
     }
     write_the_map(&mut w, out, &settings::map_name(&outputs.named(&l.id)))

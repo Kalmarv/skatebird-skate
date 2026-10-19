@@ -35,6 +35,7 @@ Nothing.
    unify-texture-wrap, pack-orm passes).
 
 ## Decided (Caleb's words; never dropped, only replaced by a newer decision)
+- 2026-10-19 · Interior light: ambient as "Fill lights" (shadowless point grid from SkateBIRD's ambient); brightness "x10000" the standard calibration (run light1).
 - 2026-10-19 · Language/shape: "this should be 90% rust when it's "done". Using primase, with maybe a handful of scripts"; "This is my goal for all game readers I think. The mod is fine" (the C# BepInEx plugin stays); order: after the side-by-sides (repo cleanup, then the primase promotion requests; plan in this session: ~1,100 of the program's 1,821 Rust lines to primase).
 - 2026-10-19 · Pinning: "you can use a branch idc, the fixes must land on primase main before it's "done" though"; screenshots: "you can also do all the ss in one run". Repo: "just use main".
 - 2026-10-19 · NPC birds: "I don't think we need the npc birds in skate".
