@@ -118,8 +118,15 @@ skatebird-export build --typetrees <modding>/cache/primase/pm-core/w9/typetrees.
   skater, `trainer where` prints `(x, y, z) heading N`, `trainer option hud 0` hides the HUD
   (`modding/refs/ReSkate/Extension/Trainer/trainer.cpp`, read-only reference). Commands can also be queued at launch
   with `RESKATE_STARTUP_COMMANDS`. Heading follows the mouse (`rel dx`), so turn until `where` reports the target.
-- **SkateBIRD** has no teleport command in its ReflexCLI (`MissionManager.LoadLevel` only). A BepInEx 5 plugin in a lab
-  copy (`ds-modding/skatebird-lab`) reads `data/skatebird-teleport.json` and sets the skater's position/rotation.
+- **SkateBIRD** has no teleport or camera command in its ReflexCLI (`MissionManager.LoadLevel` only). The BepInEx 5
+  plugin `tools/skatebird-teleport-plugin` in the lab copy `cache/skatebird/lab` (made by `tools/skatebird_lab.sh`)
+  loads scenes, teleports, and locks Camera.main at an exact world pose and vertical FOV with the HUD, the bird and
+  the lens effects off; `tools/skatebird_views.sh` shoots every view of `data/skatebird-views.json` with it (runbook:
+  "Exact camera views").
+- SkateBIRD's gameplay post-process profile has depth of field focused on the bird (~3 m), lens distortion, chromatic
+  aberration and vignette (`ReactiveGameplayPostProcessing`; the game's options `DisableDoF` / `DisableVignette` turn
+  them off but persist to the save). A camera away from the bird gets a fully blurred, warped frame unless they are
+  off; the plugin turns them off on the runtime profile copy while the camera is locked.
 - Coordinates: Unity (x, y, z) -> skate scene (x, y, -z), yaw 180 - unity yaw, identical on both sides.
 
 ## Machine/tool gotchas

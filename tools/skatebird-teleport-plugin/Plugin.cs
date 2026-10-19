@@ -1,177 +1,313 @@
-// SkateBIRD teleport probe for the lab copy.
+// SkateBIRD lab plugin: scene loads, teleports and an exact camera, driven through a control folder.
 //
-// Watches C:/Users/kalmarv/ds-modding/data/skatebird-teleport.json:
-//   { "x": -18.7, "y": 1.189, "z": 84.8, "yaw": 172.9341 }
-// teleports the live skater to that Unity position/yaw (Quaternion.Euler(0, yaw, 0)),
-// zeroes the board Rigidbody for six fixed frames, then logs the read-back pose.
-// Optional cam_yaw/cam_pitch: locks Camera.main to that rotation for six seconds (CinemachineBrain
-// disabled while locked) and logs the measured forward bearing.
+// The control folder is <game root>/control (the lab copy's folder, BepInEx's Paths.GameRootPath). At start the plugin
+// deletes command.json and reply.json, then writes ready.json ({"pid": <game pid>}); after that a runner writes
+// command.json atomically (write a temp file, rename); the plugin runs each new seq once and writes reply.json the
+// same way, with the same seq. Ops (JsonUtility fields, missing ones keep their defaults):
+//
+//   {"seq":1,"op":"load","scene":"rooftop"}              LoadingManager.LoadScene(Unity scene name); replies once
+//                                                        the scene is active, loading is over and the player exists
+//   {"seq":2,"op":"screen","width":1024,"height":576}    Screen.SetResolution(w, h, windowed); replies when applied
+//   {"seq":3,"op":"teleport","position":[x,y,z],"yaw":172.9}
+//                                                        puts the skateboard at a Unity position and yaw
+//   {"seq":4,"op":"camera","position":[x,y,z],"yaw":172.9,"pitch":0,"fov":60,"settle_frames":30,"settle_seconds":1}
+//                                                        locks Camera.main at that world pose: rotation
+//                                                        Euler(pitch, yaw, 0) (pitch > 0 looks down, yaw from +Z
+//                                                        towards +X), vertical field of view fov; CinemachineBrain
+//                                                        off; screen/camera-space canvases and the player's
+//                                                        renderers hidden (unless "show_player":true); depth of
+//                                                        field, lens distortion, chromatic aberration, vignette
+//                                                        and motion blur off (unless "keep_post":true);
+//                                                        re-asserted every frame until release; replies with the
+//                                                        read-back pose after the settle
+//   {"seq":5,"op":"shot","path":"C:/out/0_spawn.png"}    reads the rendered frame back at the end of a frame, writes
+//                                                        it as PNG and replies with the camera pose of that frame
+//   {"seq":6,"op":"readback"}                            replies with the current pose
+//   {"seq":7,"op":"release"}                             gives the camera, canvases and renderers back
+//   {"seq":8,"op":"quit"}                                Application.Quit
+//
+// Every reply carries "ok" and, on failure, "error"; pose replies carry the camera's position, euler angles, forward,
+// bearing (atan2(fwd.x, fwd.z)), fieldOfView and the vertical FOV of the projection matrix, the screen size, the
+// player's position and what was hidden. Everything is also logged to BepInEx/LogOutput.log.
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
-using System.Text.RegularExpressions;
+using System.Linq;
 using BepInEx;
 using Cinemachine;
 using Skatebirb;
 using Skatebirb.Managers;
 using Skatebirb.Util;
 using UnityEngine;
+using UnityEngine.Rendering.PostProcessing;
 using UnityEngine.SceneManagement;
 
 namespace SkateBIRDTeleport
 {
-    [BepInPlugin("skatebird.teleport", "SkateBIRD Teleport", "0.4.0")]
+    [Serializable]
+    public class Command
+    {
+        public int seq;
+        public string op;
+        public string scene;
+        public string path;
+        public float[] position;
+        public float yaw;
+        public float pitch;
+        public float fov = 60f;
+        public int settle_frames = 30;
+        public float settle_seconds = 1f;
+        public bool show_player;
+        public bool keep_post;
+        public int width;
+        public int height;
+    }
+
+    [Serializable]
+    public class Reply
+    {
+        public int seq;
+        public string op;
+        public bool ok;
+        public string error;
+        public string scene;
+        public float time;
+        public int frame;
+        public string path;
+        public bool locked;
+        public float[] cam_position;
+        public float[] cam_euler;
+        public float[] cam_forward;
+        public float cam_bearing;
+        public float cam_fov;
+        public float cam_fov_projection;
+        public float cam_near;
+        public float cam_far;
+        public string cam_name;
+        public int screen_width;
+        public int screen_height;
+        public float[] player_position;
+        public float player_yaw;
+        public bool gameplay_obstructed;
+        public int hidden_canvases;
+        public int hidden_renderers;
+        public string[] player_roots;
+        public string[] other_cameras;
+        public string[] kept_canvases;
+        public string[] post_effects_off;
+        public string[] post_effects_on;
+    }
+
+    [BepInPlugin("skatebird.teleport", "SkateBIRD lab control", "0.5.0")]
     public class TeleportPlugin : BaseUnityPlugin
     {
-        private const string TeleportPath = @"C:/Users/kalmarv/ds-modding/data/skatebird-teleport.json";
-        private const string ScenePath = @"C:/Users/kalmarv/ds-modding/data/skatebird-load-scene.json";
-        private const float PollSeconds = 0.2f;
+        private const float PollSeconds = 0.1f;
+        // A player root with more renderers than this is not the player (a scene container); it is left alone.
+        private const int MaxPlayerRenderers = 400;
 
-        private static readonly Regex Number = new Regex(
-            "\"(?<key>x|y|z|yaw)\"\\s*:\\s*(?<value>-?[0-9]+(?:\\.[0-9]+)?(?:[eE][+-]?[0-9]+)?)",
-            RegexOptions.Compiled);
-
-        private static readonly Regex CamNumber = new Regex(
-            "\"(?<key>cam_yaw|cam_pitch)\"\\s*:\\s*(?<value>-?[0-9]+(?:\\.[0-9]+)?(?:[eE][+-]?[0-9]+)?)",
-            RegexOptions.Compiled);
-
-        private static readonly Regex SceneName = new Regex(
-            "\"scene\"\\s*:\\s*\"(?<name>[^\"]+)\"", RegexOptions.Compiled);
-
+        private string controlDir;
+        private string commandPath;
+        private string replyPath;
         private float nextPoll;
-        private string lastText;
-        private bool waitingLogged;
-        private string lastSceneText;
-        private string pendingScene;
-        private string requestedScene;
-        private float cameraLogUntil;
-        private float nextCameraLog;
+        private int lastSeq = int.MinValue;
+        private bool busy;
+
         private Camera lockCamera;
         private CinemachineBrain lockBrain;
-        private bool lockBrainWasEnabled;
-        private float lockUntil;
-        private float lockCheckAt;
-        private bool lockCheckLogged;
-        private double lockYaw;
-        private double lockPitch;
-        private Vector3 lockTarget;
-        private float lockDistance;
-        private float lockTargetY;
+        private Vector3 lockPosition;
+        private Quaternion lockRotation;
+        private float lockFov;
+        private readonly List<Canvas> hiddenCanvases = new List<Canvas>();
+        private readonly HashSet<Renderer> hiddenRenderers = new HashSet<Renderer>();
+        private readonly List<string> playerRoots = new List<string>();
+        private bool showPlayer;
+        private bool keepPost;
+        // Effects that make a frame differ from a pinhole render of the scene (blur, lens warp, colour fringes, dark
+        // corners). The game's own options (Options DisableDoF/DisableVignette) do the same but persist to the save.
+        private static readonly Type[] PostEffectsOff =
+            { typeof(DepthOfField), typeof(LensDistortion), typeof(ChromaticAberration), typeof(Vignette), typeof(MotionBlur) };
+        private readonly HashSet<PostProcessEffectSettings> postOff = new HashSet<PostProcessEffectSettings>();
+
+        private void Awake()
+        {
+            controlDir = Path.Combine(Paths.GameRootPath, "control");
+            Directory.CreateDirectory(controlDir);
+            commandPath = Path.Combine(controlDir, "command.json");
+            replyPath = Path.Combine(controlDir, "reply.json");
+            // A stale command from an earlier run must not replay (the runner starts every run at seq 1), so the
+            // runner sends nothing before it has read ready.json with this process's id.
+            TryDelete(commandPath);
+            TryDelete(replyPath);
+            var ready = Path.Combine(controlDir, "ready.json");
+            File.WriteAllText(ready + ".tmp", "{\"pid\":" + System.Diagnostics.Process.GetCurrentProcess().Id + "}");
+            TryDelete(ready);
+            File.Move(ready + ".tmp", ready);
+            // Keep rendering and reading commands while the window is not focused.
+            Application.runInBackground = true;
+            Camera.onPreCull += OnAnyPreCull;
+            SceneManager.sceneLoaded += (s, m) => Logger.LogInfo("SCENE ACTIVE " + SceneManager.GetActiveScene().name);
+            Logger.LogInfo("CONTROL " + controlDir);
+        }
+
+        private void OnDestroy()
+        {
+            Camera.onPreCull -= OnAnyPreCull;
+        }
 
         private void Update()
         {
-            ServiceCameraLock();
-            if (Time.unscaledTime < nextPoll) return;
+            if (lockCamera != null) HoldLock();
+            if (busy || Time.unscaledTime < nextPoll) return;
             nextPoll = Time.unscaledTime + PollSeconds;
-            PollScene();
-            PollTeleport();
-            if (Time.unscaledTime < cameraLogUntil && Time.unscaledTime >= nextCameraLog)
-            {
-                LogCamera();
-                nextCameraLog = Time.unscaledTime + 0.25f;
-            }
+            Poll();
         }
 
         private void LateUpdate()
         {
-            if (lockCamera != null && Time.unscaledTime < lockUntil) ApplyCameraLock();
+            if (lockCamera != null) HoldLock();
         }
 
-        private void PollScene()
+        private void OnAnyPreCull(Camera cam)
         {
-            if (requestedScene != null && SceneManager.GetActiveScene().name == requestedScene)
-            {
-                Logger.LogInfo("SCENE LOADED " + requestedScene);
-                requestedScene = null;
-            }
+            if (cam == null || cam != lockCamera) return;
+            // Last word before this camera culls: no game script can move it or show the player after this.
+            ApplyPose();
+            HidePlayer();
+        }
 
+        private void Poll()
+        {
             string text;
             try
             {
-                if (!File.Exists(ScenePath)) return;
-                text = File.ReadAllText(ScenePath);
+                if (!File.Exists(commandPath)) return;
+                text = File.ReadAllText(commandPath);
             }
             catch (IOException)
             {
                 return;
             }
-            if (text != lastSceneText)
-            {
-                lastSceneText = text;
-                var m = SceneName.Match(text);
-                if (m.Success)
-                {
-                    pendingScene = m.Groups["name"].Value;
-                }
-                else
-                {
-                    Logger.LogError("SCENE JSON BAD: expected {\"scene\":\"flashback\"}");
-                }
-            }
-            if (pendingScene != null && !LoadingManager.IsLoading)
-            {
-                requestedScene = pendingScene;
-                pendingScene = null;
-                Logger.LogInfo("SCENE LOAD REQUEST " + requestedScene);
-                LoadingManager.LoadScene(requestedScene);
-            }
-        }
-
-        private void PollTeleport()
-        {
-            string text;
+            Command cmd;
             try
             {
-                if (!File.Exists(TeleportPath)) return;
-                text = File.ReadAllText(TeleportPath);
+                cmd = JsonUtility.FromJson<Command>(text);
             }
-            catch (IOException)
+            catch (Exception e)
             {
+                Logger.LogError("COMMAND BAD JSON: " + e.Message);
                 return;
             }
-            if (text == lastText) return;
-            lastText = text;
+            if (cmd == null || cmd.seq == lastSeq) return;
+            lastSeq = cmd.seq;
+            Logger.LogInfo("COMMAND " + text.Trim());
+            busy = true;
+            StartCoroutine(Run(cmd));
+        }
 
-            double x, y, z, yaw;
-            if (!TryParse(text, out x, out y, out z, out yaw))
+        private IEnumerator Run(Command cmd)
+        {
+            IEnumerator body;
+            switch (cmd.op)
             {
-                Logger.LogError("TELEPORT JSON BAD: expected {\"x\":..,\"y\":..,\"z\":..,\"yaw\":..}");
-                return;
+                case "load": body = DoLoad(cmd); break;
+                case "screen": body = DoScreen(cmd); break;
+                case "teleport": body = DoTeleport(cmd); break;
+                case "camera": body = DoCamera(cmd); break;
+                case "shot": body = DoShot(cmd); break;
+                case "readback": body = DoReadback(cmd); break;
+                case "release": body = DoRelease(cmd); break;
+                case "quit": body = DoQuit(cmd); break;
+                default:
+                    Fail(cmd, "unknown op '" + cmd.op + "'");
+                    busy = false;
+                    yield break;
             }
+            // Nested iteration instead of StartCoroutine so an exception in an op becomes a failed reply.
+            while (true)
+            {
+                object current;
+                try
+                {
+                    if (!body.MoveNext()) break;
+                    current = body.Current;
+                }
+                catch (Exception e)
+                {
+                    Logger.LogError("OP " + cmd.op + " THREW " + e);
+                    Fail(cmd, e.GetType().Name + ": " + e.Message);
+                    break;
+                }
+                yield return current;
+            }
+            busy = false;
+        }
 
+        // ---- ops -------------------------------------------------------------------------------------------------
+
+        private IEnumerator DoLoad(Command cmd)
+        {
+            if (string.IsNullOrEmpty(cmd.scene))
+            {
+                Fail(cmd, "load needs scene");
+                yield break;
+            }
+            ReleaseLock();
+            var deadline = Time.unscaledTime + 30f;
+            while (LoadingManager.IsLoading)
+            {
+                if (Time.unscaledTime > deadline) { Fail(cmd, "a load already in progress did not finish"); yield break; }
+                yield return null;
+            }
+            LoadingManager.LoadScene(cmd.scene);
+            deadline = Time.unscaledTime + 120f;
+            while (LoadingManager.IsLoading || SceneManager.GetActiveScene().name != cmd.scene
+                   || ImportantStuff.PlayerSkateboard == null || Camera.main == null)
+            {
+                if (Time.unscaledTime > deadline)
+                {
+                    Fail(cmd, "scene '" + cmd.scene + "' not active after 120 s (active: "
+                              + SceneManager.GetActiveScene().name + ")");
+                    yield break;
+                }
+                yield return null;
+            }
+            // ControlBoard resets the player to the level start on its first Update: let that and the fade-in run.
+            var until = Time.unscaledTime + Math.Max(cmd.settle_seconds, 0f);
+            for (var i = 0; i < cmd.settle_frames || Time.unscaledTime < until; i++) yield return null;
+            Succeed(cmd, Pose(cmd));
+        }
+
+        private IEnumerator DoScreen(Command cmd)
+        {
+            if (cmd.width <= 0 || cmd.height <= 0)
+            {
+                Fail(cmd, "screen needs width and height");
+                yield break;
+            }
+            if (Screen.width != cmd.width || Screen.height != cmd.height || Screen.fullScreen)
+                Screen.SetResolution(cmd.width, cmd.height, FullScreenMode.Windowed);
+            var deadline = Time.unscaledTime + 10f;
+            while (Screen.width != cmd.width || Screen.height != cmd.height)
+            {
+                if (Time.unscaledTime > deadline)
+                {
+                    Fail(cmd, Format("screen is {0}x{1}, not {2}x{3}", Screen.width, Screen.height, cmd.width, cmd.height));
+                    yield break;
+                }
+                yield return null;
+            }
+            Succeed(cmd, Pose(cmd));
+        }
+
+        private IEnumerator DoTeleport(Command cmd)
+        {
+            Vector3 pos;
+            if (!TryVector(cmd.position, out pos)) { Fail(cmd, "teleport needs position [x,y,z]"); yield break; }
             var board = ImportantStuff.PlayerSkateboard;
-            if (board == null)
-            {
-                if (!waitingLogged)
-                {
-                    Logger.LogInfo("TELEPORT WAIT: no player yet (ImportantStuff.PlayerSkateboard is null)");
-                    waitingLogged = true;
-                }
-                return;
-            }
-            waitingLogged = false;
-            double? camYaw = null;
-            var camPitch = 12.0;
-            foreach (Match m in CamNumber.Matches(text))
-            {
-                double v;
-                if (!double.TryParse(m.Groups["value"].Value, NumberStyles.Float,
-                        CultureInfo.InvariantCulture, out v))
-                    continue;
-                if (m.Groups["key"].Value == "cam_yaw") camYaw = v;
-                else camPitch = v;
-            }
-            StartCoroutine(Apply(board, x, y, z, yaw, camYaw, camPitch));
-        }
-
-        private IEnumerator Apply(ISkateboardGateway board, double x, double y, double z, double yaw,
-            double? camYaw, double camPitch)
-        {
-            var pos = new Vector3((float)x, (float)y, (float)z);
-            var rot = Quaternion.Euler(0f, (float)yaw, 0f);
-            Logger.LogInfo(Format("TELEPORT REQUEST ({0:F3},{1:F3},{2:F3} yaw {3:F3})", x, y, z, yaw));
-
+            if (board == null) { Fail(cmd, "no player (ImportantStuff.PlayerSkateboard is null)"); yield break; }
+            var rot = Quaternion.Euler(0f, cmd.yaw, 0f);
             // Hold through six physics steps: a moving board would otherwise be snapped back.
             for (var i = 0; i < 6; i++)
             {
@@ -184,132 +320,287 @@ namespace SkateBIRDTeleport
                 yield return new WaitForFixedUpdate();
             }
             board.Teleport(pos, rot);
-
-            var body = board.RigidBody;
-            var p = body.position;
-            var e = body.rotation.eulerAngles;
-            Logger.LogInfo(Format("TELEPORT OK ({0:F3},{1:F3},{2:F3} yaw {3:F3})", p.x, p.y, p.z, e.y));
-            Logger.LogInfo(Format("PLAYER POS ({0:F3},{1:F3},{2:F3}) ROT ({3:F3},{4:F3},{5:F3})",
-                p.x, p.y, p.z, e.x, e.y, e.z));
-            Logger.LogInfo(Format("PLAYER OBJECT {0} ACTIVE {1}", body.gameObject.name, body.gameObject.activeInHierarchy));
-            LogCamera();
-            cameraLogUntil = Time.unscaledTime + 1.5f;
-            nextCameraLog = 0f;
-            if (camYaw.HasValue) BeginCameraLock(x, y, z, camYaw.Value, camPitch);
+            yield return null;
+            Succeed(cmd, Pose(cmd));
         }
 
-        private void LogCamera()
+        private IEnumerator DoCamera(Command cmd)
         {
-            var cam = Camera.main;
-            if (cam == null)
-            {
-                Logger.LogInfo("CAMERA NONE (no Camera.main)");
-                return;
-            }
-            var t = cam.transform;
-            var p = t.position;
-            var f = t.forward;
-            var bearing = Mathf.Atan2(f.x, f.z) * Mathf.Rad2Deg;
-            Logger.LogInfo(Format(
-                "CAMERA POS ({0:F3},{1:F3},{2:F3}) FWD ({3:F4},{4:F4},{5:F4}) BEARING {6:F2}",
-                p.x, p.y, p.z, f.x, f.y, f.z, bearing));
-            Logger.LogInfo(Format("CAMERA OBJECT {0} EULER ({1:F2},{2:F2},{3:F2})",
-                cam.gameObject.name, t.eulerAngles.x, t.eulerAngles.y, t.eulerAngles.z));
-        }
-
-        private void BeginCameraLock(double x, double y, double z, double yaw, double pitch)
-        {
-            lockCamera = Camera.main;
+            Vector3 pos;
+            if (!TryVector(cmd.position, out pos)) { Fail(cmd, "camera needs position [x,y,z]"); yield break; }
+            if (!(cmd.fov > 1f && cmd.fov < 179f)) { Fail(cmd, "fov must be in (1, 179) degrees"); yield break; }
+            var cam = lockCamera != null ? lockCamera : Camera.main;
+            if (cam == null) { Fail(cmd, "no Camera.main"); yield break; }
             if (lockCamera == null)
             {
-                Logger.LogError("CAMERA LOCK FAIL: no Camera.main");
-                return;
+                lockCamera = cam;
+                lockBrain = cam.GetComponent<CinemachineBrain>();
+                if (lockBrain == null) lockBrain = FindObjectOfType<CinemachineBrain>();
+                if (lockBrain != null) lockBrain.enabled = false;
             }
-            lockYaw = yaw;
-            lockPitch = pitch;
-            lockTarget = new Vector3((float)x, (float)y, (float)z);
-            lockDistance = 3.0f;
-            lockTargetY = 0.7f;
-            lockBrain = lockCamera.GetComponent<CinemachineBrain>();
-            if (lockBrain == null) lockBrain = FindObjectOfType<CinemachineBrain>();
-            if (lockBrain != null)
-            {
-                lockBrainWasEnabled = lockBrain.enabled;
-                lockBrain.enabled = false;
-            }
-            lockUntil = Time.unscaledTime + 6f;
-            lockCheckAt = Time.unscaledTime + 1f;
-            lockCheckLogged = false;
-            Logger.LogInfo(Format(
-                "CAMERA LOCK REQUEST yaw {0:F2} pitch {1:F2} dist {2:F2} target_y {3:F2} camera {4}",
-                yaw, pitch, lockDistance, lockTargetY, lockCamera.gameObject.name));
-            ApplyCameraLock();
+            lockPosition = pos;
+            lockRotation = Quaternion.Euler(cmd.pitch, cmd.yaw, 0f);
+            lockFov = cmd.fov;
+            if (cmd.show_player && !showPlayer) ShowPlayer();
+            showPlayer = cmd.show_player;
+            if (cmd.keep_post && !keepPost) RestorePost();
+            keepPost = cmd.keep_post;
+            HoldLock();
+            var until = Time.unscaledTime + Math.Max(cmd.settle_seconds, 0f);
+            for (var i = 0; i < cmd.settle_frames || Time.unscaledTime < until; i++) yield return null;
+            yield return new WaitForEndOfFrame();
+            Succeed(cmd, Pose(cmd));
         }
 
-        private void ApplyCameraLock()
+        private IEnumerator DoShot(Command cmd)
         {
-            if (lockCamera == null) return;
-            var yaw = (float)lockYaw * Mathf.Deg2Rad;
-            var pitch = (float)lockPitch * Mathf.Deg2Rad;
-            var forward = new Vector3(Mathf.Sin(yaw) * Mathf.Cos(pitch), -Mathf.Sin(pitch),
-                Mathf.Cos(yaw) * Mathf.Cos(pitch));
-            var target = lockTarget + new Vector3(0f, lockTargetY, 0f);
-            lockCamera.transform.position = target - forward * lockDistance;
-            lockCamera.transform.rotation = Quaternion.Euler((float)lockPitch, (float)lockYaw, 0f);
+            if (string.IsNullOrEmpty(cmd.path)) { Fail(cmd, "shot needs path"); yield break; }
+            yield return new WaitForEndOfFrame();
+            var reply = Pose(cmd);
+            var tex = ScreenCapture.CaptureScreenshotAsTexture();
+            try
+            {
+                var dir = Path.GetDirectoryName(cmd.path);
+                if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
+                var tmp = cmd.path + ".tmp";
+                File.WriteAllBytes(tmp, tex.EncodeToPNG());
+                if (File.Exists(cmd.path)) File.Delete(cmd.path);
+                File.Move(tmp, cmd.path);
+            }
+            finally
+            {
+                Destroy(tex);
+            }
+            reply.path = cmd.path;
+            Succeed(cmd, reply);
         }
 
-        private void ServiceCameraLock()
+        private IEnumerator DoReadback(Command cmd)
+        {
+            yield return new WaitForEndOfFrame();
+            Succeed(cmd, Pose(cmd));
+        }
+
+        private IEnumerator DoRelease(Command cmd)
+        {
+            ReleaseLock();
+            yield return null;
+            Succeed(cmd, Pose(cmd));
+        }
+
+        private IEnumerator DoQuit(Command cmd)
+        {
+            ReleaseLock();
+            Succeed(cmd, Pose(cmd));
+            yield return null;
+            Application.Quit();
+        }
+
+        // ---- the camera lock -------------------------------------------------------------------------------------
+
+        private void ApplyPose()
+        {
+            var t = lockCamera.transform;
+            t.SetPositionAndRotation(lockPosition, lockRotation);
+            lockCamera.fieldOfView = lockFov;
+        }
+
+        private void HoldLock()
         {
             if (lockCamera == null) return;
-            if (Time.unscaledTime >= lockUntil)
+            if (lockBrain != null && lockBrain.enabled) lockBrain.enabled = false;
+            ApplyPose();
+            HideUi();
+            HidePlayer();
+            if (!keepPost) PostOff();
+        }
+
+        // ReactiveGameplayPostProcessing swaps in a fresh profile copy when a menu opens or closes, so this runs every
+        // frame; it only touches the volumes' runtime profile instances, never the profile assets.
+        private void PostOff()
+        {
+            foreach (var v in FindObjectsOfType<PostProcessVolume>())
             {
-                if (lockBrain != null) lockBrain.enabled = lockBrainWasEnabled;
-                Logger.LogInfo("CAMERA LOCK RESTORED");
-                lockCamera = null;
-                lockBrain = null;
-                return;
+                if (!v.enabled || !v.HasInstantiatedProfile() && v.sharedProfile == null) continue;
+                foreach (var s in v.profile.settings)
+                {
+                    if (s == null || !s.active || !PostEffectsOff.Contains(s.GetType())) continue;
+                    s.active = false;
+                    postOff.Add(s);
+                }
             }
-            ApplyCameraLock();
-            if (lockCheckLogged || Time.unscaledTime < lockCheckAt) return;
-            lockCheckLogged = true;
-            var f = lockCamera.transform.forward;
-            var bearing = Mathf.Atan2(f.x, f.z) * Mathf.Rad2Deg;
-            var diff = Mathf.DeltaAngle((float)lockYaw, bearing);
-            var ok = Mathf.Abs(diff) <= 2f;
-            Logger.LogInfo(Format(
-                "CAMERA LOCK BEARING {0:F2} TARGET {1:F2} DIFF {2:F2} {3}",
-                bearing, lockYaw, diff, ok ? "OK" : "FAIL"));
-            if (!ok)
+        }
+
+        private void RestorePost()
+        {
+            foreach (var s in postOff) if (s != null) s.active = true;
+            postOff.Clear();
+        }
+
+        private void ShowPlayer()
+        {
+            foreach (var r in hiddenRenderers) if (r != null) r.enabled = true;
+            hiddenRenderers.Clear();
+            playerRoots.Clear();
+        }
+
+        // Screen-space canvases are the HUD, menus and the console; world-space ones belong to the level and stay.
+        private void HideUi()
+        {
+            foreach (var c in FindObjectsOfType<Canvas>())
             {
-                Logger.LogError(Format(
-                    "CAMERA LOCK FAIL bearing {0:F2} target {1:F2} diff {2:F2}",
-                    bearing, lockYaw, diff));
+                if (!c.enabled || !c.isRootCanvas || c.renderMode == RenderMode.WorldSpace) continue;
+                c.enabled = false;
+                hiddenCanvases.Add(c);
             }
+        }
+
+        private void HidePlayer()
+        {
+            if (showPlayer) return;
+            playerRoots.Clear();
+            var board = ImportantStuff.PlayerSkateboard;
+            if (board == null) return;
+            var roots = new List<Transform>();
+            var body = board.RigidBody;
+            if (body != null) roots.Add(body.transform.root);
+            if (board.Rider != null) roots.Add(board.Rider.transform.root);
+            foreach (var root in roots.Distinct())
+            {
+                var renderers = root.GetComponentsInChildren<Renderer>(true);
+                if (renderers.Length > MaxPlayerRenderers)
+                {
+                    playerRoots.Add(root.name + " (skipped: " + renderers.Length + " renderers)");
+                    continue;
+                }
+                playerRoots.Add(root.name);
+                foreach (var r in renderers)
+                {
+                    if (!r.enabled) continue;
+                    r.enabled = false;
+                    hiddenRenderers.Add(r);
+                }
+            }
+        }
+
+        private void ReleaseLock()
+        {
+            if (lockCamera == null) return;
+            if (lockBrain != null) lockBrain.enabled = true;
+            foreach (var c in hiddenCanvases) if (c != null) c.enabled = true;
+            hiddenCanvases.Clear();
+            ShowPlayer();
+            RestorePost();
+            showPlayer = false;
+            keepPost = false;
+            lockCamera = null;
+            lockBrain = null;
+            Logger.LogInfo("CAMERA RELEASED");
+        }
+
+        // ---- replies ---------------------------------------------------------------------------------------------
+
+        private Reply Pose(Command cmd)
+        {
+            var r = new Reply
+            {
+                seq = cmd.seq,
+                op = cmd.op,
+                scene = SceneManager.GetActiveScene().name,
+                time = Time.unscaledTime,
+                frame = Time.frameCount,
+                locked = lockCamera != null,
+                screen_width = Screen.width,
+                screen_height = Screen.height,
+                hidden_canvases = hiddenCanvases.Count(c => c != null && !c.enabled),
+                hidden_renderers = hiddenRenderers.Count(x => x != null && !x.enabled),
+                player_roots = playerRoots.ToArray(),
+            };
+            try { r.gameplay_obstructed = UIManager.IsGameplayObstructed(); } catch (Exception) { }
+            var cam = lockCamera != null ? lockCamera : Camera.main;
+            if (cam != null)
+            {
+                var t = cam.transform;
+                var f = t.forward;
+                r.cam_name = cam.gameObject.name;
+                r.cam_position = Vec(t.position);
+                r.cam_euler = Vec(t.eulerAngles);
+                r.cam_forward = Vec(f);
+                r.cam_bearing = Mathf.Atan2(f.x, f.z) * Mathf.Rad2Deg;
+                r.cam_fov = cam.fieldOfView;
+                r.cam_fov_projection = 2f * Mathf.Atan(1f / cam.projectionMatrix[1, 1]) * Mathf.Rad2Deg;
+                r.cam_near = cam.nearClipPlane;
+                r.cam_far = cam.farClipPlane;
+                r.other_cameras = Camera.allCameras.Where(c => c != cam).Select(c => Format(
+                    "{0} depth {1} target {2} mask 0x{3:X}", c.gameObject.name, c.depth,
+                    c.targetTexture != null ? c.targetTexture.name : "screen", c.cullingMask)).ToArray();
+            }
+            r.kept_canvases = FindObjectsOfType<Canvas>().Where(c => c.enabled && c.isRootCanvas)
+                .Select(c => c.gameObject.name + " " + c.renderMode).ToArray();
+            r.post_effects_off = postOff.Where(s => s != null && !s.active).Select(s => s.GetType().Name).Distinct()
+                .ToArray();
+            r.post_effects_on = FindObjectsOfType<PostProcessVolume>().Where(v => v.enabled)
+                .SelectMany(v => (v.HasInstantiatedProfile() ? v.profile : v.sharedProfile)?.settings
+                                 ?? new List<PostProcessEffectSettings>())
+                .Where(s => s != null && s.active).Select(s => s.GetType().Name).Distinct().ToArray();
+            var board = ImportantStuff.PlayerSkateboard;
+            if (board != null && board.RigidBody != null)
+            {
+                r.player_position = Vec(board.RigidBody.position);
+                r.player_yaw = board.RigidBody.rotation.eulerAngles.y;
+            }
+            return r;
+        }
+
+        private void Succeed(Command cmd, Reply r)
+        {
+            r.ok = true;
+            WriteReply(r);
+        }
+
+        private void Fail(Command cmd, string error)
+        {
+            Reply r;
+            try { r = Pose(cmd); } catch (Exception) { r = new Reply { seq = cmd.seq, op = cmd.op }; }
+            r.ok = false;
+            r.error = error;
+            Logger.LogError("OP " + cmd.op + " FAILED: " + error);
+            WriteReply(r);
+        }
+
+        private void WriteReply(Reply r)
+        {
+            var json = JsonUtility.ToJson(r);
+            Logger.LogInfo("REPLY " + json);
+            var tmp = replyPath + ".tmp";
+            File.WriteAllText(tmp, json);
+            if (File.Exists(replyPath)) File.Delete(replyPath);
+            File.Move(tmp, replyPath);
+        }
+
+        // ---- helpers ---------------------------------------------------------------------------------------------
+
+        private static bool TryVector(float[] v, out Vector3 result)
+        {
+            result = Vector3.zero;
+            if (v == null || v.Length != 3) return false;
+            result = new Vector3(v[0], v[1], v[2]);
+            return true;
+        }
+
+        private static float[] Vec(Vector3 v)
+        {
+            return new[] { v.x, v.y, v.z };
+        }
+
+        private static void TryDelete(string path)
+        {
+            try { if (File.Exists(path)) File.Delete(path); } catch (IOException) { }
         }
 
         private static string Format(string format, params object[] args)
         {
             return string.Format(CultureInfo.InvariantCulture, format, args);
-        }
-
-        private static bool TryParse(string text, out double x, out double y, out double z, out double yaw)
-        {
-            x = y = z = yaw = 0;
-            var seen = 0;
-            foreach (Match m in Number.Matches(text))
-            {
-                double v;
-                if (!double.TryParse(m.Groups["value"].Value, NumberStyles.Float, CultureInfo.InvariantCulture, out v))
-                    return false;
-                switch (m.Groups["key"].Value)
-                {
-                    case "x": x = v; seen |= 1; break;
-                    case "y": y = v; seen |= 2; break;
-                    case "z": z = v; seen |= 4; break;
-                    case "yaw": yaw = v; seen |= 8; break;
-                }
-            }
-            return seen == 15;
         }
     }
 }
