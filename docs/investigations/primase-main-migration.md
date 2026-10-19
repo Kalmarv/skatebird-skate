@@ -118,3 +118,16 @@ SkateBIRD coordinator takes it). Nothing below is merged.
 - Shared-target rule (kb note d31027b3): a second checkout of primase or of this program built into the same
   CARGO_TARGET_DIR needs its own cargo profile (`--config 'profile.X.inherits="release"' --profile X`) and every
   tracked file touched; outputs of a shared build are discarded.
+
+## Closed by skatebird-coord (2026-10-19)
+
+- Pinned to c0d6539b with batch 38's recipe lines (bff6c78). Levels 1, 5 and 12 fixed in the program (bff6c78):
+  level1 missing UV0 filled as zeros before the bake (fill-missing-texcoords); level12 the variants of prototypes no
+  one places dropped (they joined two tilings into one bake group); level5 material-less parts left out (counted;
+  the placed one is prototype_e631 part 2). level7 waits for primase aa7daf03 (decode_stream_raw; reproduced by the
+  owner, job 3ea8c316, exit 0).
+- The program now drives the route itself (`skatebird-export build`, c1a6594/a812ae1): spawn and travel from the
+  scan, map, Studio compile (resident, no LODs). 7 levels built and compiled in 4 m 19 s (job 4ba3545f).
+- Proofs (a) and (c) not run: they compare against the fork, whose maps failed visual parity anyway, and whole-map
+  byte comparisons are outside the verification budget. Proof (b) (the writer, identical in content on 7 levels,
+  job ff568715) stands. The check that counts is the in-game match per level (docs/VERIFICATION.md).
