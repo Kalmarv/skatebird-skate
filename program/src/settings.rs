@@ -12,15 +12,19 @@ use std::path::PathBuf;
 use primase_core::pass::Pass;
 use primase_gltf::prepare::{FillMissingTexcoords, PrepareGltfMaterials, UnitValue};
 use primase_reskate::EncodingOptions;
+use primase_reskate::components::{CollisionSurfaces, CollisionWeld};
+use primase_reskate::passes::{
+    LightCalibration, PrepareReskateCollision, PrepareReskateUvRepeats, RepeatBlended, RepeatDecals,
+};
 use primase_reskate::prepare::{
     OceanMaterials, PauseExtent, PauseSource, PlanReskateBlendBudget, PrepareReskateBlendOrder,
     PrepareReskateGrinds, PrepareReskateOverlays, PrepareReskatePauseMap, PrepareReskateTextures,
     PrepareReskateWater, RaiseOptions, SnapReskateMarkers, WaterExtent,
 };
 
-/// raise-skate's light calibration (Studio watts per candela over 4 pi^2): skate's, fitted against San Vansterdam's
-/// own lights (primase's `SKATE_LIGHT_SCALE`, the same at the fork and at main).
-pub const LIGHT_SCALE: f64 = 3.007e-4;
+/// raise-skate's light calibration (Studio watts per candela over 4 pi^2): skate's standard one, fitted against San
+/// Vansterdam's own lights (primase's `SKATE_LIGHT_SCALE`, 3.007e-4, the same at the fork and at main).
+pub const LIGHTS: LightCalibration = LightCalibration::Standard;
 /// The web tile set's cell, metres.
 pub const WEB_TILE: f64 = 200.0;
 /// The largest file a web tile may carry before its cell is split, bytes: 96 MiB.
@@ -120,11 +124,9 @@ pub fn web_textures() -> Result<primase_web::prepare::PrepareWebTextures, String
 }
 
 /// raise-skate's options: the scene `name`, the game's surfaces onto skate's (`surfaces`; an unmapped surface with no
-/// class has its triangles left out, reported), lights at [`LIGHT_SCALE`].
+/// class has its triangles left out, reported), lights calibrated as [`LIGHTS`].
 pub fn raise(name: &str, surfaces: BTreeMap<String, String>) -> Result<RaiseOptions, String> {
-    RaiseOptions::new(name)?
-        .with_surfaces(surfaces)?
-        .with_light_scale(LIGHT_SCALE)
+    RaiseOptions::new(name, LIGHTS)?.with_surfaces(surfaces)
 }
 
 /// How the map is encoded (the fork's `BuildOptions` defaults, build.rs:63-87, and the map name the program gives):
@@ -150,8 +152,11 @@ pub fn encoding(out_root: PathBuf, name: &str) -> EncodingOptions {
 /// prisms as Studio builds them; the markers snapped for this encoding; the water surfaces of the content, 400 m past
 /// it, no material drawn as ocean unless it says so; the pause-map picture drawn from the geometry over the content,
 /// 2,160 px high; textures capped at 256 px (stored levels, else the 2 x 2 box, normal maps alike); tints multiplied
-/// into texture copies; the overlays stacked 4 mm apart; the blend chains cut on the 200 m grid; at most 1,000 chain
-/// objects. No light cap.
+/// into texture copies; triangles over Studio's 256 texture repeats left out of repeating decals, and a repeating
+/// blended surface with such a triangle drawn as a cutout twin (what the fork's writer did inside itself); the
+/// overlays stacked 4 mm apart; the blend chains cut on the 200 m grid; the collision laid out as the fork's writer
+/// did (a leaf's rare surfaces coalesced into its common one, corners welded to the millimetre); at most 1,000 chain
+/// objects (a fixed count, so no map summary). No light cap.
 pub fn map_preparation(encoding: &EncodingOptions) -> Result<Vec<Box<dyn Pass>>, String> {
     let cap = primase_image::CapTextures::new(MAP_TEXTURE_CAP)?.with_mode(primase_image::CapMode {
         normals: primase_image::NormalDownscale::Box,
@@ -172,8 +177,17 @@ pub fn map_preparation(encoding: &EncodingOptions) -> Result<Vec<Box<dyn Pass>>,
         })?),
         Box::new(cap),
         Box::new(PrepareReskateTextures),
+        Box::new(PrepareReskateUvRepeats::new(
+            RepeatDecals::Omit,
+            RepeatBlended::Cutout,
+        )),
         Box::new(PrepareReskateOverlays::new(OVERLAY_STEP)?.for_encoding(encoding)?),
         Box::new(PrepareReskateBlendOrder::new(BLEND_GRID)?.for_encoding(encoding)?),
+        Box::new(PrepareReskateCollision::new(
+            CollisionSurfaces::Coalesce,
+            CollisionWeld::Millimetre,
+            encoding,
+        )?),
         Box::new(PlanReskateBlendBudget::objects(BLEND_OBJECTS)),
     ])
 }
@@ -202,10 +216,16 @@ mod tests {
             "cap-textures{",
             "max=256",
             "prepare-reskate-textures",
+            "prepare-reskate-uv-repeats{",
+            "decals=omit",
+            "blended=cutout",
             "prepare-reskate-overlays{",
             "step=0.004",
             "prepare-reskate-blend-order{",
             "grid=200",
+            "prepare-reskate-collision{",
+            "surfaces=coalesce",
+            "weld=mm",
             "plan-reskate-blend-budget{objects=1000}",
         ] {
             assert!(text.contains(want), "{want} not in {text}");
@@ -213,10 +233,10 @@ mod tests {
     }
 
     #[test]
-    fn the_raise_options_state_the_light_scale() {
+    fn the_raise_options_state_the_light_calibration() {
         let surfaces = BTreeMap::from([("default".to_owned(), "concrete".to_owned())]);
         let o = raise("level2", surfaces).unwrap();
-        assert_eq!(o.options()["light_scale"], LIGHT_SCALE.to_string());
+        assert_eq!(o.options()["light_scale"], "standard");
         assert!(raise("level 2", BTreeMap::new()).is_err());
     }
 }

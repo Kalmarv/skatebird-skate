@@ -1,4 +1,5 @@
-//! Give differently textured placements independent geometry before baking UVs.
+//! Give differently textured placements independent geometry before baking UVs; a prototype nobody places keeps
+//! only its default materials.
 use primase_core::pass::PassLog;
 use primase_core::{Entity, Instance, Lods, MaterialVariants, Mesh, MeshFile, Name, World};
 use std::collections::BTreeMap;
@@ -28,6 +29,17 @@ pub fn specialize(world: &mut World) -> Result<PassLog, String> {
         }
     }
     let mut log = PassLog::default();
+    // Variants are per-placement choices: a prototype nobody places chooses none, and keeping them would join its
+    // materials into one texture-coordinate group with every alternative's tiling.
+    let unplaced: Vec<Entity> = world
+        .iter::<MaterialVariants>()
+        .map(|(e, _)| e)
+        .filter(|e| !placements.contains_key(e))
+        .collect();
+    for prototype in unplaced {
+        world.remove::<MaterialVariants>(prototype);
+        log.count("unplaced prototypes' material variants left out", 1);
+    }
     for (prototype, used) in placements {
         let source = world.get::<Mesh>(prototype).unwrap().clone();
         let variants = world.get::<MaterialVariants>(prototype).unwrap().clone();

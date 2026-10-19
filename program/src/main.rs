@@ -11,6 +11,7 @@
 
 mod pack;
 mod settings;
+mod unmaterialed;
 mod uv_policy;
 mod variants;
 mod wrap;
@@ -269,8 +270,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         report.lod_forms
     );
     println!(
-        "not decoded {:?}; not reproduced {:?}",
-        report.textures_not_decoded, report.not_reproduced
+        "not decoded {:?}; not reproduced {:?}; read otherwise {:?}; colliders not colliding {:?}",
+        report.textures_not_decoded,
+        report.not_reproduced,
+        report.notices,
+        report.colliders_not_colliding
     );
     // the lowering, as a pipeline: each pass whose input the level has, verified after each
     let passes = settings::lowering();
@@ -297,12 +301,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("lowered in {:.1} s", started.elapsed().as_secs_f64());
     std::fs::create_dir_all(out)?;
     if std::env::var_os("BIRD_UV_DIAGNOSTIC").is_some() {
-        show("specialize-variants", &variants::specialize(&mut w)?);
-        show(
-            "preserve-base-tiling",
-            &uv_policy::preserve_base_tiling(&mut w)?,
-        );
-        return Ok(());
+        return one_uv_set(&mut w);
     }
     let glb = out.join(format!("{level}.glb"));
     // the glTF's own needs, on a copy: the world the skate scene is made from stays as lowered
@@ -352,11 +351,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
     let Some(map) = surfaces else { return Ok(()) };
     let surfaces: BTreeMap<String, String> = serde_json::from_slice(&std::fs::read(map)?)?;
-    show("specialize-variants", &variants::specialize(&mut w)?);
-    show(
-        "preserve-base-tiling",
-        &uv_policy::preserve_base_tiling(&mut w)?,
-    );
+    one_uv_set(&mut w)?;
+    show("leave-out-unmaterialed", &unmaterialed::leave_out(&mut w)?);
     // skate's materials carry one wrap for all their textures: take the base colour's; and one mask image:
     // occlusion, roughness and metallic pack into it
     run(
@@ -386,9 +382,22 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         println!("travel markers: {n} from {}", path.display());
     }
     let r = primase_reskate::interchange::write(&w, &out.join("skate").join("scene"))?;
-    println!("skate scene: {r:?}");
+    println!("skate scene: {} tables written", r.tables.len());
     let name = map_name.unwrap_or_else(|| format!("SkateBIRD_{level}"));
     write_the_map(&mut w, out, &name)
+}
+
+/// skate's one texture-coordinate set: every material's tiling baked into its primitives' coordinates. A primitive
+/// stored without the set its texture samples reads (0, 0) in Unity, so it gets the set as zeros first; placements
+/// with other materials get their own geometry; then the base tiling is kept ([`uv_policy`]).
+fn one_uv_set(w: &mut World) -> Result<(), Box<dyn std::error::Error>> {
+    run(
+        w,
+        vec![Box::new(primase_gltf::prepare::FillMissingTexcoords)],
+    )?;
+    show("specialize-variants", &variants::specialize(w)?);
+    show("preserve-base-tiling", &uv_policy::preserve_base_tiling(w)?);
+    Ok(())
 }
 
 /// The ReSkate map of a raised world into `<out>/map/<name>`: prepared as the program chooses ([`settings`]), then
@@ -410,8 +419,17 @@ fn write_the_map(w: &mut World, out: &Path, name: &str) -> Result<(), Box<dyn st
         r.textures,
         r.collision_tris as f64 / 1e6,
     );
-    for (what, n) in &r.unsupported {
+    for (what, n) in &r.omitted {
         println!("map: not written: {what} x {n}");
+    }
+    for (what, n) in &r.approximated {
+        println!("map: approximated: {what} x {n}");
+    }
+    for (what, n) in &r.unsupported_names {
+        println!("map: unsupported: {what} x {n}");
+    }
+    for w in &r.warnings {
+        println!("map warning: {w}");
     }
     Ok(())
 }
