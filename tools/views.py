@@ -19,6 +19,7 @@ ROOT = Path(__file__).resolve().parent.parent
 LEVELS = ["level1", "level2", "level3", "level4", "level5", "level7", "level12", "level13"]
 EXTRA = 3  # travel anchors per level besides the spawn
 LIFT = 0.3  # metres above the anchor a teleport lands (skate drops the skater onto the ground)
+HOLD = 25  # seconds a view is held after its shot is asked for
 TELEPORT_YAW = 180.0  # the Unity yaw a skater faces after `trainer tp` (skate heading 0)
 
 
@@ -44,10 +45,12 @@ def skate_commands(level):
     asset = f"levels/game/dingolevel_reskate_skatebird_{level}/dingolevel_reskate_skatebird_{level}"
     # settle at the spawn: the spawn view where the level starts, then one teleport per other view (each
     # `trainer where` is a shot; the chase camera needs a few seconds to swing in behind the skater)
-    c = ["wait 100", f"load {asset}", "wait 45", "trainer option hud 0", "hideui 1", "trainer where", "wait 6"]
+    # Each view is held HOLD seconds after its `trainer where`: under load the runner's capture starts 15-20 s late
+    # (run t3), and a capture after the next teleport would show the wrong view.
+    c = ["wait 100", f"load {asset}", "wait 45", "trainer option hud 0", "hideui 1", "trainer where", f"wait {HOLD}"]
     for v in views[1:]:
         x, y, z = v["position"]
-        c += [f"trainer tp {x} {y + LIFT:.3f} {-z}", "wait 12", "trainer where", "wait 6"]
+        c += [f"trainer tp {x} {y + LIFT:.3f} {-z}", "wait 12", "trainer where", f"wait {HOLD}"]
     print(";".join(c))
 
 

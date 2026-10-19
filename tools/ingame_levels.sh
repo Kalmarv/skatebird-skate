@@ -17,12 +17,12 @@ for L in "${LEVELS[@]}"; do
   SRCS+=${SRCS:+,}$B/$L/stage/Patch; NAMES+=${NAMES:+,}SkateBIRD_$L
   C=$(python -I "$W/tools/views.py" skate-commands "$L") || exit 2
   CMDS+=";${C#wait 100;}"
-  # load + settle + 4 views (wait 45 + 6 + 3 x 18), with room for the load itself under load
-  SECS=$((SECS + 160))
+  # load + settle + 4 views held 25 s (45 + 25 + 3 x 37), with room for the load; the run ends at its last shot
+  SECS=$((SECS + 260))
 done
 mkdir -p "$R"
 printf '%s\n' "${LEVELS[@]}" > "$R/levels.txt"
-NO_DLL=1 "$BASH" "$E/ingame.sh" "$R/run" copy "$SRCS" "$NAMES" "$CMDS" "$SECS" > "$R/run.txt" 2>&1; e=$?
+STOP_AFTER_WHERE=$((4 * ${#LEVELS[@]})) NO_DLL=1 "$BASH" "$E/ingame.sh" "$R/run" copy "$SRCS" "$NAMES" "$CMDS" "$SECS" > "$R/run.txt" 2>&1; e=$?
 echo "runner exit $e; shots $(ls "$R"/run/where_*.png 2>/dev/null | grep -vc _small); crash dumps: $(grep -c 'crash dump' "$R/run.txt")"
 # the console lines in order: per level, the load and its `trainer where` readings (one per shot)
 grep -a "load levels/game\|\[Console\] \[INFO\] (" "$R/run/ReSkate.log" 2>/dev/null | cut -c1-200
