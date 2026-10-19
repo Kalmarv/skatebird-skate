@@ -8,8 +8,8 @@ publish = false
 path = "tint_policy.rs"
 
 [dependencies]
-primase-core = { git = "https://git.ivyhq.xyz/kalmarv/primase-work.git", rev = "f374e4e7" }
-primase-unity = { git = "https://git.ivyhq.xyz/kalmarv/primase-work.git", rev = "f374e4e7" }
-primase-reskate = { git = "https://git.ivyhq.xyz/kalmarv/primase-work.git", rev = "f374e4e7" }
+primase-core = { git = "https://github.com/kalmarv/primase.git", rev = "cfb71cca" }
+primase-unity = { git = "https://github.com/kalmarv/primase.git", rev = "cfb71cca" }
+primase-reskate = { git = "https://github.com/kalmarv/primase.git", rev = "cfb71cca" }
 
 [workspace]
