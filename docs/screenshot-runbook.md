@@ -61,7 +61,14 @@ C:/Users/kalmarv/modding/kit/run game --job -- "$BASH" tools/skatebird_views.sh 
   to the collider below it (`cam_overlaps`, `cam_ground`; a camera in or against geometry fails its check). In that
   run the spawns of level3, level4 and level12 failed on `Camera Follow`, the game's camera target 1.5 m above the
   player; the plugin now ignores the player's, the camera's and the virtual cameras' follow/look-at colliders
-  (not yet run in the game).
+  (verified in job dad3987b: all 32 shots pass).
+- **NPCs hidden** (Caleb: skate. gets no skinned meshes, so no NPC birds): unless `--keep-npcs`, every
+  `BirbDecorator` but the player's (with all it renders: body, crest, clothing) and every other
+  `SkinnedMeshRenderer` is hidden; `poses.json` has `npcs_hidden` per level and the counts per shot. Job dad3987b
+  (2026-10-19, 3m50s) hid 15/15/9/54/15/1/15/6 renderers in level1/2/3/4/5/7/12/13: "Generic Scenery Birb" birds
+  everywhere but level7 (a skinned `bird` under `Level`) and level13 (the skinned `Seagull` of `Missions - Skate
+  Heaven`). Compared with the shots before (same poses): outside the NPCs the frames are pixel-identical except
+  animated things (clock hands, spinning collectibles, leaves, a sparkle); every changed region was looked at.
 
 ### skate.'s third-person camera (`--chase`)
 

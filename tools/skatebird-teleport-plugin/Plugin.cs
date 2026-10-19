@@ -19,6 +19,9 @@
 //                                                        field, lens distortion, chromatic aberration, vignette
 //                                                        and motion blur off (unless "keep_post":true); with
 //                                                        "flat_sky":true the sky is cleared to black, no skybox;
+//                                                        "hide_npcs":true also hides the NPC birds (every
+//                                                        BirbDecorator but the player's, all it renders) and every
+//                                                        other SkinnedMeshRenderer;
 //                                                        re-asserted every frame until release; replies with the
 //                                                        read-back pose after the settle
 //   {"seq":5,"op":"shot","path":"C:/out/0_spawn.png"}    reads the rendered frame back at the end of a frame, writes
@@ -41,6 +44,7 @@ using BepInEx;
 using Cinemachine;
 using Skatebirb;
 using Skatebirb.Managers;
+using Skatebirb.Birbs;
 using Skatebirb.Util;
 using UnityEngine;
 using UnityEngine.Rendering.PostProcessing;
@@ -64,6 +68,7 @@ namespace SkateBIRDTeleport
         public bool show_player;
         public bool keep_post;
         public bool flat_sky;
+        public bool hide_npcs;
         public int width;
         public int height;
     }
@@ -103,6 +108,9 @@ namespace SkateBIRDTeleport
         public string[] kept_canvases;
         public string[] post_effects_off;
         public string[] post_effects_on;
+        public string[] npc_birbs;
+        public string[] npc_skinned_other;
+        public int hidden_npc_renderers;
     }
 
     [BepInPlugin("skatebird.teleport", "SkateBIRD lab control", "0.5.0")]
@@ -131,6 +139,10 @@ namespace SkateBIRDTeleport
         private bool showPlayer;
         private bool keepPost;
         private bool flatSky;
+        private bool hideNpcs;
+        private readonly HashSet<Renderer> hiddenNpcRenderers = new HashSet<Renderer>();
+        private readonly HashSet<string> npcBirbs = new HashSet<string>();
+        private readonly HashSet<string> npcSkinnedOther = new HashSet<string>();
         private CameraClearFlags savedClearFlags;
         private Color savedBackground;
         // Effects that make a frame differ from a pinhole render of the scene (blur, lens warp, colour fringes, dark
@@ -183,6 +195,7 @@ namespace SkateBIRDTeleport
             // Last word before this camera culls: no game script can move it or show the player after this.
             ApplyPose();
             HidePlayer();
+            if (hideNpcs) HideNpcs();
         }
 
         private void Poll()
@@ -366,6 +379,8 @@ namespace SkateBIRDTeleport
             if (cmd.keep_post && !keepPost) RestorePost();
             keepPost = cmd.keep_post;
             flatSky = cmd.flat_sky;
+            if (!cmd.hide_npcs && hideNpcs) ShowNpcs();
+            hideNpcs = cmd.hide_npcs;
             HoldLock();
             var until = Time.unscaledTime + Math.Max(cmd.settle_seconds, 0f);
             for (var i = 0; i < cmd.settle_frames || Time.unscaledTime < until; i++) yield return null;
@@ -435,7 +450,53 @@ namespace SkateBIRDTeleport
             ApplyPose();
             HideUi();
             HidePlayer();
+            if (hideNpcs) HideNpcs();
             if (!keepPost) PostOff();
+        }
+
+        // NPCs are not level geometry (skate. gets no skinned meshes): every bird (BirbDecorator) that is not the
+        // player's, with everything rendered under it (body, crest, clothing), and every other SkinnedMeshRenderer.
+        private void HideNpcs()
+        {
+            var player = PlayerRoots();
+            foreach (var b in FindObjectsOfType<BirbDecorator>())
+            {
+                if (player.Any(r => b.transform.IsChildOf(r))) continue;
+                npcBirbs.Add(b.gameObject.name);
+                foreach (var r in b.GetComponentsInChildren<Renderer>(true)) HideNpcRenderer(r);
+                if (b.BirbRoot != null)
+                    foreach (var r in b.BirbRoot.GetComponentsInChildren<Renderer>(true)) HideNpcRenderer(r);
+            }
+            foreach (var r in FindObjectsOfType<SkinnedMeshRenderer>())
+            {
+                if (!r.enabled || player.Any(p => r.transform.IsChildOf(p))) continue;
+                npcSkinnedOther.Add(r.gameObject.name + " (" + r.transform.root.name + ")");
+                HideNpcRenderer(r);
+            }
+        }
+
+        private void HideNpcRenderer(Renderer r)
+        {
+            if (!r.enabled) return;
+            r.enabled = false;
+            hiddenNpcRenderers.Add(r);
+        }
+
+        private void ShowNpcs()
+        {
+            foreach (var r in hiddenNpcRenderers) if (r != null) r.enabled = true;
+            hiddenNpcRenderers.Clear();
+            npcBirbs.Clear();
+            npcSkinnedOther.Clear();
+        }
+
+        private static List<Transform> PlayerRoots()
+        {
+            var roots = new List<Transform>();
+            var board = ImportantStuff.PlayerSkateboard;
+            if (board != null && board.RigidBody != null) roots.Add(board.RigidBody.transform.root);
+            if (board != null && board.Rider != null) roots.Add(board.Rider.transform.root);
+            return roots;
         }
 
         // ReactiveGameplayPostProcessing swaps in a fresh profile copy when a menu opens or closes, so this runs every
@@ -516,6 +577,8 @@ namespace SkateBIRDTeleport
             foreach (var c in hiddenCanvases) if (c != null) c.enabled = true;
             hiddenCanvases.Clear();
             ShowPlayer();
+            ShowNpcs();
+            hideNpcs = false;
             RestorePost();
             showPlayer = false;
             keepPost = false;
@@ -541,6 +604,9 @@ namespace SkateBIRDTeleport
                 hidden_canvases = hiddenCanvases.Count(c => c != null && !c.enabled),
                 hidden_renderers = hiddenRenderers.Count(x => x != null && !x.enabled),
                 player_roots = playerRoots.ToArray(),
+                npc_birbs = npcBirbs.OrderBy(n => n).ToArray(),
+                npc_skinned_other = npcSkinnedOther.OrderBy(n => n).ToArray(),
+                hidden_npc_renderers = hiddenNpcRenderers.Count(x => x != null && !x.enabled),
             };
             try { r.gameplay_obstructed = UIManager.IsGameplayObstructed(); } catch (Exception) { }
             var cam = lockCamera != null ? lockCamera : Camera.main;
@@ -641,10 +707,8 @@ namespace SkateBIRDTeleport
         // The player's roots, the camera's root and every active virtual camera's Follow and LookAt target.
         private static List<Transform> OwnTransforms(Camera cam)
         {
-            var own = new List<Transform> { cam.transform.root };
-            var board = ImportantStuff.PlayerSkateboard;
-            if (board != null && board.RigidBody != null) own.Add(board.RigidBody.transform.root);
-            if (board != null && board.Rider != null) own.Add(board.Rider.transform.root);
+            var own = PlayerRoots();
+            own.Add(cam.transform.root);
             foreach (var v in FindObjectsOfType<CinemachineVirtualCameraBase>())
             {
                 if (v.Follow != null) own.Add(v.Follow);
