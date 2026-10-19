@@ -2,7 +2,9 @@
 //! `prototype_e631` part 2, a static-batch submesh) has no surface skate can draw, and the ReSkate writer refuses a part
 //! with none. Counted as left out, parts and triangles; a prototype left with no part draws nothing (no mesh).
 use primase_core::pass::PassLog;
-use primase_core::{Entity, MaterialVariants, Mesh, Topology, World};
+use std::collections::BTreeSet;
+
+use primase_core::{Entity, Instance, MaterialVariants, Mesh, Name, Topology, World};
 
 pub fn leave_out(world: &mut World) -> Result<PassLog, String> {
     let mut log = PassLog::default();
@@ -16,7 +18,16 @@ pub fn leave_out(world: &mut World) -> Result<PassLog, String> {
             (!bare.is_empty()).then_some((e, bare))
         })
         .collect();
+    let placed: BTreeSet<Entity> = world.iter::<Instance>().map(|(_, i)| i.prototype).collect();
     for (e, bare) in bare {
+        if placed.contains(&e) {
+            log.count("placed prototypes with a part left out", 1);
+            if std::env::var_os("BIRD_LIST_UNMATERIALED").is_some() {
+                let name = world.get::<Name>(e).map_or("unnamed", |n| n.0.as_str());
+                let source = world.get::<primase_core::Source>(e).map(|s| s.0.clone());
+                println!("unmaterialed: {e:?} {name} {source:?} parts {bare:?}");
+            }
+        }
         let mesh = world.get::<Mesh>(e).expect("listed with a mesh");
         for &i in &bare {
             let p = &mesh.primitives()[i];

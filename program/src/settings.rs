@@ -129,6 +129,24 @@ pub fn raise(name: &str, surfaces: BTreeMap<String, String>) -> Result<RaiseOpti
     RaiseOptions::new(name, LIGHTS)?.with_surfaces(surfaces)
 }
 
+/// The map's (and the mod folder's) name for a level.
+pub fn map_name(level: &str) -> String {
+    format!("SkateBIRD_{level}")
+}
+
+/// The Studio compile of a level's map: resident (`--no-stream`: these levels are small, so no WorldPartition cells
+/// and none of Studio's own vista proxies, which hung the GPU on large maps), the game's own geometry at every distance
+/// (`--no-lods`: SkateBIRD has no LODs, Studio's would be decimations), no baked GI, compiled at noon.
+pub fn studio_compile() -> [&'static str; 5] {
+    [
+        "--no-stream",
+        "--no-lods",
+        "--no-gi",
+        "--time-of-day",
+        "noon",
+    ]
+}
+
 /// How the map is encoded (the fork's `BuildOptions` defaults, build.rs:63-87, and the map name the program gives):
 /// 200 m render tiles, a prototype placed at least 3 times with at least 150 triangles instanced, Studio's 4,780 m
 /// limit, no offset, the scene's longest render edge, the cull IDs of the level's share of ReSkate's pool.
