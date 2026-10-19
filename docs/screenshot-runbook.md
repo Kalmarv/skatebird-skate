@@ -55,6 +55,14 @@ C:/Users/kalmarv/modding/kit/run game --job -- "$BASH" tools/skatebird_views.sh 
   outside `Skateboard For Skating`, a decal or particle; not visible in the view shots). The first run (job d8bd98c9,
   before the post-effect fix) was fully blurred by the depth of field.
 
+- **All levels, one launch**: `tools/skatebird_views.sh level1,level2,level3,level4,level5,level7,level12,level13 <root>
+  --chase` shoots each level into `<root>/<level>` (job 270b5027, 2026-10-19: 32 shots in 3m17s,
+  `cache/skatebird/ref/<level>`). Each shot also records the colliders within 0.2 m of the camera and the distance
+  to the collider below it (`cam_overlaps`, `cam_ground`; a camera in or against geometry fails its check). In that
+  run the spawns of level3, level4 and level12 failed on `Camera Follow`, the game's camera target 1.5 m above the
+  player; the plugin now ignores the player's, the camera's and the virtual cameras' follow/look-at colliders
+  (not yet run in the game).
+
 ### skate.'s third-person camera (`--chase`)
 
 `tools/skatebird_views.sh <level> <outdir> --chase` puts the camera where skate.'s third-person camera was at
