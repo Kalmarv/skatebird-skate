@@ -20,6 +20,7 @@
 
 mod ambient;
 mod compile;
+mod cutout;
 mod level;
 mod pack;
 mod settings;
@@ -385,6 +386,8 @@ fn convert(
         Some(s) => primase_reskate::passes::LightCalibration::Scale(s),
         None => settings::LIGHTS,
     };
+    // skate does not draw blended world geometry: blended surfaces (not decals) as cutouts
+    show("blended-as-cutout", &cutout::blended_as_cutout(&mut w));
     one_uv_set(&mut w)?;
     show("leave-out-unmaterialed", &unmaterialed::leave_out(&mut w)?);
     // skate's materials carry one wrap for all their textures: take the base colour's; and one mask image:
