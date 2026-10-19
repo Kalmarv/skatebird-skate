@@ -148,6 +148,10 @@ impl Pass for PackOrm {
     fn modifies(&self) -> &[&'static str] {
         &["pbr.material"]
     }
+    /// The packed image is a new texture entity.
+    fn provides(&self) -> &[&'static str] {
+        &["core.texture"]
+    }
     fn approximates(&self) -> &'static str {
         "an occlusion map of another size is resampled nearest to the metallic-roughness texture"
     }
