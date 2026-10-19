@@ -5,7 +5,7 @@
 //! ```text
 //! skatebird-export build --typetrees <type tree package> --out <folder> [--game-data <SkateBIRD_Data>]
 //!                        [--data <folder>] [--studio <reskate_cli.exe> [--game <skate. install>]]
-//!                        [--glb] [--web [--ktx2]] [--scene] [LEVEL ...]
+//!                        [--glb] [--web [--ktx2]] [--scene] [--jobs N] [LEVEL ...]
 //! skatebird-export map-from-scene <scene folder> <output folder> --name <map name>
 //! ```
 //!
@@ -13,7 +13,8 @@
 //! `<out>/<level>/`: `map/SkateBIRD_<level>` (the ReSkate map, with the game's spawn and travel points), and with
 //! `--studio` its compile `stage/Patch` (the mod folder `SkateBIRD_<level>`, against `--game`, default
 //! `$RESKATE_GAME`). `--glb` adds the level as one glTF, `--web` the web tile set (`--ktx2`: KTX2 textures),
-//! `--scene` the skate scene folder (interchange v1). A level that fails is reported and the others still run; the
+//! `--scene` the skate scene folder (interchange v1). Levels run `--jobs` at a time (3), each in its own process with
+//! its output in `<out>/<level>/build.log`. A level that fails is reported and the others still run; the
 //! exit code says whether all did. `map-from-scene` makes the map of a skate scene folder the same way. Every pass's
 //! counts and approximations are printed.
 
@@ -37,7 +38,7 @@ use primase_unity::player::Player;
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
-const USAGE: &str = "usage: skatebird-export build --typetrees <tpk> --out <folder> [--game-data <SkateBIRD_Data>] [--data <folder>] [--studio <reskate_cli.exe> [--game <skate. install>]] [--glb] [--web [--ktx2]] [--scene] [LEVEL ...]
+const USAGE: &str = "usage: skatebird-export build --typetrees <tpk> --out <folder> [--game-data <SkateBIRD_Data>] [--data <folder>] [--studio <reskate_cli.exe> [--game <skate. install>]] [--glb] [--web [--ktx2]] [--scene] [--jobs N] [LEVEL ...]
        skatebird-export map-from-scene <scene folder> <output folder> --name <map name>";
 
 /// Where Steam installs the game.
@@ -67,9 +68,28 @@ fn build(args: Vec<String>) -> Result<()> {
     let mut game_data = PathBuf::from(STEAM_DATA);
     let mut data = Path::new(env!("CARGO_MANIFEST_DIR")).join("../data");
     let mut wanted = Vec::new();
+    let mut jobs = 3;
+    // the options as given, for the per-level children
+    let mut pass_on = Vec::new();
     let mut args = args.into_iter();
     while let Some(arg) = args.next() {
-        let mut value = || args.next().map(PathBuf::from).ok_or(USAGE);
+        if arg == "--jobs" {
+            let n = args.next().ok_or(USAGE)?;
+            jobs = n
+                .parse::<usize>()
+                .ok()
+                .filter(|&n| n > 0)
+                .ok_or(format!("--jobs {n}: a count above 0"))?;
+            continue;
+        }
+        if arg.starts_with("--") {
+            pass_on.push(arg.clone());
+        }
+        let mut value = || {
+            let v = args.next().ok_or(USAGE)?;
+            pass_on.push(v.clone());
+            Ok::<_, &str>(PathBuf::from(v))
+        };
         match arg.as_str() {
             "--typetrees" => typetrees = Some(value()?),
             "--out" => out = Some(value()?),
@@ -119,6 +139,9 @@ fn build(args: Vec<String>) -> Result<()> {
             })
             .collect::<std::result::Result<_, _>>()?
     };
+    if jobs > 1 && chosen.len() > 1 {
+        return build_in_children(&chosen, &pass_on, jobs, &out);
+    }
     let player = Player::open(
         &game_data,
         TypeTreePackage::parse(&std::fs::read(&typetrees)?)?,
@@ -157,6 +180,73 @@ fn build(args: Vec<String>) -> Result<()> {
         results.push((result.is_ok(), line));
     }
     println!("== summary");
+    for (_, line) in &results {
+        println!("{line}");
+    }
+    let failed = results.iter().filter(|(ok, _)| !ok).count();
+    if failed > 0 {
+        return Err(format!("{failed} of {} levels failed", results.len()).into());
+    }
+    Ok(())
+}
+
+/// `build` of each level in its own process (the same options, that one level), `jobs` at a time, each one's output
+/// in `<out>/<level>/build.log`; then each level's result line.
+fn build_in_children(
+    chosen: &[&level::Level],
+    options: &[String],
+    jobs: usize,
+    out: &Path,
+) -> Result<()> {
+    let exe = std::env::current_exe()?;
+    let started = std::time::Instant::now();
+    let mut queue: std::collections::VecDeque<&level::Level> = chosen.iter().copied().collect();
+    let mut running: Vec<(&level::Level, PathBuf, std::process::Child)> = Vec::new();
+    let mut results = Vec::new();
+    while !queue.is_empty() || !running.is_empty() {
+        while running.len() < jobs
+            && let Some(l) = queue.pop_front()
+        {
+            let dir = out.join(&l.id);
+            std::fs::create_dir_all(&dir)?;
+            let log = dir.join("build.log");
+            let file = std::fs::File::create(&log)?;
+            let child = std::process::Command::new(&exe)
+                .arg("build")
+                .args(options)
+                .args(["--jobs", "1", &l.id])
+                .stdout(file.try_clone()?)
+                .stderr(file)
+                .spawn()?;
+            println!("{}: started, log {}", l.id, log.display());
+            running.push((l, log, child));
+        }
+        std::thread::sleep(std::time::Duration::from_millis(500));
+        let mut i = 0;
+        while i < running.len() {
+            if let Some(status) = running[i].2.try_wait()? {
+                let (l, log, _) = running.swap_remove(i);
+                let text = std::fs::read_to_string(&log).unwrap_or_default();
+                let prefix = format!("{}: ", l.id);
+                let line = text
+                    .lines()
+                    .rfind(|line| line.starts_with(&prefix))
+                    .map_or_else(
+                        || format!("{}: exit {status}, see {}", l.id, log.display()),
+                        str::to_owned,
+                    );
+                println!("{line}");
+                results.push((status.success(), line));
+            } else {
+                i += 1;
+            }
+        }
+    }
+    println!(
+        "== summary ({:.0} s, {jobs} at a time)",
+        started.elapsed().as_secs_f64()
+    );
+    results.sort_by(|a, b| a.1.cmp(&b.1));
     for (_, line) in &results {
         println!("{line}");
     }

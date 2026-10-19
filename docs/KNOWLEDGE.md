@@ -48,55 +48,48 @@ Linked from `STATE.md`. Add only facts verified against files or runs, with the 
   (the writer's forward is `(sin yaw, cos yaw)`; travel markers use the same rule).
   Verified: the rooftop spawn (-18.7, 1.189, 84.8) maps to scene (-18.7, -84.8), where the map has geometry.
 
-## primase pipeline used (all local)
+## The route (program/, primase pinned by git rev)
 
 ```
-cargo build --release -p primase-unity --example unity_export -p primase-reskate --example build_map
-unity_export <Data> data/typetrees.tpk level2 out/unity2 --surfaces data/skatebird-surfaces.json
-build_map out/unity2/skate/scene --out out/map2 --name SkateBIRD_Rooftop
-reskate_cli compile-map <ReSkate install> out/map2/SkateBIRD_Rooftop out/stage2 --mod-folder SkateBIRD_Rooftop --no-gi --time-of-day noon
-python tools/install_mod.py out/stage2 <ReSkate install> SkateBIRD_Rooftop --display "SkateBIRD - Rooftop"
+cd program && cargo build --release        # CARGO_TARGET_DIR=<modding>/.targets/<agent>
+skatebird-export build --typetrees <modding>/cache/primase/pm-core/w9/typetrees.tpk --out <modding>/cache/skatebird/build     --studio <modding>/tools/ReSkateStudio-20261012/reskate_cli.exe [level2 ...]
 ```
 
-- Type tree package: `data/typetrees.tpk` (copy of `work/primase/pm-core/w9/typetrees.tpk` = AssetRipper
-  TPK, covers 2019.4.20f1 exactly).
-- Studio: copy at `ds-modding/tools/ReSkateStudio-20261012` (never run binaries out of `modding`).
-- Game: `reskate`; mods under `Mods/`, enabled in `Mods/mods.json`.
+- Per level: `<out>/<level>/map/SkateBIRD_<level>` (the normalized map) and `<out>/<level>/stage/Patch` (the mod
+  folder `SkateBIRD_<level>`). Spawn and travel points come from `data/skatebird-levels.json`; every choice is in
+  `program/src/settings.rs`, the Studio compile's too (`--no-stream --no-lods --no-gi --time-of-day noon`).
+- `--no-stream` keeps these small levels resident: no WorldPartition cells, so none of Studio's own vista proxies,
+  and the shared runner's vista guard (`check_no_studio_vistas.py`) passes (level2, 2026-10-19).
+- Type tree package: AssetRipper TPK covering 2019.4.20f1 exactly.
+- Game: `$RESKATE_GAME`; mods under `Mods/`, enabled in `Mods/mods.json`.
 
-## Running skate. for tests (isolated install)
+## Running skate. for tests
 
-- `ds-modding/game`: copy of `reskate` root files, `Data` and `__Installer` **junctions** to the
-  real install, own `Mods/`, own `logs/`. `ds-modding/appdata/seed` is a copy of the ReSkate offline profile
-  seed (cache + settings); each run gets a fresh `appdata/run`.
-- Run straight into a level:
-  `LOCALAPPDATA=<abs appdata/run> RESKATE_STARTUP_COMMANDS="load levels/game/<level>/<level>" ReSkateLauncher.exe --no-gui --no-update --offline --windowed --width=1920 --height=1080`
-  (`tools/run_skate.sh` wraps it with screenshots; run it in `orca job run --lock heavy=20,screen -- ...`).
+- Through the shared runner only: reskate-tools `ports/gta/engine/ingame.sh OUT copy <stage>/Patch SkateBIRD_<level>
+  "<commands>" <seconds>` under `kit/run game --job` (it copies the mod in, disables every other mod, restores the
+  player's mods/profile/DLL after, and refuses a level with Studio vistas). `NO_DLL=1` runs without the probe DLL.
+- Load a level: `load levels/game/dingolevel_reskate_skatebird_<level>/dingolevel_reskate_skatebird_<level>`; the
+  runner takes a screenshot at every `trainer where`. `tools/views.py skate-commands <level>` makes a run's commands.
 - Caleb's own install has 55 mods enabled; loading it produces a black HUB screen, so never judge a map there.
-  Never leave a test mod enabled in his install.
-- Screenshots: ffmpeg gfxcapture with `timeout 90` (um's 20 s is too short under load); the game window is
-  `window_exe=Skate.exe`.
 
 ## Scripts in `tools/`
 
-- `export_level.sh <levelN> [name] [install|noinstall]` - the whole pipeline for one level (export with the game's
-  spawn and travel points, build_map, Studio compile into `ds-modding/game`, install the mod).
-- `run_skate.sh <level asset> <out dir> [settle]` - isolated skate. run with periodic screenshots.
+- `views.py` - the fixed views per level (`data/skatebird-views.json`) and the skate commands that shoot them.
 - `install_mod.py <stage> <game> <name> --display "..."` - copy `stage/Patch` into `Mods/`, write manifest,
   set the display name, enable it in `mods.json` (with a backup).
-- `compare_shots.py out.png left.png right.png` - side-by-side verification sheet.
-- `skatebird_shot.sh <level> <out.png>` - SkateBIRD reference screenshot (windowed 1920x1080, dev console
-  `MissionManager.LoadLevel <level>`); runbook in `docs/screenshot-runbook.md`.
-- `unitypy_census.py` - the independent census used to gate the v21 container reader.
+- `compare_shots.py out.png left.png right.png`, `contact_sheet.py` - side-by-side verification sheets.
+- `skatebird_shot.sh`, `skatebird_reference_shots.py`, `skatebird_teleport.py`, `skatebird-teleport-plugin/` - the
+  SkateBIRD side (lab copy with BepInEx); runbook in `docs/screenshot-runbook.md`.
+- `skatebird_scan.py` - makes `data/skatebird-levels.json`; `qa_report.py` - spawn/marker checks of written maps;
+  `unitypy_census.py` - the independent census used to gate the v21 container reader.
 - **Shell trap**: a child `bash` started from an agent's own shell is *WSL* bash (C:\WINDOWS\system32\bash.exe is
-  first on PATH), which has no `python`/`powershell`/`um` and cannot run `C:/...` paths. `orca job run -- bash ...`
-  starts **Git Bash** instead. Run these scripts through an orca job, or from WSL use `/mnt/c/...` paths and
-  `/mnt/c/Python313/python.exe` / `powershell.exe`.
+  first on PATH). `orca job run -- bash ...` starts **Git Bash**; call `"$BASH"` inside scripts.
 - Write scripts with **LF line endings** (CRLF breaks `<<'EOF'` heredocs).
 
 ## Unity overlay meshes
 - SkateBIRD draws mission markers with `Minimap/Mission Marker` on MeshRenderers (big yellow spheres in a naive
-  export; invisible in game). `unity-drawn` now leaves out placements whose materials are all on interface shader
-  families (`Minimap/`, `UI/`, `Sprites/`, `TextMeshPro/`, `TMP/`, `GUI/`).
+  export; invisible in game). The ds-modding fork's `unity-drawn` left out interface shader families by name; main's
+  does not (the review dropped that filter), so check the maps for these spheres.
 - ReSkate's live time of day overrides the compile's `--time-of-day` (log: `TOD_3_Afternoon`), so a map's sky is
   set by BAM, not by the compile flag.
 
