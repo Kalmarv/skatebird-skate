@@ -38,6 +38,7 @@ Nothing. No zip, release or tag.
 5. Delete `C:\Users\kalmarv\ds-modding` after moving `out/` evidence worth keeping (Decided).
 
 ## Decided (Caleb's words; never dropped, only replaced by a newer decision)
+- 2026-10-19 · NPC birds: "I don't think we need the npc birds in skate".
 - 2026-10-19 · Sky: "sky is okay, every custom skate level has the skate sky. we can leave it. you can add it to the reader, but for reskate writer we're not gonna use it".
 - 2026-10-19 · Library requests: "lets wait a bit then we can submit this stuff" (promotion requests held; bug fixes already with the owner).
 - 2026-10-19 · Per-level maps first ("per level"); gameplay scale "1:1 for now"; skylines: "keep".
