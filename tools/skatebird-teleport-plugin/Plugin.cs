@@ -29,7 +29,8 @@
 //
 // Every reply carries "ok" and, on failure, "error"; pose replies carry the camera's position, euler angles, forward,
 // bearing (atan2(fwd.x, fwd.z)), fieldOfView and the vertical FOV of the projection matrix, the screen size, the
-// player's position and what was hidden. Everything is also logged to BepInEx/LogOutput.log.
+// player's position, what was hidden, the colliders within 0.2 m of the camera (cam_overlaps) and the distance down
+// to the first collider below it (cam_ground). Everything is also logged to BepInEx/LogOutput.log.
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -92,6 +93,8 @@ namespace SkateBIRDTeleport
         public int screen_height;
         public float[] player_position;
         public float player_yaw;
+        public string[] cam_overlaps;
+        public float cam_ground;
         public bool gameplay_obstructed;
         public int hidden_canvases;
         public int hidden_renderers;
@@ -108,6 +111,7 @@ namespace SkateBIRDTeleport
         private const float PollSeconds = 0.1f;
         // A player root with more renderers than this is not the player (a scene container); it is left alone.
         private const int MaxPlayerRenderers = 400;
+        private const float CamProbe = 0.2f;
 
         private string controlDir;
         private string commandPath;
@@ -565,6 +569,21 @@ namespace SkateBIRDTeleport
                 .SelectMany(v => (v.HasInstantiatedProfile() ? v.profile : v.sharedProfile)?.settings
                                  ?? new List<PostProcessEffectSettings>())
                 .Where(s => s != null && s.active).Select(s => s.GetType().Name).Distinct().ToArray();
+            if (cam != null)
+            {
+                // Is the camera in or against level geometry? Non-trigger colliders within CamProbe of it ("name
+                // (root)"), and the distance down to the first collider below (-1: none within 1000 m). The player's,
+                // the camera's own and the virtual cameras' follow/look-at targets' colliders don't count: at a spawn
+                // the game's "Camera Follow" target sits right under the camera.
+                var at = cam.transform.position;
+                var own = OwnTransforms(cam);
+                r.cam_overlaps = Physics.OverlapSphere(at, CamProbe, ~0, QueryTriggerInteraction.Ignore)
+                    .Where(c => !IsUnder(c.transform, own))
+                    .Select(c => c.gameObject.name + " (" + c.transform.root.name + ")").Distinct().ToArray();
+                var below = Physics.RaycastAll(at, Vector3.down, 1000f, ~0, QueryTriggerInteraction.Ignore)
+                    .Where(h => !IsUnder(h.collider.transform, own)).OrderBy(h => h.distance).ToArray();
+                r.cam_ground = below.Length > 0 ? below[0].distance : -1f;
+            }
             var board = ImportantStuff.PlayerSkateboard;
             if (board != null && board.RigidBody != null)
             {
@@ -618,6 +637,26 @@ namespace SkateBIRDTeleport
         }
 
         // ---- helpers ---------------------------------------------------------------------------------------------
+
+        // The player's roots, the camera's root and every active virtual camera's Follow and LookAt target.
+        private static List<Transform> OwnTransforms(Camera cam)
+        {
+            var own = new List<Transform> { cam.transform.root };
+            var board = ImportantStuff.PlayerSkateboard;
+            if (board != null && board.RigidBody != null) own.Add(board.RigidBody.transform.root);
+            if (board != null && board.Rider != null) own.Add(board.Rider.transform.root);
+            foreach (var v in FindObjectsOfType<CinemachineVirtualCameraBase>())
+            {
+                if (v.Follow != null) own.Add(v.Follow);
+                if (v.LookAt != null) own.Add(v.LookAt);
+            }
+            return own;
+        }
+
+        private static bool IsUnder(Transform t, List<Transform> roots)
+        {
+            return roots.Any(r => t == r || t.IsChildOf(r));
+        }
 
         private static bool TryVector(float[] v, out Vector3 result)
         {
