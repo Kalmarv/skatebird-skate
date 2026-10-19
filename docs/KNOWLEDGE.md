@@ -52,7 +52,8 @@ Linked from `STATE.md`. Add only facts verified against files or runs, with the 
 
 ```
 cd program && cargo build --release        # CARGO_TARGET_DIR=<modding>/.targets/<agent>
-skatebird-export build --typetrees <modding>/cache/primase/pm-core/w9/typetrees.tpk --out <modding>/cache/skatebird/build \n    --studio <modding>/tools/ReSkateStudio-20261012/reskate_cli.exe [level2 ...]
+skatebird-export build --typetrees <modding>/cache/primase/pm-core/w9/typetrees.tpk --out <modding>/cache/skatebird/build \
+    --studio <modding>/tools/ReSkateStudio-20261012/reskate_cli.exe [level2 ...]
 ```
 
 - Per level: `<out>/<level>/map/SkateBIRD_<level>` (the normalized map) and `<out>/<level>/stage/Patch` (the mod

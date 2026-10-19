@@ -4,16 +4,19 @@ version = "0.1.0"
 edition = "2024"
 publish = false
 
-# primase is a library this program uses, pinned to a revision of its public main by git (no path checkout, no fork).
+# primase is a library this program uses, pinned by git revision (no path checkout, no fork): its public main, or while
+# a fix of the owner's is on its way to main, that fix's commit on primase-work (Caleb, 2026-10-19: "you can use a
+# branch idc, the fixes must land on primase main before it's done"). Now: f374e4e7 (owner/unity-name: primase's
+# lowerings declare their per-entity effects), going to main.
 # The previous pin, for rollback: the ds-modding fork, primase-work archive/ds-skatebird 7b81a686, as a path checkout.
 [dependencies]
-primase-core = { git = "https://github.com/kalmarv/primase.git", rev = "c8563db3" }
-primase-unity = { git = "https://github.com/kalmarv/primase.git", rev = "c8563db3" }
-primase-meshops = { git = "https://github.com/kalmarv/primase.git", rev = "c8563db3" }
-primase-image = { git = "https://github.com/kalmarv/primase.git", rev = "c8563db3" }
-primase-reskate = { git = "https://github.com/kalmarv/primase.git", rev = "c8563db3" }
-primase-gltf = { git = "https://github.com/kalmarv/primase.git", rev = "c8563db3" }
-primase-web = { git = "https://github.com/kalmarv/primase.git", rev = "c8563db3", features = ["ktx2"] }
+primase-core = { git = "https://git.ivyhq.xyz/kalmarv/primase-work.git", rev = "f374e4e7" }
+primase-unity = { git = "https://git.ivyhq.xyz/kalmarv/primase-work.git", rev = "f374e4e7" }
+primase-meshops = { git = "https://git.ivyhq.xyz/kalmarv/primase-work.git", rev = "f374e4e7" }
+primase-image = { git = "https://git.ivyhq.xyz/kalmarv/primase-work.git", rev = "f374e4e7" }
+primase-reskate = { git = "https://git.ivyhq.xyz/kalmarv/primase-work.git", rev = "f374e4e7" }
+primase-gltf = { git = "https://git.ivyhq.xyz/kalmarv/primase-work.git", rev = "f374e4e7" }
+primase-web = { git = "https://git.ivyhq.xyz/kalmarv/primase-work.git", rev = "f374e4e7", features = ["ktx2"] }
 serde_json = "=1.0.154"
 
 [workspace]
