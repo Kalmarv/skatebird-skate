@@ -43,6 +43,10 @@ ambient lighting (needs a core field), Houdini tint, gravel, Shiny Two Tone. Det
 4. Canopy check, then UV, then ambient. Then the gameplay checks nobody ran: roll, grind, collision, travel points.
 
 ## Decided (Caleb's words; never dropped, only replaced by a newer decision)
+- 2026-10-19 · Per-level maps first ("per level"); gameplay scale "1:1 for now"; skylines: "keep".
+- 2026-10-19 · Sub-agents: "I like opus, sonnet is fine for simple shit."
+- 2026-10-19 · Delete C:\Users\kalmarv\ds-modding: "yes" (after checking out/ for evidence worth keeping).
+- 2026-10-19 · Goal restated: "get all the Skate Bird maps into Reskate through primase with visual matching and polish."
 - 2026-10-18 · "All the Skate Bird levels as ReSkate Map(s). Verified by matching in game screenshots in Skate Bird to ReSkate."
 - 2026-10-18 · "Drop all skate bird shit for now, focus only on gta" (`orca log gta --at 431480`).
 - 2026-10-18 · "SkateBIRD: keep all its progress (incl. the 6 ds-modding-only primase commits); resumes after GTA."
