@@ -93,7 +93,8 @@ pub fn preserve_base_tiling(world: &mut World) -> Result<PassLog, String> {
                         .is_some_and(|v| v.values().any(|m| *m == entity));
                     if primitive.material == Some(entity) || variant_use {
                         uses.push(format!(
-                            "{mesh_entity:?}/{i}: placed={}, uv0={}, default={:?}, variants={:?}",
+                            "{mesh_entity:?}/{i}: {:?}, placed={}, uv0={}, default={:?}, variants={:?}",
+                            primitive.topology,
                             placed.contains(&mesh_entity),
                             primitive
                                 .streams
