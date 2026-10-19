@@ -18,6 +18,7 @@
 //! exit code says whether all did. `map-from-scene` makes the map of a skate scene folder the same way. Every pass's
 //! counts and approximations are printed.
 
+mod ambient;
 mod compile;
 mod level;
 mod pack;
@@ -38,19 +39,35 @@ use primase_unity::player::Player;
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
-const USAGE: &str = "usage: skatebird-export build --typetrees <tpk> --out <folder> [--game-data <SkateBIRD_Data>] [--data <folder>] [--studio <reskate_cli.exe> [--game <skate. install>]] [--glb] [--web [--ktx2]] [--scene] [--jobs N] [LEVEL ...]
+const USAGE: &str = "usage: skatebird-export build --typetrees <tpk> --out <folder> [--game-data <SkateBIRD_Data>] [--data <folder>] [--studio <reskate_cli.exe> [--game <skate. install>]] [--glb] [--web [--ktx2]] [--scene] [--jobs N] [--light-scale S] [--ambient-fill M] [--tag T] [LEVEL ...]
        skatebird-export map-from-scene <scene folder> <output folder> --name <map name>";
 
 /// Where Steam installs the game.
 const STEAM_DATA: &str = r"C:\Program Files (x86)\Steam\steamapps\common\SkateBIRD\SkateBIRD_Data";
 
-/// What `build` writes besides the map.
-#[derive(Clone, Copy, Default)]
+/// What `build` writes besides the map, and the experiments it may run.
+#[derive(Clone, Default)]
 struct Outputs {
     glb: bool,
     web: bool,
     ktx2: bool,
     scene: bool,
+    /// `--light-scale S`: lights calibrated by this scale instead of [`settings::LIGHTS`].
+    light_scale: Option<f64>,
+    /// `--ambient-fill SPACING`: the scene's ambient as fill lights this many metres apart ([`ambient`]).
+    fill: Option<f64>,
+    /// `--tag T`: the level's folder, map and mod named `..._T`, so variants of a level stand side by side.
+    tag: Option<String>,
+}
+
+impl Outputs {
+    /// The level's name with the tag: its folder under `--out`, and after `SkateBIRD_` its map and mod.
+    fn named(&self, level: &str) -> String {
+        match &self.tag {
+            Some(t) => format!("{level}_{t}"),
+            None => level.to_owned(),
+        }
+    }
 }
 
 fn main() -> Result<()> {
@@ -101,6 +118,20 @@ fn build(args: Vec<String>) -> Result<()> {
             "--web" => outputs.web = true,
             "--ktx2" => outputs.ktx2 = true,
             "--scene" => outputs.scene = true,
+            "--light-scale" | "--ambient-fill" | "--tag" => {
+                let text = value()?.to_string_lossy().into_owned();
+                let number = || {
+                    text.parse::<f64>()
+                        .ok()
+                        .filter(|n| n.is_finite() && *n > 0.0)
+                        .ok_or(format!("{arg} {text}: a number above 0"))
+                };
+                match arg.as_str() {
+                    "--light-scale" => outputs.light_scale = Some(number()?),
+                    "--ambient-fill" => outputs.fill = Some(number()?),
+                    _ => outputs.tag = Some(text.clone()),
+                }
+            }
             _ if arg.starts_with("--") => {
                 return Err(format!("unknown option {arg}; {USAGE}").into());
             }
@@ -140,7 +171,7 @@ fn build(args: Vec<String>) -> Result<()> {
             .collect::<std::result::Result<_, _>>()?
     };
     if jobs > 1 && chosen.len() > 1 {
-        return build_in_children(&chosen, &pass_on, jobs, &out);
+        return build_in_children(&chosen, &pass_on, jobs, &out, &outputs);
     }
     let player = Player::open(
         &game_data,
@@ -150,12 +181,18 @@ fn build(args: Vec<String>) -> Result<()> {
     for l in chosen {
         println!("== {} ({})", l.id, l.name);
         let started = std::time::Instant::now();
-        let dir = out.join(&l.id);
-        let result = convert(&player, l, &surfaces, outputs, &dir).and_then(|map| {
+        let named = outputs.named(&l.id);
+        let dir = out.join(&named);
+        let result = convert(&player, l, &surfaces, &outputs, &dir).and_then(|map| {
             let Some(studio) = &studio else {
                 return Ok(format!("map {}", map.display()));
             };
-            let c = compile::compile(studio, &map, &dir.join("stage"), &settings::map_name(&l.id))?;
+            let c = compile::compile(
+                studio,
+                &map,
+                &dir.join("stage"),
+                &settings::map_name(&named),
+            )?;
             Ok(format!(
                 "map and Studio compile ({:.0} s, {} warnings, log {}): {}",
                 c.seconds,
@@ -197,6 +234,7 @@ fn build_in_children(
     options: &[String],
     jobs: usize,
     out: &Path,
+    outputs: &Outputs,
 ) -> Result<()> {
     let exe = std::env::current_exe()?;
     let started = std::time::Instant::now();
@@ -207,7 +245,7 @@ fn build_in_children(
         while running.len() < jobs
             && let Some(l) = queue.pop_front()
         {
-            let dir = out.join(&l.id);
+            let dir = out.join(outputs.named(&l.id));
             std::fs::create_dir_all(&dir)?;
             let log = dir.join("build.log");
             let file = std::fs::File::create(&log)?;
@@ -286,7 +324,7 @@ fn convert(
     player: &Player,
     l: &level::Level,
     surfaces: &BTreeMap<String, String>,
-    outputs: Outputs,
+    outputs: &Outputs,
     out: &Path,
 ) -> Result<PathBuf> {
     let mut w = World::new();
@@ -337,6 +375,16 @@ fn convert(
     if outputs.web {
         write_web(&w, outputs.ktx2, out)?;
     }
+    if let Some(spacing) = outputs.fill {
+        let bounds = l
+            .bounds
+            .ok_or("--ambient-fill needs the level's bounds in the scan")?;
+        show("ambient-fill", &ambient::add_fill(&mut w, bounds, spacing));
+    }
+    let lights = match outputs.light_scale {
+        Some(s) => primase_reskate::passes::LightCalibration::Scale(s),
+        None => settings::LIGHTS,
+    };
     one_uv_set(&mut w)?;
     show("leave-out-unmaterialed", &unmaterialed::leave_out(&mut w)?);
     // skate's materials carry one wrap for all their textures: take the base colour's; and one mask image:
@@ -352,7 +400,10 @@ fn convert(
     );
     show(
         "raise-skate",
-        &primase_reskate::prepare::raise_skate(&mut w, &settings::raise(&l.id, surfaces.clone())?)?,
+        &primase_reskate::prepare::raise_skate(
+            &mut w,
+            &settings::raise(&l.id, surfaces.clone(), lights)?,
+        )?,
     );
     let travel = level::add_markers(&mut w, l);
     println!(
@@ -363,7 +414,7 @@ fn convert(
         let r = primase_reskate::interchange::write(&w, &out.join("skate").join("scene"))?;
         println!("skate scene: {} tables written", r.tables.len());
     }
-    write_the_map(&mut w, out, &settings::map_name(&l.id))
+    write_the_map(&mut w, out, &settings::map_name(&outputs.named(&l.id)))
 }
 
 /// Runs `passes` with the pass manager (each verified after it runs) and prints each one's counts.

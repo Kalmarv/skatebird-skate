@@ -124,9 +124,13 @@ pub fn web_textures() -> Result<primase_web::prepare::PrepareWebTextures, String
 }
 
 /// raise-skate's options: the scene `name`, the game's surfaces onto skate's (`surfaces`; an unmapped surface with no
-/// class has its triangles left out, reported), lights calibrated as [`LIGHTS`].
-pub fn raise(name: &str, surfaces: BTreeMap<String, String>) -> Result<RaiseOptions, String> {
-    RaiseOptions::new(name, LIGHTS)?.with_surfaces(surfaces)
+/// class has its triangles left out, reported), lights calibrated as `lights` ([`LIGHTS`] unless an experiment says).
+pub fn raise(
+    name: &str,
+    surfaces: BTreeMap<String, String>,
+    lights: LightCalibration,
+) -> Result<RaiseOptions, String> {
+    RaiseOptions::new(name, lights)?.with_surfaces(surfaces)
 }
 
 /// The map's (and the mod folder's) name for a level.
@@ -253,8 +257,8 @@ mod tests {
     #[test]
     fn the_raise_options_state_the_light_calibration() {
         let surfaces = BTreeMap::from([("default".to_owned(), "concrete".to_owned())]);
-        let o = raise("level2", surfaces).unwrap();
+        let o = raise("level2", surfaces, LIGHTS).unwrap();
         assert_eq!(o.options()["light_scale"], "standard");
-        assert!(raise("level 2", BTreeMap::new()).is_err());
+        assert!(raise("level 2", BTreeMap::new(), LIGHTS).is_err());
     }
 }

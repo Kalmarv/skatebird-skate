@@ -30,6 +30,9 @@ pub struct Level {
     pub name: String,
     pub spawn: Point,
     pub travel: Vec<Point>,
+    /// The play space: the box of the level's enabled, non-trigger colliders (Unity min and max corners), those over
+    /// 100 m (skyline backdrops) left out; `None` when the scan has none.
+    pub bounds: Option<([f64; 3], [f64; 3])>,
 }
 
 /// Every level of the scan, by id, in the scan's order of ids.
@@ -74,10 +77,23 @@ pub fn read_levels(path: &Path) -> Result<BTreeMap<String, Level>, String> {
                         )
                     })
                     .collect::<Result<_, _>>()?,
+                bounds: bounds(l),
             },
         );
     }
     Ok(out)
+}
+
+fn bounds(l: &serde_json::Value) -> Option<([f64; 3], [f64; 3])> {
+    let corner = |k: &str| -> Option<[f64; 3]> {
+        let a = l.get("bounds")?.get(k)?.as_array()?;
+        Some([
+            a.first()?.as_f64()?,
+            a.get(1)?.as_f64()?,
+            a.get(2)?.as_f64()?,
+        ])
+    };
+    Some((corner("min")?, corner("max")?))
 }
 
 fn point(v: &serde_json::Value, default_name: &str, what: &str) -> Result<Point, String> {

@@ -41,7 +41,8 @@ def make():
 
 
 def skate_commands(level):
-    views = json.loads((ROOT / "data/skatebird-views.json").read_text(encoding="utf-8"))[level]["views"]
+    # a variant built with `--tag T` (level3_T) has its level's views
+    views = json.loads((ROOT / "data/skatebird-views.json").read_text(encoding="utf-8"))[level.split("_")[0]]["views"]
     asset = f"levels/game/dingolevel_reskate_skatebird_{level}/dingolevel_reskate_skatebird_{level}"
     # settle at the spawn: the spawn view where the level starts, then one teleport per other view (each
     # `trainer where` is a shot; the chase camera needs a few seconds to swing in behind the skater)
