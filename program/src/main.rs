@@ -1,15 +1,19 @@
-//! A Unity level end to end: read, lowered, written as one GLB, as web tiles and (with a surface map) as a skate scene.
+//! A Unity level end to end: read, lowered, written as one GLB, as web tiles and (with a surface map) as a skate scene
+//! and a ReSkate map.
 //!
-//! Usage: `unity_export <Game>_Data <type tree package> <level> <output folder> [--web] [--ktx2] [--surfaces <map>]`.
-//! Writes `<output>/<level>.glb`; with `--web`, the web tile set in `<output>/web` (`--ktx2`: textures as KTX2); with
-//! `--surfaces`, `<output>/skate/assets` and `<output>/skate/scene`. `--drop <prefix>` despawns every entity whose
-//! name (or an ancestor's, in its path) starts with the prefix after lowering, before the writers. The surface map is
-//! an object of the game's surface names (its physic materials, `default` for none) onto skate surfaces. Prints every
-//! pass's counts and approximations.
+//! Usage: `unity_export <Game>_Data <type tree package> <level> <output folder> [--web] [--ktx2] [--surfaces <map>]
+//! [--spawn ...] [--travel <json>] [--name <map name>]`. Writes `<output>/<level>.glb`; with `--web`, the web tile set
+//! in `<output>/web` (`--ktx2`: textures as KTX2); with `--surfaces`, the skate scene in `<output>/skate/scene` and the
+//! ReSkate map in `<output>/map/<map name>` (`SkateBIRD_<level>` unless `--name`), prepared as [`settings`] states.
+//! The surface map is an object of the game's surface names (its physic materials, `default` for none) onto skate
+//! surfaces. `--map-from-scene <scene folder> <output folder> --name <map name>` makes the map of a skate scene folder
+//! (read and loaded) the same way. Prints every pass's counts and approximations.
 
+mod pack;
 mod settings;
 mod uv_policy;
 mod variants;
+mod wrap;
 
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
@@ -20,7 +24,57 @@ use primase_unity::TypeTreePackage;
 use primase_unity::level::read_level;
 use primase_unity::player::Player;
 
-const USAGE: &str = "usage: unity_export <Game>_Data <type tree package> <level> <output folder> [--web] [--ktx2] [--surfaces <map>] [--spawn x,z[,yaw] | x,y,z,yaw] [--travel <json>] [--drop <prefix>]";
+const USAGE: &str = "usage: unity_export <Game>_Data <type tree package> <level> <output folder> [--web] [--ktx2] [--surfaces <map>] [--spawn x,z[,yaw] | x,y,z,yaw] [--travel <json>] [--name <map name>]
+       unity_export --map-from-scene <scene folder> <output folder> --name <map name>";
+
+/// Where the spawn marker goes, in scene space: (x, z) with its height found by snapping to the ground, or (x, y, z)
+/// exactly (a game's own spawn height: a ceiling above it must not win).
+#[derive(Clone, Copy, Debug)]
+enum Spawn {
+    Ground([f32; 2]),
+    Exact([f32; 3]),
+}
+
+/// Runs `passes` with the pass manager (each verified after it runs) and prints each one's counts.
+fn run(w: &mut World, passes: Vec<Box<dyn Pass>>) -> Result<(), Box<dyn std::error::Error>> {
+    let mut report = RunReport::default();
+    PassManager::new(PassRegistry::new()).run(w, &Pipeline { passes }, &mut report)?;
+    for step in &report.steps {
+        show(&step.pass, &step.log);
+    }
+    Ok(())
+}
+
+/// The spawn marker, as the program states it: named `spawn`, at `spawn` facing `yaw` degrees (0 faces +Z,
+/// clockwise seen from above), snapped to the ground only when it has no height.
+fn add_spawn_marker(w: &mut World, spawn: Spawn, yaw: f64) {
+    let (position, snap) = match spawn {
+        Spawn::Ground(p) => (
+            (p, None),
+            Some(primase_reskate::dialect::Snap::Mode(
+                primase_reskate::dialect::SnapMode::Ground,
+            )),
+        ),
+        Spawn::Exact([x, y, z]) => (([x, z], Some(y)), None),
+    };
+    let e = w.spawn();
+    w.insert(e, primase_core::Name("spawn".into()));
+    w.insert(
+        e,
+        primase_reskate::dialect::SkateMarker {
+            kind: primase_reskate::dialect::MarkerKind::Spawn,
+            position: Some(position),
+            yaw: Some(yaw),
+            m: None,
+            blueprint: None,
+            snap,
+            lift: None,
+            shelter: None,
+            trainer: None,
+            other: Default::default(),
+        },
+    );
+}
 
 fn show(pass: &str, log: &PassLog) {
     println!("{pass}: {:?}", log.counts);
@@ -101,8 +155,8 @@ fn add_travel_markers(w: &mut World, points: &[TravelPoint]) -> usize {
         w.insert(e, primase_core::Name(p.name.clone()));
         w.insert(
             e,
-            primase_skate_scene::SkateMarker {
-                kind: primase_skate_scene::MarkerKind::Travel,
+            primase_reskate::dialect::SkateMarker {
+                kind: primase_reskate::dialect::MarkerKind::Travel,
                 position: Some((
                     [p.position[0] as f32, -(p.position[2] as f32)],
                     Some(p.position[1] as f32),
@@ -123,9 +177,10 @@ fn add_travel_markers(w: &mut World, points: &[TravelPoint]) -> usize {
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let (mut paths, mut web, mut ktx2, mut surfaces) = (Vec::new(), false, false, None);
-    let mut spawn: Option<(primase_skate_scene::Spawn, f64)> = None;
+    let mut spawn: Option<(Spawn, f64)> = None;
     let mut travel: Option<PathBuf> = None;
-    let mut drops: Vec<String> = Vec::new();
+    let mut map_name: Option<String> = None;
+    let mut map_from_scene = false;
     let mut args = std::env::args().skip(1);
     while let Some(arg) = args.next() {
         match arg.as_str() {
@@ -133,7 +188,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             "--ktx2" => ktx2 = true,
             "--surfaces" => surfaces = Some(PathBuf::from(args.next().ok_or(USAGE)?)),
             "--travel" => travel = Some(PathBuf::from(args.next().ok_or(USAGE)?)),
-            "--drop" => drops.push(args.next().ok_or(USAGE)?),
+            "--name" => map_name = Some(args.next().ok_or(USAGE)?),
+            "--map-from-scene" => map_from_scene = true,
             "--spawn" => {
                 // x,z[,yaw] (height snapped to the ground) or x,y,z,yaw (a game's own spawn height, exact)
                 let text = args.next().ok_or(USAGE)?;
@@ -149,12 +205,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     3 => {
                         let (x, z) = (num(0, "x")?, num(1, "z")?);
                         let yaw = f64::from(num(2, "yaw")?);
-                        spawn = Some((primase_skate_scene::Spawn::At([x, z]), yaw));
+                        spawn = Some((Spawn::Ground([x, z]), yaw));
                     }
                     4 => {
                         let (x, y, z) = (num(0, "x")?, num(1, "y")?, num(2, "z")?);
                         let yaw = f64::from(num(3, "yaw")?);
-                        spawn = Some((primase_skate_scene::Spawn::AtWithHeight([x, y, z]), yaw));
+                        spawn = Some((Spawn::Exact([x, y, z]), yaw));
                     }
                     _ => {
                         return Err(format!("--spawn needs x,z[,yaw] or x,y,z,yaw; {USAGE}").into());
@@ -166,6 +222,18 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
             _ => paths.push(arg),
         }
+    }
+    if map_from_scene {
+        // a skate scene folder (this program's, or another's) -> the map, prepared as this program prepares it
+        let [scene, out] = &paths[..] else {
+            return Err(USAGE.into());
+        };
+        let scene = Path::new(scene);
+        let mut w = World::new();
+        primase_reskate::interchange::read(scene, &mut w)?;
+        primase_reskate::interchange::load(scene, &mut w)?;
+        let name = map_name.ok_or("--map-from-scene needs --name")?;
+        return write_the_map(&mut w, Path::new(out), &name);
     }
     let [data, tpk, level, out] = &paths[..] else {
         return Err(USAGE.into());
@@ -227,23 +295,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         show(&step.pass, &step.log);
     }
     println!("lowered in {:.1} s", started.elapsed().as_secs_f64());
-    // named scenery groups leave after lowering: a level's bounds are not part of its playable map
-    for prefix in &drops {
-        let mut report = RunReport::default();
-        PassManager::new(PassRegistry::new()).run(
-            &mut w,
-            &Pipeline {
-                passes: vec![Box::new(primase_meshops::DropByName {
-                    prefix: Some(prefix.clone()),
-                    equals: None,
-                })],
-            },
-            &mut report,
-        )?;
-        for step in &report.steps {
-            show(&step.pass, &step.log);
-        }
-    }
     std::fs::create_dir_all(out)?;
     if std::env::var_os("BIRD_UV_DIAGNOSTIC").is_some() {
         show("specialize-variants", &variants::specialize(&mut w)?);
@@ -254,7 +305,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         return Ok(());
     }
     let glb = out.join(format!("{level}.glb"));
-    let r = primase_gltf::write_file(&w, &settings::gltf(level), &glb)?;
+    // the glTF's own needs, on a copy: the world the skate scene is made from stays as lowered
+    let mut for_gltf = w.clone();
+    run(&mut for_gltf, settings::gltf_preparation()?)?;
+    let r = primase_gltf::write_file(&for_gltf, &settings::gltf(level), &glb)?;
+    drop(for_gltf);
     println!("glTF {}: {r:?}", glb.display());
     if web {
         let set = primase_web::write(&w, &settings::web(ktx2))?;
@@ -296,40 +351,62 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         "preserve-base-tiling",
         &uv_policy::preserve_base_tiling(&mut w)?,
     );
-    // skate's materials carry one wrap for all their textures: take the base colour's
-    show(
-        "unify-texture-wrap",
-        &primase_skate_scene::unify_texture_wrap(&mut w),
-    );
-    // skate's material has one mask image: occlusion, roughness and metallic pack into it
-    show("pack-orm", &primase_skate_scene::pack_orm(&mut w)?);
+    // skate's materials carry one wrap for all their textures: take the base colour's; and one mask image:
+    // occlusion, roughness and metallic pack into it
+    run(
+        &mut w,
+        vec![Box::new(wrap::UnifyTextureWrap), Box::new(pack::PackOrm)],
+    )?;
     // a normal map's scale is a material value the target has no slot for; it goes into the pixels
     show(
         "bake-normal-scale",
         &primase_image::bake_normal_scale(&mut w)?,
     );
+    let scene_name = level.replace(
+        |c: char| !(c.is_ascii_alphanumeric() || c == '_' || c == '-'),
+        "_",
+    );
     show(
         "raise-skate",
-        &primase_skate_scene::raise_skate(
-            &mut w,
-            &settings::raise(
-                level.replace(
-                    |c: char| !(c.is_ascii_alphanumeric() || c == '_' || c == '-'),
-                    "_",
-                ),
-                surfaces,
-                spawn,
-            ),
-        )?,
+        &primase_reskate::prepare::raise_skate(&mut w, &settings::raise(&scene_name, surfaces)?)?,
     );
+    if let Some((at, yaw)) = spawn {
+        add_spawn_marker(&mut w, at, yaw);
+        println!("spawn marker: {at:?}, yaw {yaw}");
+    }
     if let Some(path) = travel {
         let points = read_travel_points(&path, level)?;
         let n = add_travel_markers(&mut w, &points);
         println!("travel markers: {n} from {}", path.display());
     }
-    primase_skate_scene::prepare_scene_assets(&mut w, &out.join("skate").join("assets"))?;
-    let r = primase_skate_scene::write(&w, &out.join("skate").join("scene"))?;
+    let r = primase_reskate::interchange::write(&w, &out.join("skate").join("scene"))?;
     println!("skate scene: {r:?}");
+    let name = map_name.unwrap_or_else(|| format!("SkateBIRD_{level}"));
+    write_the_map(&mut w, out, &name)
+}
+
+/// The ReSkate map of a raised world into `<out>/map/<name>`: prepared as the program chooses ([`settings`]), then
+/// the writer.
+fn write_the_map(w: &mut World, out: &Path, name: &str) -> Result<(), Box<dyn std::error::Error>> {
+    let encoding = settings::encoding(out.join("map"), name);
+    run(w, settings::map_preparation(&encoding)?)?;
+    let r = primase_reskate::write_map(w, Path::new(""), &encoding)?;
+    println!(
+        "map '{}': {} tiles, {} merged placements / {:.2} M tris, {} instances of {} prototypes, {} object records,          {} materials, {} textures, collision {:.2} M tris",
+        r.out_dir.display(),
+        r.tiles,
+        r.merged_entities,
+        r.merged_tris as f64 / 1e6,
+        r.instances,
+        r.prototypes,
+        r.object_records,
+        r.materials,
+        r.textures,
+        r.collision_tris as f64 / 1e6,
+    );
+    for (what, n) in &r.unsupported {
+        println!("map: not written: {what} x {n}");
+    }
     Ok(())
 }
 
@@ -360,8 +437,8 @@ mod tests {
 
         let mut w = World::new();
         assert_eq!(add_travel_markers(&mut w, &points), 2);
-        let mut found: Vec<(String, primase_skate_scene::SkateMarker)> = w
-            .iter::<primase_skate_scene::SkateMarker>()
+        let mut found: Vec<(String, primase_reskate::dialect::SkateMarker)> = w
+            .iter::<primase_reskate::dialect::SkateMarker>()
             .map(|(e, m)| (w.get::<primase_core::Name>(e).unwrap().0.clone(), m.clone()))
             .collect();
         found.sort_by(|a, b| a.0.cmp(&b.0));

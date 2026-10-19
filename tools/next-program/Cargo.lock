@@ -20,7 +20,6 @@ version = "0.1.0"
 dependencies = [
  "primase-core",
  "primase-reskate",
- "primase-skate-scene",
  "primase-unity",
 ]
 
@@ -246,10 +245,12 @@ dependencies = [
 [[package]]
 name = "primase-bytes"
 version = "0.1.0"
+source = "git+https://github.com/kalmarv/primase.git?rev=a8ddf9f7f992d29734daf90c17565dec4f747033#a8ddf9f7f992d29734daf90c17565dec4f747033"
 
 [[package]]
 name = "primase-compress"
 version = "0.1.0"
+source = "git+https://github.com/kalmarv/primase.git?rev=a8ddf9f7f992d29734daf90c17565dec4f747033#a8ddf9f7f992d29734daf90c17565dec4f747033"
 dependencies = [
  "flate2",
  "libloading",
@@ -260,6 +261,7 @@ dependencies = [
 [[package]]
 name = "primase-core"
 version = "0.1.0"
+source = "git+https://github.com/kalmarv/primase.git?rev=a8ddf9f7f992d29734daf90c17565dec4f747033#a8ddf9f7f992d29734daf90c17565dec4f747033"
 dependencies = [
  "serde",
  "serde_json",
@@ -269,6 +271,7 @@ dependencies = [
 [[package]]
 name = "primase-dds"
 version = "0.1.0"
+source = "git+https://github.com/kalmarv/primase.git?rev=a8ddf9f7f992d29734daf90c17565dec4f747033#a8ddf9f7f992d29734daf90c17565dec4f747033"
 dependencies = [
  "primase-core",
  "thiserror",
@@ -277,16 +280,17 @@ dependencies = [
 [[package]]
 name = "primase-frostbite"
 version = "0.1.0"
+source = "git+https://github.com/kalmarv/primase.git?rev=a8ddf9f7f992d29734daf90c17565dec4f747033#a8ddf9f7f992d29734daf90c17565dec4f747033"
 dependencies = [
  "primase-bytes",
  "primase-compress",
- "primase-hash",
  "thiserror",
 ]
 
 [[package]]
 name = "primase-gltf"
 version = "0.1.0"
+source = "git+https://github.com/kalmarv/primase.git?rev=a8ddf9f7f992d29734daf90c17565dec4f747033#a8ddf9f7f992d29734daf90c17565dec4f747033"
 dependencies = [
  "bytemuck",
  "primase-core",
@@ -299,14 +303,17 @@ dependencies = [
 [[package]]
 name = "primase-hash"
 version = "0.1.0"
+source = "git+https://github.com/kalmarv/primase.git?rev=a8ddf9f7f992d29734daf90c17565dec4f747033#a8ddf9f7f992d29734daf90c17565dec4f747033"
 
 [[package]]
 name = "primase-image"
 version = "0.1.0"
+source = "git+https://github.com/kalmarv/primase.git?rev=a8ddf9f7f992d29734daf90c17565dec4f747033#a8ddf9f7f992d29734daf90c17565dec4f747033"
 dependencies = [
  "png",
  "primase-core",
  "primase-dds",
+ "primase-meshops",
  "primase-texcodec",
  "thiserror",
 ]
@@ -314,6 +321,7 @@ dependencies = [
 [[package]]
 name = "primase-meshops"
 version = "0.1.0"
+source = "git+https://github.com/kalmarv/primase.git?rev=a8ddf9f7f992d29734daf90c17565dec4f747033#a8ddf9f7f992d29734daf90c17565dec4f747033"
 dependencies = [
  "primase-core",
  "thiserror",
@@ -322,6 +330,7 @@ dependencies = [
 [[package]]
 name = "primase-reskate"
 version = "0.1.0"
+source = "git+https://github.com/kalmarv/primase.git?rev=a8ddf9f7f992d29734daf90c17565dec4f747033#a8ddf9f7f992d29734daf90c17565dec4f747033"
 dependencies = [
  "half",
  "primase-bytes",
@@ -333,25 +342,11 @@ dependencies = [
  "primase-hash",
  "primase-image",
  "primase-meshops",
- "primase-skate-scene",
  "primase-texcodec",
  "primase-vertex",
  "serde",
  "serde_json",
  "sha1",
- "thiserror",
-]
-
-[[package]]
-name = "primase-skate-scene"
-version = "0.1.0"
-dependencies = [
- "primase-core",
- "primase-gltf",
- "primase-image",
- "primase-meshops",
- "serde",
- "serde_json",
  "sha2",
  "thiserror",
 ]
@@ -359,6 +354,7 @@ dependencies = [
 [[package]]
 name = "primase-texcodec"
 version = "0.1.0"
+source = "git+https://github.com/kalmarv/primase.git?rev=a8ddf9f7f992d29734daf90c17565dec4f747033#a8ddf9f7f992d29734daf90c17565dec4f747033"
 dependencies = [
  "bcdec_rs",
  "half",
@@ -369,6 +365,7 @@ dependencies = [
 [[package]]
 name = "primase-unity"
 version = "0.1.0"
+source = "git+https://github.com/kalmarv/primase.git?rev=a8ddf9f7f992d29734daf90c17565dec4f747033#a8ddf9f7f992d29734daf90c17565dec4f747033"
 dependencies = [
  "primase-compress",
  "primase-core",
@@ -384,6 +381,7 @@ dependencies = [
 [[package]]
 name = "primase-vertex"
 version = "0.1.0"
+source = "git+https://github.com/kalmarv/primase.git?rev=a8ddf9f7f992d29734daf90c17565dec4f747033#a8ddf9f7f992d29734daf90c17565dec4f747033"
 dependencies = [
  "half",
  "thiserror",
