@@ -14,6 +14,89 @@ and command prefixes are code reads. The raw ffmpeg gfxcapture graph was exercis
 on SkateBIRD. `tools/skatebird_shot.sh` had its orchestration exercised against stubs (launch args, drive
 sequence, capture, kill); it was not run end-to-end after the game was closed.
 
+## Exact camera views (lab copy + plugin)
+
+For reference shots to match against skate. at the same views, use the lab copy and its plugin, not the console route
+below: the plugin puts Camera.main at an exact world pose and FOV, so nothing depends on the follow camera.
+
+```bash
+# once (and after a game update or a plugin change): lab copy + BepInEx 5.4.23.5 + the plugin, built
+tools/skatebird_lab.sh            # --check only reports
+# one level's views; opens a game window, so only under the screen lock
+C:/Users/kalmarv/modding/kit/run game --job -- "$BASH" tools/skatebird_views.sh level2 C:/Users/kalmarv/modding/cache/skatebird/ref/level2
+```
+
+- **Lab**: `C:\Users\kalmarv\modding\cache\skatebird\lab` = copies of `SkateBIRD.exe`, `UnityPlayer.dll`,
+  `UnityCrashHandler64.exe`; junctions `SkateBIRD_Data`, `MonoBleedingEdge` into the Steam install (never recurse or
+  delete through them; remove one with `rmdir`); BepInEx 5.4.23.5 win x64 (zip pinned by sha256 in
+  `cache/skatebird/downloads`); `BepInEx/plugins/SkateBIRDTeleport.dll`. The game runs without Steam
+  (`SteamClient.Init` failure is caught), and the save in LocalLow is shared with the Steam copy.
+- **Control**: the plugin reads `<lab>/control/command.json` and answers in `reply.json`; ops `load`, `screen`,
+  `teleport`, `camera`, `shot`, `readback`, `release`, `quit` (protocol at the top of `Plugin.cs`). No keyboard input,
+  no console, no window capture: the plugin loads the scene with `LoadingManager.LoadScene`, sets
+  `Application.runInBackground`, and writes the PNG from the rendered frame (`ScreenCapture.CaptureScreenshotAsTexture`
+  at end of frame) together with the camera pose of that frame.
+- **Camera**: position = view position + `--eye` m (default 1.6), rotation `Euler(pitch, yaw, 0)` (Unity: yaw from +Z
+  towards +X, positive pitch looks down; default pitch 0), vertical FOV `--fov` (default 60), 1024x576 windowed.
+  CinemachineBrain is disabled and the pose is re-asserted in Update, LateUpdate and the camera's onPreCull.
+- **Hidden**: screen-space canvases (HUD, menus, console), the renderers under the player's root
+  (`Skateboard For Skating`, board and bird), and the post effects depth of field, lens distortion, chromatic
+  aberration, vignette and motion blur (`--keep-post` keeps them). Colour grading, bloom and the rest stay.
+- **Output**: `<outdir>/<index>_<name>.png` per view, `poses.json` (requested pose, read-back of the saved frame and
+  after it, checks), `checks/player_{shown,hidden}.png` (the control for the bird hiding: one pose looking at the bird
+  with and without it) and `plugin.log`. Exit 1 if a read-back differs from the request (1 mm, 0.05 deg), the screen
+  is not 1024x576, a menu is open, a screen canvas or one of those post effects is still on, or hiding the bird
+  changes nothing in the control frame.
+- **Verified 2026-10-19** (job ff37a39b, level2, 43 s of run): 4 views, every read-back equal to the request
+  (position to float precision, yaw/pitch/roll exact, projection FOV 60.000), 3 screen canvases and 29 player
+  renderers hidden, post effects off: DepthOfField, LensDistortion, ChromaticAberration, Vignette (on: AmbientOcclusion,
+  ColorGrading, Bloom); the bird control changed 12,615 pixels, and the shots looked at by eye are sharp, without
+  HUD or bird. Left over in the hidden control frame: two pixel-sized pink dots where the bird's feet were (something
+  outside `Skateboard For Skating`, a decal or particle; not visible in the view shots). The first run (job d8bd98c9,
+  before the post-effect fix) was fully blurred by the depth of field.
+
+- **All levels, one launch**: `tools/skatebird_views.sh level1,level2,level3,level4,level5,level7,level12,level13 <root>
+  --chase` shoots each level into `<root>/<level>` (job 270b5027, 2026-10-19: 32 shots in 3m17s,
+  `cache/skatebird/ref/<level>`). Each shot also records the colliders within 0.2 m of the camera and the distance
+  to the collider below it (`cam_overlaps`, `cam_ground`; a camera in or against geometry fails its check). In that
+  run the spawns of level3, level4 and level12 failed on `Camera Follow`, the game's camera target 1.5 m above the
+  player; the plugin now ignores the player's, the camera's and the virtual cameras' follow/look-at colliders
+  (verified in job dad3987b: all 32 shots pass).
+- **NPCs hidden** (Caleb: skate. gets no skinned meshes, so no NPC birds): unless `--keep-npcs`, every
+  `BirbDecorator` but the player's (with all it renders: body, crest, clothing) and every other
+  `SkinnedMeshRenderer` is hidden; `poses.json` has `npcs_hidden` per level and the counts per shot. Job dad3987b
+  (2026-10-19, 3m50s) hid 15/15/9/54/15/1/15/6 renderers in level1/2/3/4/5/7/12/13: "Generic Scenery Birb" birds
+  everywhere but level7 (a skinned `bird` under `Level`) and level13 (the skinned `Seagull` of `Missions - Skate
+  Heaven`). Compared with the shots before (same poses): outside the NPCs the frames are pixel-identical except
+  animated things (clock hands, spinning collectibles, leaves, a sparkle); every changed region was looked at.
+
+### skate.'s third-person camera (`--chase`)
+
+`tools/skatebird_views.sh <level> <outdir> --chase` puts the camera where skate.'s third-person camera was at
+level2's spawn: D -0.3 (0.3 m *ahead* of the view point along its yaw), H 1.5 m up, pitch +1.2 (down), vertical FOV
+55.3, yaw offset 0. Fitted on 2026-10-19 by `tools/skatebird_chase_fit.sh` (job 0da1c4ce, 649 renders in one launch,
+13m41s; results `cache/skatebird/chase-fit/level2/fit.json`, side-by-sides `t1_where_1_pair.png`,
+`t2_where_1_pair.png`) against skate. shots `cache/skatebird/runs/t{1,2}/level2/where_1.png`:
+
+| target | D | H | L | P | dY | F | score (640 px) |
+|---|---|---|---|---|---|---|---|
+| t1 | -0.25 | 1.50 | -0.2 | +1.16 | -0.25 | 55.36 | 0.799 |
+| t2 | -0.35 | 1.50 | 0.0 | -6.23 | +4.18 | 55.24 | 0.807 |
+
+- Method: only the camera position needs the game. One launch renders a grid of positions (D -1.5..1.5, H 1.2..1.8,
+  L -0.6..0.6, then a finer grid around each best) at pitch 0, vertical FOV 100, flat black sky, 1920x1080; pitch,
+  yaw offset and FOV are fitted offline per render by warping it (a pinhole rotation/zoom is a pixel re-map) and
+  correlating blurred gradient orientations with the target (colour, lighting and sky count little; skate's skater
+  area and FPS counter masked). `fit` and `views` re-fit / re-draw from the renders without the game.
+- Precision: H is sharp (1.45 and 1.55 score clearly lower); D and L are flat within about +-0.15 m; F agrees to
+  0.1 deg between the launches. The orientation does not: the two skate launches differ by 7 deg in pitch and 4.4 deg
+  in yaw (skate's camera had not settled the same way), so a SkateBIRD shot matches one launch's framing, not both.
+  The preset takes t1 (camera along the heading).
+- What differs between the games at that pose (from the edge overlays): skate has a yellow half-dome at the ramp's
+  right end, a row of small posts and a green bag on the far ledge, a bump at the foot of the ramp and strong
+  sun shadows; SkateBIRD has a small NPC bird at the ramp foot. Everything structural (ramp lip, walls, pipes, arches,
+  wires, buildings) lines up.
+
 ## TL;DR (one level, one shot)
 
 ```bash

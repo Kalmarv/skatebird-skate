@@ -1,0 +1,330 @@
+{
+  "level1": {
+    "name": "bedroom 1",
+    "views": [
+      {
+        "name": "spawn",
+        "position": [
+          45.4,
+          16.796,
+          55.77
+        ],
+        "yaw_deg": -54.8157
+      },
+      {
+        "name": "Quarter pipe set",
+        "position": [
+          15.58,
+          16.606,
+          29.33
+        ],
+        "yaw_deg": 180.0
+      },
+      {
+        "name": "The Bowl",
+        "position": [
+          9.47,
+          28.6,
+          67.73
+        ],
+        "yaw_deg": 180.0
+      },
+      {
+        "name": "Chaser",
+        "position": [
+          -27.6,
+          15.0,
+          0.2
+        ],
+        "yaw_deg": 180.0
+      }
+    ]
+  },
+  "level2": {
+    "name": "rooftop",
+    "views": [
+      {
+        "name": "spawn",
+        "position": [
+          -18.7,
+          1.189,
+          84.8
+        ],
+        "yaw_deg": 172.9341
+      },
+      {
+        "name": "Middle Roof (2)",
+        "position": [
+          -0.05,
+          1.189,
+          63.72
+        ],
+        "yaw_deg": 180.0
+      },
+      {
+        "name": "Lower Roof",
+        "position": [
+          -73.6,
+          -3.1,
+          69.4
+        ],
+        "yaw_deg": 180.0
+      },
+      {
+        "name": "Reuben",
+        "position": [
+          26.433,
+          6.0,
+          38.454
+        ],
+        "yaw_deg": 180.0
+      }
+    ]
+  },
+  "level3": {
+    "name": "office",
+    "views": [
+      {
+        "name": "spawn",
+        "position": [
+          -34.026,
+          11.98,
+          -78.359
+        ],
+        "yaw_deg": 0.0
+      },
+      {
+        "name": "Halfpipe start",
+        "position": [
+          -13.46,
+          11.98,
+          -79.68
+        ],
+        "yaw_deg": 180.0
+      },
+      {
+        "name": "Top of cubicle start (1)",
+        "position": [
+          -21.03,
+          22.03,
+          -32.39
+        ],
+        "yaw_deg": 180.0
+      },
+      {
+        "name": "Chaser",
+        "position": [
+          0.528,
+          47.693,
+          28.133
+        ],
+        "yaw_deg": 180.0
+      }
+    ]
+  },
+  "level4": {
+    "name": "server room",
+    "views": [
+      {
+        "name": "spawn",
+        "position": [
+          28.36,
+          -1.0,
+          -16.86
+        ],
+        "yaw_deg": -58.6617
+      },
+      {
+        "name": "Wire Shelves",
+        "position": [
+          -33.406,
+          24.362,
+          2.749
+        ],
+        "yaw_deg": 180.0
+      },
+      {
+        "name": "Third Level Of Tower Upper",
+        "position": [
+          -27.7,
+          19.0,
+          27.0
+        ],
+        "yaw_deg": 180.0
+      },
+      {
+        "name": "High Score Birbs",
+        "position": [
+          13.913,
+          -1.01,
+          -5.203
+        ],
+        "yaw_deg": 180.0
+      }
+    ]
+  },
+  "level5": {
+    "name": "bedroom 2",
+    "views": [
+      {
+        "name": "spawn",
+        "position": [
+          -26.68,
+          15.2,
+          10.05
+        ],
+        "yaw_deg": -54.9471
+      },
+      {
+        "name": "Couch Bridge",
+        "position": [
+          -36.69,
+          16.94,
+          33.41
+        ],
+        "yaw_deg": 180.0
+      },
+      {
+        "name": "By Record Player",
+        "position": [
+          -9.392,
+          20.998,
+          71.296
+        ],
+        "yaw_deg": 180.0
+      },
+      {
+        "name": "Daniyah",
+        "position": [
+          7.5,
+          30.7,
+          67.9
+        ],
+        "yaw_deg": 180.0
+      }
+    ]
+  },
+  "level7": {
+    "name": "flashback",
+    "views": [
+      {
+        "name": "spawn",
+        "position": [
+          0.0,
+          1.189,
+          0.0
+        ],
+        "yaw_deg": 172.9341
+      },
+      {
+        "name": "On the pipe box",
+        "position": [
+          24.18,
+          10.5,
+          11.01
+        ],
+        "yaw_deg": 180.0
+      },
+      {
+        "name": "Around The Room",
+        "position": [
+          -31.63,
+          -15.19,
+          -36.98
+        ],
+        "yaw_deg": 180.0
+      },
+      {
+        "name": "Around The Room",
+        "position": [
+          -59.67,
+          -2.3,
+          -65.12
+        ],
+        "yaw_deg": 180.0
+      }
+    ]
+  },
+  "level12": {
+    "name": "playground",
+    "views": [
+      {
+        "name": "spawn",
+        "position": [
+          -59.09,
+          1.1,
+          62.76
+        ],
+        "yaw_deg": 106.1471
+      },
+      {
+        "name": "Underpass (6)",
+        "position": [
+          -37.2,
+          1.1,
+          -31.0
+        ],
+        "yaw_deg": 180.0
+      },
+      {
+        "name": "Ramp",
+        "position": [
+          -53.3,
+          27.2,
+          31.2
+        ],
+        "yaw_deg": 180.0
+      },
+      {
+        "name": "Beulah",
+        "position": [
+          -54.7,
+          1.0001,
+          59.7
+        ],
+        "yaw_deg": 180.0
+      }
+    ]
+  },
+  "level13": {
+    "name": "skate heaven",
+    "views": [
+      {
+        "name": "spawn",
+        "position": [
+          30.7,
+          0.2,
+          -23.6
+        ],
+        "yaw_deg": -14.0914
+      },
+      {
+        "name": "Third Level By Ramp",
+        "position": [
+          59.0,
+          20.0,
+          99.0
+        ],
+        "yaw_deg": 180.0
+      },
+      {
+        "name": "Third Level Corner",
+        "position": [
+          -23.5,
+          20.0,
+          122.7
+        ],
+        "yaw_deg": 180.0
+      },
+      {
+        "name": "Third Level By Pizza",
+        "position": [
+          21.2,
+          20.0,
+          96.5
+        ],
+        "yaw_deg": 180.0
+      }
+    ]
+  }
+}

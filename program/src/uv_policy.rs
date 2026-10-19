@@ -72,39 +72,50 @@ pub fn preserve_base_tiling(world: &mut World) -> Result<PassLog, String> {
         }
     }
     for entity in used {
-        if let Some(m) = world.get::<PbrMaterial>(entity) {
-            if m.textures()
+        if let Some(m) = world.get::<PbrMaterial>(entity)
+            && m.textures()
                 .any(|r| r.transform.is_some_and(|t| t != UvTransform::IDENTITY))
-            {
-                let name = world
-                    .get::<Name>(entity)
-                    .map(|n| n.0.as_str())
-                    .unwrap_or("unnamed");
-                let placed: BTreeSet<_> = world
-                    .iter::<primase_core::Instance>()
-                    .map(|(_, instance)| instance.prototype)
-                    .collect();
-                let mut uses = Vec::new();
-                for (mesh_entity, mesh) in world.iter::<Mesh>() {
-                    let variants = world.get::<MaterialVariants>(mesh_entity);
-                    for (i, primitive) in mesh.primitives().iter().enumerate() {
-                        let variant_use = variants
-                            .and_then(|v| v.0.get(i))
-                            .is_some_and(|v| v.values().any(|m| *m == entity));
-                        if primitive.material == Some(entity) || variant_use {
-                            uses.push(format!("{mesh_entity:?}/{i}: placed={}, uv0={}, default={:?}, variants={:?}",
-                                placed.contains(&mesh_entity),
-                                primitive.streams.get(&primase_core::Semantic::TexCoord(0))
-                                    .map_or("absent", |s| if matches!(s, primase_core::Stream::F32x2(_)) { "f32x2" } else { "other" }),
-                                primitive.material, variants.and_then(|v| v.0.get(i))));
-                        }
+        {
+            let name = world
+                .get::<Name>(entity)
+                .map(|n| n.0.as_str())
+                .unwrap_or("unnamed");
+            let placed: BTreeSet<_> = world
+                .iter::<primase_core::Instance>()
+                .map(|(_, instance)| instance.prototype)
+                .collect();
+            let mut uses = Vec::new();
+            for (mesh_entity, mesh) in world.iter::<Mesh>() {
+                let variants = world.get::<MaterialVariants>(mesh_entity);
+                for (i, primitive) in mesh.primitives().iter().enumerate() {
+                    let variant_use = variants
+                        .and_then(|v| v.0.get(i))
+                        .is_some_and(|v| v.values().any(|m| *m == entity));
+                    if primitive.material == Some(entity) || variant_use {
+                        uses.push(format!(
+                            "{mesh_entity:?}/{i}: {:?}, placed={}, uv0={}, default={:?}, variants={:?}",
+                            primitive.topology,
+                            placed.contains(&mesh_entity),
+                            primitive
+                                .streams
+                                .get(&primase_core::Semantic::TexCoord(0))
+                                .map_or("absent", |s| {
+                                    if matches!(s, primase_core::Stream::F32x2(_)) {
+                                        "f32x2"
+                                    } else {
+                                        "other"
+                                    }
+                                }),
+                            primitive.material,
+                            variants.and_then(|v| v.0.get(i))
+                        ));
                     }
                 }
-                return Err(format!(
-                    "{name}: base tiling still unbaked; refusing to erase it. Bake counts: {:?}. Uses: {uses:?}",
-                    log.counts
-                ));
             }
+            return Err(format!(
+                "{name}: base tiling still unbaked; refusing to erase it. Bake counts: {:?}. Uses: {uses:?}",
+                log.counts
+            ));
         }
     }
     Ok(log)

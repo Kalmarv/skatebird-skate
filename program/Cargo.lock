@@ -450,8 +450,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "primase-bytes"
+version = "0.1.0"
+source = "git+https://github.com/kalmarv/primase.git?rev=c8563db3#c8563db33f9b5420c50753e171f1d9e5c696b71d"
+
+[[package]]
 name = "primase-cache"
 version = "0.1.0"
+source = "git+https://github.com/kalmarv/primase.git?rev=c8563db3#c8563db33f9b5420c50753e171f1d9e5c696b71d"
 dependencies = [
  "sha2",
 ]
@@ -459,6 +465,7 @@ dependencies = [
 [[package]]
 name = "primase-compress"
 version = "0.1.0"
+source = "git+https://github.com/kalmarv/primase.git?rev=c8563db3#c8563db33f9b5420c50753e171f1d9e5c696b71d"
 dependencies = [
  "flate2",
  "libloading 0.9.0",
@@ -469,6 +476,7 @@ dependencies = [
 [[package]]
 name = "primase-core"
 version = "0.1.0"
+source = "git+https://github.com/kalmarv/primase.git?rev=c8563db3#c8563db33f9b5420c50753e171f1d9e5c696b71d"
 dependencies = [
  "serde",
  "serde_json",
@@ -478,14 +486,26 @@ dependencies = [
 [[package]]
 name = "primase-dds"
 version = "0.1.0"
+source = "git+https://github.com/kalmarv/primase.git?rev=c8563db3#c8563db33f9b5420c50753e171f1d9e5c696b71d"
 dependencies = [
  "primase-core",
  "thiserror",
 ]
 
 [[package]]
+name = "primase-frostbite"
+version = "0.1.0"
+source = "git+https://github.com/kalmarv/primase.git?rev=c8563db3#c8563db33f9b5420c50753e171f1d9e5c696b71d"
+dependencies = [
+ "primase-bytes",
+ "primase-compress",
+ "thiserror",
+]
+
+[[package]]
 name = "primase-gltf"
 version = "0.1.0"
+source = "git+https://github.com/kalmarv/primase.git?rev=c8563db3#c8563db33f9b5420c50753e171f1d9e5c696b71d"
 dependencies = [
  "bytemuck",
  "primase-core",
@@ -496,12 +516,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "primase-hash"
+version = "0.1.0"
+source = "git+https://github.com/kalmarv/primase.git?rev=c8563db3#c8563db33f9b5420c50753e171f1d9e5c696b71d"
+
+[[package]]
 name = "primase-image"
 version = "0.1.0"
+source = "git+https://github.com/kalmarv/primase.git?rev=c8563db3#c8563db33f9b5420c50753e171f1d9e5c696b71d"
 dependencies = [
  "png",
  "primase-core",
  "primase-dds",
+ "primase-meshops",
  "primase-texcodec",
  "thiserror",
 ]
@@ -509,21 +536,32 @@ dependencies = [
 [[package]]
 name = "primase-meshops"
 version = "0.1.0"
+source = "git+https://github.com/kalmarv/primase.git?rev=c8563db3#c8563db33f9b5420c50753e171f1d9e5c696b71d"
 dependencies = [
  "primase-core",
  "thiserror",
 ]
 
 [[package]]
-name = "primase-skate-scene"
+name = "primase-reskate"
 version = "0.1.0"
+source = "git+https://github.com/kalmarv/primase.git?rev=c8563db3#c8563db33f9b5420c50753e171f1d9e5c696b71d"
 dependencies = [
+ "half",
+ "primase-bytes",
+ "primase-compress",
  "primase-core",
+ "primase-dds",
+ "primase-frostbite",
  "primase-gltf",
+ "primase-hash",
  "primase-image",
  "primase-meshops",
+ "primase-texcodec",
+ "primase-vertex",
  "serde",
  "serde_json",
+ "sha1",
  "sha2",
  "thiserror",
 ]
@@ -531,6 +569,7 @@ dependencies = [
 [[package]]
 name = "primase-texcodec"
 version = "0.1.0"
+source = "git+https://github.com/kalmarv/primase.git?rev=c8563db3#c8563db33f9b5420c50753e171f1d9e5c696b71d"
 dependencies = [
  "bcdec_rs",
  "half",
@@ -541,6 +580,7 @@ dependencies = [
 [[package]]
 name = "primase-unity"
 version = "0.1.0"
+source = "git+https://github.com/kalmarv/primase.git?rev=c8563db3#c8563db33f9b5420c50753e171f1d9e5c696b71d"
 dependencies = [
  "primase-compress",
  "primase-core",
@@ -556,6 +596,7 @@ dependencies = [
 [[package]]
 name = "primase-vertex"
 version = "0.1.0"
+source = "git+https://github.com/kalmarv/primase.git?rev=c8563db3#c8563db33f9b5420c50753e171f1d9e5c696b71d"
 dependencies = [
  "half",
  "thiserror",
@@ -564,6 +605,7 @@ dependencies = [
 [[package]]
 name = "primase-web"
 version = "0.1.0"
+source = "git+https://github.com/kalmarv/primase.git?rev=c8563db3#c8563db33f9b5420c50753e171f1d9e5c696b71d"
 dependencies = [
  "basisu_c_sys",
  "meshopt",
@@ -683,6 +725,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "sha1"
+version = "0.11.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "aacc4cc499359472b4abe1bf11d0b12e688af9a805fa5e3016f9a386dc2d0214"
+dependencies = [
+ "cfg-if",
+ "cpufeatures",
+ "digest",
+]
+
+[[package]]
 name = "sha2"
 version = "0.11.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -719,7 +772,7 @@ dependencies = [
  "primase-gltf",
  "primase-image",
  "primase-meshops",
- "primase-skate-scene",
+ "primase-reskate",
  "primase-unity",
  "primase-web",
  "serde_json",

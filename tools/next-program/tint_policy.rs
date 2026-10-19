@@ -3,7 +3,7 @@
 //! queued UV candidate until its single-variable office proof has completed.
 use primase_core::pass::{Pass, PassLog};
 use primase_core::{Entity, MaterialVariants, Mesh, World};
-use primase_skate_scene::SkateMaterial;
+use primase_reskate::dialect::SkateMaterial;
 use primase_unity::components::UnityMaterial;
 
 fn consumes_colour(world: &World, material: Entity) -> bool {
@@ -51,7 +51,7 @@ pub fn lower_verified_tints(world: &mut World) -> Result<PassLog, String> {
         })
         .collect();
     let mut log = PassLog::default();
-    let result = primase_reskate::tint::LowerTintReskate::default().run(world, &mut log);
+    let result = primase_reskate::tint::LowerTintReskate::uncapped().run(world, &mut log);
     for (entity, material) in saved {
         world.insert(entity, material);
     }
@@ -63,7 +63,7 @@ pub fn lower_verified_tints(world: &mut World) -> Result<PassLog, String> {
 mod tests {
     use super::*;
     use primase_core::{Primitive, Semantic, Stream, Topology};
-    use primase_skate_scene::{MaterialClass, Part, SkateParts};
+    use primase_reskate::dialect::{MaterialClass, Part, SkateParts};
     use primase_unity::components::UnityObject;
     use std::collections::BTreeMap;
 
