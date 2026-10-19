@@ -1,7 +1,7 @@
 """SkateBIRD reference shots at exact camera poses, one per view of data/skatebird-views.json.
 
   python -I tools/skatebird_views.py LEVEL OUTDIR [--chase] [--back D] [--eye H] [--fov F] [--pitch P] [--yaw-offset Y]
-                                     [--settle S] [--keep-post] [--keep]
+                                     [--settle S] [--keep-post] [--keep-npcs] [--keep]
 
 (Run it through tools/skatebird_views.sh inside `kit/run game`: it opens a game window.) LEVEL may be several levels
 joined by commas: one launch shoots them all, each into OUTDIR/<level>.
@@ -13,7 +13,9 @@ from the preset, "eye" (D 0, H 1.6, P 0, F 60) or with --chase skate.'s third-pe
 HUD/menus and the player's renderers hidden. After the settle it saves OUTDIR/<view index>_<name>.png (the rendered
 frame, read back in game) and writes OUTDIR/poses.json: per shot the requested pose, the plugin's read-back of the
 frame that was saved, a read-back after the save, and the checks (read-back = request; no menu, HUD, bird or lens
-effects; no collider within 0.2 m of the camera; a collider below it). OUTDIR/checks/player_{shown,hidden}.png are the
+effects; no collider within 0.2 m of the camera; a collider below it). Unless --keep-npcs, the NPC birds (every
+BirbDecorator but the player's) and every other SkinnedMeshRenderer are hidden too; poses.json counts them
+(npcs_hidden, and per shot). OUTDIR/checks/player_{shown,hidden}.png are the
 control for the bird hiding (one pose looking at the bird, with and without it). OUTDIR/plugin.log (the parent's, with
 several levels) is the run's BepInEx log. Exit 1 if any check failed.
 
@@ -180,7 +182,8 @@ def pose(r):
     keys = ("frame", "time", "cam_name", "cam_position", "cam_euler", "cam_forward", "cam_bearing", "cam_fov",
             "cam_fov_projection", "cam_near", "cam_far", "screen_width", "screen_height", "player_position",
             "player_yaw", "gameplay_obstructed", "hidden_canvases", "hidden_renderers", "player_roots",
-            "kept_canvases", "other_cameras", "post_effects_off", "post_effects_on", "cam_overlaps", "cam_ground")
+            "kept_canvases", "other_cameras", "post_effects_off", "post_effects_on", "cam_overlaps", "cam_ground", "npc_birbs", "npc_skinned_other",
+            "hidden_npc_renderers")
     return {k: r.get(k) for k in keys}
 
 
@@ -223,6 +226,7 @@ def shoot_level(game, key, level, out, args):
     out.mkdir(parents=True, exist_ok=True)
     record = {"level": key, "scene": level["name"], "mode": args.mode, "back": args.back, "eye": args.eye,
               "fov": args.fov, "pitch": args.pitch, "yaw_offset": args.yaw_offset, "post_effects_kept": args.keep_post,
+              "npcs_kept": args.keep_npcs,
               "settle_s": args.settle, "screen": [WIDTH, HEIGHT], "lab": str(LAB),
               "started": time.strftime("%Y-%m-%dT%H:%M:%S"), "shots": []}
     failed = 0
@@ -237,7 +241,8 @@ def shoot_level(game, key, level, out, args):
             name = re.sub(r"[^A-Za-z0-9]+", "_", view["name"]).strip("_")
             path = (out / f"{i}_{name}.png").resolve()
             game.send("camera", position=want["position"], yaw=want["yaw"], pitch=want["pitch"], fov=want["fov"],
-                      settle_frames=30, settle_seconds=args.settle, keep_post=args.keep_post)
+                      settle_frames=30, settle_seconds=args.settle, keep_post=args.keep_post,
+                      hide_npcs=not args.keep_npcs)
             shot = game.send("shot", path=str(path))
             after = game.send("readback")
             bad = checks(want, shot, keep_post=args.keep_post) + [
@@ -247,7 +252,11 @@ def shoot_level(game, key, level, out, args):
                                     "view": {"position": view["position"], "yaw_deg": view["yaw_deg"]},
                                     "requested": want, "shot": pose(shot), "after": pose(after), "failed": bad})
             print(f"{key} {path.name}: cam {[round(v, 3) for v in shot['cam_position']]} ground "
-                  f"{shot.get('cam_ground', -1):.2f} m {'FAILED ' + '; '.join(bad) if bad else 'ok'}", flush=True)
+                  f"{shot.get('cam_ground', -1):.2f} m, NPC renderers hidden {shot.get('hidden_npc_renderers')}"
+                  f" {'FAILED ' + '; '.join(bad) if bad else 'ok'}", flush=True)
+        last = record["shots"][-1]["shot"] if record["shots"] else {}
+        record["npcs_hidden"] = {"birbs": last.get("npc_birbs"), "other_skinned": last.get("npc_skinned_other"),
+                                 "renderers": last.get("hidden_npc_renderers")}
         record["player_check"] = player_check(game, out / "checks", level["views"][0]["yaw_deg"], args)
         failed += bool(record["player_check"]["failed"])
         game.send("release")
@@ -274,6 +283,8 @@ def main():
     ap.add_argument("--load-settle", type=float, default=8.0, help="seconds after the scene is active")
     ap.add_argument("--keep-post", action="store_true",
                     help="keep the game's depth of field, lens distortion, chromatic aberration, vignette, motion blur")
+    ap.add_argument("--keep-npcs", action="store_true",
+                    help="keep the NPC birds and other skinned meshes (hidden by default: skate. gets no skinned meshes)")
     ap.add_argument("--keep", action="store_true", help="leave the game running")
     args = ap.parse_args()
     args.mode = "chase" if args.chase else "eye"
