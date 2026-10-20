@@ -12,7 +12,7 @@ Evidence status: window flags + 1920x1080 client, F1 console, `MissionManager.Lo
 first-run chain, and `um win shot` were observed live. The `-devconsole` gate, spawn/reset code, save paths,
 and command prefixes are code reads. The raw ffmpeg gfxcapture graph was exercised on a desktop window, not
 on SkateBIRD. The keyboard-driven `tools/skatebird_shot.sh` that went with this method is retired (in git history before
-ff148b4); the supported route is the plugin's exact camera views below (`skatebird-export skatebird-shots`).
+ff148b4); the supported route is the plugin's exact camera views below (`skatebird-tools skatebird-shots`).
 
 ## Exact camera views (lab copy + plugin)
 
@@ -126,7 +126,7 @@ um win ps | grep SkateBIRD        # take the pid
 um win kill <pid>
 ```
 
-Or, with exact camera poses and no keyboard driving, `skatebird-export skatebird-shots` (see "Exact camera views").
+Or, with exact camera poses and no keyboard driving, `skatebird-tools skatebird-shots` (see "Exact camera views").
 
 Fresh save only: after the load, the game chains three first-run screens. Send `Esc`, `Esc`, `Enter`
 (2 s apart). The first-options popup is gated on `OptionsManager.HasShownFirstOptions`
@@ -333,7 +333,7 @@ keyboard navigation (`W`/`S` + `Enter`, `Esc` per the on-screen legend) and capt
 
 ## Scripts
 
-The SkateBIRD side is `skatebird-export skatebird-shots` (program/src/shots.rs), wrapped by
+The SkateBIRD side is `skatebird-tools skatebird-shots` (tools/skatebird-tools/src/shots.rs), wrapped by
 `tools/skatebird_views.sh` and run under `kit/run game --job`; the lab copy comes from `tools/skatebird_lab.sh`. See
 "Exact camera views" above.
 

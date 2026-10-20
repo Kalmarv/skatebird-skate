@@ -116,8 +116,9 @@ First steps
 3. Smallest useful step: the canopy check (compiled leaf OSK opacity pixels and card facing on the playground), offline.
 
 Commands that matter
-- Export one level: `tools/export_level.sh` (the program composes `unity_export` with `--spawn --travel --drop`; levels,
-  spawns and travel points from `data/skatebird-levels.json`); type trees `work\primase\pm-core\w9\typetrees.tpk`.
+- Build levels: `cargo run --release -p skatebird-export -- --typetrees <tpk> --out <folder> --studio <reskate_cli>
+  [LEVEL ...]` (the route: `program/src/recipe.rs`); package: `cargo run --release -p skatebird-tools -- package ...`;
+  type trees `cache\primase\pm-core\w9\typetrees.tpk`.
 - Studio compile: `reskate_cli compile-map ... --no-gi --time-of-day noon` (20 s to 5 min per level).
 - One level in game: `RESKATE_STARTUP_COMMANDS="load levels/game/<level>/<level>"` +
   `ReSkateLauncher.exe --no-gui --no-update --offline --windowed` on an isolated copy (never Caleb's install, which has

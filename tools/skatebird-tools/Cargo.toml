@@ -8,6 +8,6 @@ publish = false
 # SkateBIRD reference shots (the lab copy and its BepInEx plugin) and the side-by-side sheets. Not the conversion.
 [dependencies]
 skatebird-export = { path = "../../program" }
-primase-image = { git = "https://github.com/kalmarv/primase.git", rev = "2e03ee20" }
+primase-image = { git = "https://github.com/kalmarv/primase.git", rev = "5dcbce73" }
 serde_json = "=1.0.154"
 zip = { version = "2", default-features = false, features = ["deflate"] }

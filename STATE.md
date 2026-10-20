@@ -82,11 +82,22 @@ All in 0.3.0 except 8 (cup lid z-fight, Caleb: "not really that worried about it
    and `Main Camera / Mission Arrow` (levels 7, 12). Added to primase-gta-lane's mission-only drop.
 
 ## Next
-1. Read night-031's shots; report to Caleb in the morning. Office and server room icons from him.
-2. Later, only when Caleb says go (via the modding coordinator): the conversion as one readable recipe, ~100-150
-   lines; tooling in its own folder or small crate; markers from primase_skatebird's core markers instead of level.rs.
+1. Office and server room icons from Caleb; a 0.3.1 build from the recipe when he wants the shadow change (a2) out.
+
+## The program (2026-10-20, Caleb: "SkateBIRD can go now, it's basically done")
+- program/ is the recipe: src/recipe.rs (SkatebirdReader -> lower pipeline -> prepare pipeline -> convert into
+  MapSink -> notices -> compile_map), src/choices.rs (per-level choices with their reasons), src/levels.rs, src/main.rs
+  (CLI, levels 3 at a time). Tooling in tools/skatebird-tools (package, views, sheets, skatebird-shots); one workspace.
+- primase main 5dcbce73: SkatebirdReader, place-skatebird-markers, pause extent=collision, set-shadow-casting +
+  lower-reskate-shadows (the retired set-reskate-shadow-casting dropped; a2: the scene's castShadows Off kept).
+- Checked: all 8 levels built by the recipe (job bd639d99, cache/skatebird/build-recipe) against build-0.3.1
+  (scratch scripts/compare_builds.py): spawn, travel, textures, lights, Studio output and pause pictures identical; only
+  non-casting materials (and the material/prototype copies that come with them, +-2-5) differ, from a2. Bedroom 2 is
+  identical to the old program with the new shadow passes (build-shadowcheck).
+- Dropped with the trim: --glb, --web, --scene, --light-scale, --tag, map-from-scene (experiments; in git history).
 
 ## Decided (Caleb's words; never dropped, only replaced by a newer decision)
+- 2026-10-20 · Shadows: (a2) keep the Unity reader's castShadows Off, the program's set-shadow-casting on top; no emission fill for dark interiors. Trim: "SkateBIRD can go now, it's basically done".
 - 2026-10-20 · Night testing: "I'm going to sleep now so you can launch skate yourself to finish testing. I'll take ss tomorrow".
 - 2026-10-19 · Release: "I'm gonna release this version on thunder store, it's plenty good" (he uploads). Windows: "fully clear windows, opaque other glass. just the big windows clear". Server room: "just make the floors or whatever above not shadow cast". TOD: "default tod is noon, noon is fine".
 - 2026-10-19 · Release gate: "lights, mission, grinds, waypoint cleanup and they're almost ready to release"; mod images: "I'll take SS of the maps".

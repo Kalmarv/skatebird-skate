@@ -61,11 +61,9 @@ pub fn chosen(wanted: &[String]) -> Result<Vec<Level>, String> {
 }
 
 /// The map's (and the mod folder's, and the zip's) name for a level, by the game's name for it: `SkateBIRD_Rooftop`,
-/// `SkateBIRD_ServerRoom` (Caleb, 2026-10-19: the scene numbers confused); a variant built with `--tag T`
-/// (`<level>_T`) is `SkateBIRD_<Name>_T`.
+/// `SkateBIRD_ServerRoom` (Caleb, 2026-10-19: the scene numbers confused).
 pub fn map_name(level: &str) -> String {
-    let (id, tag) = level.split_once('_').map_or((level, None), |(i, t)| (i, Some(t)));
-    let name = LEVELS.iter().find(|l| l.id == id).map_or(id.to_owned(), |l| {
+    let name: String = LEVELS.iter().find(|l| l.id == level).map_or(level.to_owned(), |l| {
         l.name
             .split(' ')
             .map(|w| {
@@ -74,10 +72,7 @@ pub fn map_name(level: &str) -> String {
             })
             .collect()
     });
-    match tag {
-        Some(t) => format!("SkateBIRD_{name}_{t}"),
-        None => format!("SkateBIRD_{name}"),
-    }
+    format!("SkateBIRD_{name}")
 }
 
 #[cfg(test)]
@@ -95,6 +90,5 @@ mod tests {
         assert_eq!(map_name("level2"), "SkateBIRD_Rooftop");
         assert_eq!(map_name("level4"), "SkateBIRD_ServerRoom");
         assert_eq!(map_name("level1"), "SkateBIRD_Bedroom1");
-        assert_eq!(map_name("level3_s1k"), "SkateBIRD_Office_s1k");
     }
 }

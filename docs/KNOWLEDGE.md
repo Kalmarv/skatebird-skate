@@ -38,11 +38,12 @@ Linked from `STATE.md`. Add only facts verified against files or runs, with the 
 - Gate: `worlds/unity/tests/skatebird_census.rs` compared primase against a UnityPy census of all 31
   files: 503,045 objects, exact path ids, class ids, byte offsets and sizes.
 
-## SkateBIRD level data (`data/skatebird-levels.json`, from `tools/skatebird_scan.py`)
+## SkateBIRD markers (primase's `place-skatebird-markers`)
 
-- Spawn = the `ResetPosition` with `startingPosition=true` (level7 has none: `Player Birb` at (0,1.189,0)).
-- Bounds = enabled non-trigger colliders, mesh AABBs transformed, excluding anything over 100 m.
-- Travel points = the game's own `ResetPosition` anchors + `MissionGiver`s, 11-16 per level.
+- Spawn = the `ResetPosition` with `startingPosition=true` (level7 has none: `Player Birb` at (0,1.189,0), dropped
+  onto the collision below since the mission object it stood on is left out).
+- Play space = the box of every collision soup no wider than 100 m on any axis (skylines and building sides excluded).
+- Travel points = `ResetPosition`s inside it (10 m margin), the start first, spread farthest-first to 5.
 - **Coordinate mapping**: Unity (x, y, z) -> primase scene (x, y, -z) (`SourceFrame::new([PosX, PosY, NegZ])`).
   Unity yaw 0 faces +Z, which becomes -Z after the mirror, so **scene yaw = (180 - unity yaw) mod 360**
   (the writer's forward is `(sin yaw, cos yaw)`; travel markers use the same rule).
@@ -51,15 +52,13 @@ Linked from `STATE.md`. Add only facts verified against files or runs, with the 
 ## The route (program/, primase pinned by git rev)
 
 ```
-cd program && cargo build --release        # CARGO_TARGET_DIR=<modding>/.targets/<agent>
-skatebird-export build --typetrees <modding>/cache/primase/pm-core/w9/typetrees.tpk --out <modding>/cache/skatebird/build \
-    --studio <modding>/tools/ReSkateStudio-20261012/reskate_cli.exe [level2 ...]
+cargo run --release -p skatebird-export -- --typetrees <modding>/cache/primase/pm-core/w9/typetrees.tpk     --out <modding>/cache/skatebird/build --studio <modding>/tools/ReSkateStudio-20261012/reskate_cli.exe [level2 ...]
 ```
 
-- Per level: `<out>/<level>/map/SkateBIRD_<level>` (the normalized map) and `<out>/<level>/stage/Patch` (the mod
-  folder `SkateBIRD_<level>`). Spawn and travel points come from primase's SkateBIRD reader (`primase_skatebird::read_markers`; the
-  program picks them: `program/src/level.rs`); every choice is in
-  `program/src/settings.rs`, the Studio compile's too (`--no-stream --no-lods --no-gi --time-of-day noon`).
+- Per level: `<out>/<level>/map/SkateBIRD_<Name>` (the map) and `<out>/<level>/stage/Patch` (Studio's compile). The
+  route is `program/src/recipe.rs`; per-level choices `program/src/choices.rs`, the Studio compile's too
+  (`--no-stream --no-lods --no-gi --time-of-day noon`). Use `cargo run` (or check the exe's time): an agent shell has
+  no `CARGO_TARGET_DIR`, and a stale exe once ran a whole build.
 - `--no-stream` keeps these small levels resident: no WorldPartition cells, so none of Studio's own vista proxies,
   and the shared runner's vista guard (`check_no_studio_vistas.py`) passes (level2, 2026-10-19).
 - Type tree package: AssetRipper TPK covering 2019.4.20f1 exactly.
@@ -71,16 +70,14 @@ skatebird-export build --typetrees <modding>/cache/primase/pm-core/w9/typetrees.
   "<commands>" <seconds>` under `kit/run game --job` (it copies the mod in, disables every other mod, restores the
   player's mods/profile/DLL after, and refuses a level with Studio vistas). `NO_DLL=1` runs without the probe DLL.
 - Load a level: `load levels/game/dingolevel_reskate_skatebird_<level>/dingolevel_reskate_skatebird_<level>`; the
-  runner takes a screenshot at every `trainer where`. `skatebird-export views skate-commands <level>` makes a run's
-  commands; `skatebird-export sheets --refs <ref> --run <run> --out <dir>` the side-by-sides.
+  runner takes a screenshot at every `trainer where`. `skatebird-tools views skate-commands <level>` makes a run's
+  commands; `skatebird-tools sheets --refs <ref> --run <run> --out <dir>` the side-by-sides.
 - Caleb's own install has 55 mods enabled; loading it produces a black HUB screen, so never judge a map there.
 
 ## Scripts in `tools/`
 
 - `ingame_levels.sh TAG [LEVEL ...]` - every level in one skate. launch through the shared runner (see above).
-- `skatebird_scan.py`, `data/skatebird-levels.json` - the old scan, kept until the reader-based markers are checked
-  against it in game, then removed.
-- `skatebird_views.sh` (a wrapper over the program's `skatebird-shots`, `program/src/shots.rs`), `skatebird_lab.sh`,
+- `skatebird_views.sh` (a wrapper over `skatebird-tools skatebird-shots`, `tools/skatebird-tools/src/shots.rs`), `skatebird_lab.sh`,
   `skatebird-teleport-plugin/` - the SkateBIRD side (lab copy with BepInEx); runbook
   `docs/screenshot-runbook.md`. The chase-camera fit that set
   `--chase`'s defaults was a one-off (tools/skatebird_chase_fit.py, in history at ff965de..e667417).
