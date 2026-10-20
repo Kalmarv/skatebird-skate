@@ -76,6 +76,9 @@ pub fn mod_folder(
     Ok(out)
 }
 
+/// The levels under open sky (rooftop, playground, skate heaven); the others are rooms.
+const OUTDOORS: [&str; 3] = ["level2", "level12", "level13"];
+
 /// The Thunderstore page of a level's package: what it is, its pictures, what is in it, how to install it.
 pub fn readme(level: &Level, name: &str) -> String {
     let title = format!("SkateBIRD: {}", capitalised(level.name));
@@ -94,7 +97,7 @@ The level from above, as the pause map shows it.
 ## In the map
 - The level as you skate it in SkateBIRD: every ramp, rail and prop, with the game's own collision.
 - SkateBIRD's grind rails, clotheslines and ropes included, as grindable rails.
-- Lit by the sun and sky through the room, with the level's own lamps.
+- {light}
 - The spawn and 5 fast-travel points at the game's own reset positions.
 - Mission pickups, mission birds and unlocks left out: the level as it stands between missions.
 
@@ -106,6 +109,11 @@ The level from above, as the pause map shows it.
 Converted with [primase](https://github.com/kalmarv/primase); the conversion is open: {REPOSITORY}
 ",
         level = level.name,
+        light = if OUTDOORS.contains(&level.id) {
+            "Lit by skate.'s sun and sky, with the level's own lamps."
+        } else {
+            "Lit by skate.'s sun and sky through the room, with the level's own lamps."
+        },
     )
 }
 
