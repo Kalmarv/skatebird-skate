@@ -118,8 +118,8 @@ pub const PAUSE_MAP_HEIGHT: usize = 2160;
 /// prototype's finest level of detail, what Unity draws, its materials, terrain, collision and lights lowered,
 /// normal maps to glTF's convention, collision shapes as triangles (the writers here take triangles), and last before
 /// the writers authored mirrors and shears baked into geometry, mirrors too, so every placement is rigid.
-pub fn lowering() -> Vec<Box<dyn Pass>> {
-    vec![
+pub fn lowering() -> Result<Vec<Box<dyn Pass>>, String> {
+    Ok(vec![
         Box::new(primase_core::state::ResolveState {
             assign: BTreeMap::new(),
             assign_class: BTreeMap::from([("lod".to_owned(), "lod0".to_owned())]),
@@ -131,7 +131,15 @@ pub fn lowering() -> Vec<Box<dyn Pass>> {
         Box::new(primase_unity::drawn::UnityDrawn),
         Box::new(primase_unity::lower::LowerUnityPbr),
         // SkateBIRD's Bumped Specular Voronoi (gravel, carpet) baked from its own compiled shader into textures
-        Box::new(primase_skatebird::passes::voronoi::LowerSkatebirdVoronoi),
+        // (the forward pass's DIRECTIONAL variant in tier 3; a 2 x 2-cell block, at most 1,024 texels a cell)
+        Box::new(
+            primase_skatebird::passes::voronoi::LowerSkatebirdVoronoi::new(
+                vec!["DIRECTIONAL".to_owned()],
+                3,
+                2,
+                1024,
+            )?,
+        ),
         Box::new(primase_unity::lower_terrain::LowerUnityTerrain),
         Box::new(primase_unity::lower_collision::LowerUnityCollision),
         Box::new(primase_unity::lower_lights::LowerUnityLights),
@@ -144,7 +152,7 @@ pub fn lowering() -> Vec<Box<dyn Pass>> {
         Box::new(primase_unity::lower_ambient::LowerUnityAmbient {
             probe: primase_unity::lower_ambient::UnityAmbientProbe::ProbeAverage,
         }),
-    ]
+    ])
 }
 
 /// What the one-file glTF of the level needs that the world does not state, run on a copy of the world for the glTF

@@ -508,7 +508,7 @@ fn convert(
         report.colliders_not_colliding
     );
     // the lowering, as a pipeline: each pass whose input the level has, verified after each
-    for p in settings::lowering() {
+    for p in settings::lowering()? {
         // a pass's input may come from an earlier pass (terrain textures for normalize-normals)
         if p.requires().iter().all(|r| w.has_component_named(r)) {
             run(&mut w, vec![p])?;
