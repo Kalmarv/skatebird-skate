@@ -39,6 +39,7 @@ const USAGE: &str = "usage: skatebird-export build --typetrees <tpk> --out <fold
        skatebird-export map-from-scene <scene folder> <output folder> --name <map name>
        skatebird-export package --out <build folder> --dest <folder> --version <version> [LEVEL ...]
        skatebird-export views skate-commands LEVEL [--data <folder>]
+       skatebird-export views map-name LEVEL
        skatebird-export sheets --refs <SkateBIRD shots> --run <run folder> --out <folder>
        skatebird-export skatebird-shots <level>[,<level>...] <out> [--chase] [--back D] [--eye H] [--fov F] [--pitch P] [--yaw-offset Y] [--settle S] [--load-settle S] [--keep-post] [--keep-npcs] [--keep] [--data <folder>]";
 
@@ -335,6 +336,7 @@ fn views_command(args: Vec<String>) -> Result<()> {
     }
     let file = data.join("skatebird-views.json");
     match &words[..] {
+        [w, level] if w == "map-name" => println!("{}", settings::map_name(level)),
         [w, level] if w == "skate-commands" => {
             let v: serde_json::Value = serde_json::from_slice(&std::fs::read(&file)?)?;
             println!("{}", views::skate_commands(&v, level)?);

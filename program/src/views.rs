@@ -24,9 +24,13 @@ pub fn skate_commands(views: &Value, level: &str) -> Result<String, String> {
     let list = views[base]["views"]
         .as_array()
         .ok_or(format!("no views for {base}"))?;
-    let asset = format!(
-        "levels/game/dingolevel_reskate_skatebird_{level}/dingolevel_reskate_skatebird_{level}"
-    );
+    let asset = {
+        let l = format!(
+            "dingolevel_reskate_{}",
+            crate::settings::map_name(level).to_lowercase()
+        );
+        format!("levels/game/{l}/{l}")
+    };
     let mut c = vec![
         "wait 100".to_owned(),
         format!("load {asset}"),

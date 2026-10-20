@@ -250,9 +250,30 @@ pub fn one_wrap() -> Result<primase_reskate::passes::PrepareReskateWrap, String>
     primase_reskate::passes::PrepareReskateWrap::new(primase_core::pbr::TextureSlot::BaseColor, 0)
 }
 
-/// The map's (and the mod folder's) name for a level.
+/// The map's (and the mod folder's, and the zip's) name for a level, by the game's name for it: `SkateBIRD_Rooftop`,
+/// `SkateBIRD_ServerRoom` (Caleb, 2026-10-19: the scene numbers confused).
 pub fn map_name(level: &str) -> String {
-    format!("SkateBIRD_{level}")
+    // a variant built with `--tag T` is `<level>_T`
+    let (id, tag) = level
+        .split_once('_')
+        .map_or((level, None), |(i, t)| (i, Some(t)));
+    let name = LEVELS
+        .iter()
+        .find(|l| l.id == id)
+        .map_or(id.to_owned(), |l| {
+            l.name
+                .split(' ')
+                .map(|w| {
+                    let mut c = w.chars();
+                    c.next()
+                        .map_or(String::new(), |f| f.to_uppercase().chain(c).collect())
+                })
+                .collect()
+        });
+    match tag {
+        Some(t) => format!("SkateBIRD_{name}_{t}"),
+        None => format!("SkateBIRD_{name}"),
+    }
 }
 
 /// The Studio compile of a level's map: resident (`--no-stream`: these levels are small, so no WorldPartition cells
@@ -374,6 +395,14 @@ mod tests {
         ] {
             assert!(text.contains(want), "{want} not in {text}");
         }
+    }
+
+    #[test]
+    fn maps_are_named_by_the_games_level_names() {
+        assert_eq!(map_name("level2"), "SkateBIRD_Rooftop");
+        assert_eq!(map_name("level4"), "SkateBIRD_ServerRoom");
+        assert_eq!(map_name("level1"), "SkateBIRD_Bedroom1");
+        assert_eq!(map_name("level3_s1k"), "SkateBIRD_Office_s1k");
     }
 
     #[test]
