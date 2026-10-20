@@ -31,12 +31,15 @@ Nothing running.
 3. Materials: bedroom bowl floor/supports, playground gravel tiling, leaves sparser than SkateBIRD's.
 
 ## Next
-1. Caleb's verdict on the t5 sheets; then the remaining polish (fill-light spots, office UV, tint, gravel, two-tone).
-2. Gameplay checks nobody ran: roll, grind, collision, travel points.
-3. Held for Caleb's go: promotion requests (level scan into primase's SkateBIRD crate; variants, unmaterialed,
-   unify-texture-wrap, pack-orm passes).
+1. Caleb's findings from the 0.1.0 zips.
+2. Switch the program to primase's versions as they land: the program's passes (ORM pack, variants/single
+   sampling, blended-as-cutout, ambient to lights; review docs/primase-promote-review.md), the worlds/skatebird
+   marker reader (GTA lane; then level.rs and tools/skatebird_scan.py retire), the Unity shader waves.
+3. Then repo cleanup toward ~90% Rust (Caleb): views/compare/install tools into the program; research/ and the
+   census JSON out of the repo.
 
 ## Decided (Caleb's words; never dropped, only replaced by a newer decision)
+- 2026-10-19 · Shader list approved (via the modding coordinator): primase wave 1 Legacy Bumped family, Autodesk Interactive, Houdini specular, Self-Illumin/Unlit as emission; wave 2 Voronoi as a bake; Two Tone stays base colour with a notice.
 - 2026-10-19 · Interior light: ambient as "Fill lights" (shadowless point grid from SkateBIRD's ambient); brightness "x10000" the standard calibration (run light1).
 - 2026-10-19 · Language/shape: "this should be 90% rust when it's "done". Using primase, with maybe a handful of scripts"; "This is my goal for all game readers I think. The mod is fine" (the C# BepInEx plugin stays); order: after the side-by-sides (repo cleanup, then the primase promotion requests; plan in this session: ~1,100 of the program's 1,821 Rust lines to primase).
 - 2026-10-19 · Pinning: "you can use a branch idc, the fixes must land on primase main before it's "done" though"; screenshots: "you can also do all the ss in one run". Repo: "just use main".
