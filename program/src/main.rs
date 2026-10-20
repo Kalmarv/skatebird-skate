@@ -28,6 +28,7 @@ mod settings;
 mod unmaterialed;
 mod uv_policy;
 mod variants;
+mod views;
 mod wrap;
 
 use std::collections::BTreeMap;
@@ -43,7 +44,10 @@ type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
 const USAGE: &str = "usage: skatebird-export build --typetrees <tpk> --out <folder> [--game-data <SkateBIRD_Data>] [--data <folder>] [--studio <reskate_cli.exe> [--game <skate. install>]] [--glb] [--web [--ktx2]] [--scene] [--jobs N] [--light-scale S] [--ambient-fill M] [--tag T] [LEVEL ...]
        skatebird-export map-from-scene <scene folder> <output folder> --name <map name>
-       skatebird-export package --out <build folder> --dest <folder> --version <version> [--data <folder>] [LEVEL ...]";
+       skatebird-export package --out <build folder> --dest <folder> --version <version> [--data <folder>] [LEVEL ...]
+       skatebird-export views make [--data <folder>]            (writes <data>/skatebird-views.json)
+       skatebird-export views skate-commands LEVEL [--data <folder>]
+       skatebird-export sheets --refs <SkateBIRD shots> --run <run folder> --out <folder>";
 
 /// Where Steam installs the game.
 const STEAM_DATA: &str = r"C:\Program Files (x86)\Steam\steamapps\common\SkateBIRD\SkateBIRD_Data";
@@ -79,6 +83,8 @@ fn main() -> Result<()> {
         Some("build") => build(args.collect()),
         Some("map-from-scene") => map_from_scene(args.collect()),
         Some("package") => package(args.collect()),
+        Some("views") => views_command(args.collect()),
+        Some("sheets") => sheets(args.collect()),
         _ => Err(USAGE.into()),
     }
 }
@@ -341,6 +347,65 @@ fn package(args: Vec<String>) -> Result<()> {
         let zip = dest.join(format!("{name}-{version}.zip"));
         let bytes = package::zip(&folder, &zip)?;
         println!("{}: {} ({:.1} MB)", l.id, zip.display(), bytes as f64 / 1e6);
+    }
+    Ok(())
+}
+
+/// `views make`: the views file from the scan; `views skate-commands LEVEL`: one run's console commands ([`views`]).
+fn views_command(args: Vec<String>) -> Result<()> {
+    let mut data = Path::new(env!("CARGO_MANIFEST_DIR")).join("../data");
+    let mut words = Vec::new();
+    let mut args = args.into_iter();
+    while let Some(arg) = args.next() {
+        match arg.as_str() {
+            "--data" => data = PathBuf::from(args.next().ok_or(USAGE)?),
+            _ => words.push(arg),
+        }
+    }
+    let file = data.join("skatebird-views.json");
+    match &words[..] {
+        [w] if w == "make" => {
+            let levels = level::read_levels(&data.join("skatebird-levels.json"))?;
+            let v = views::make(&levels);
+            std::fs::write(
+                &file,
+                serde_json::to_string_pretty(&v)?
+                    + "
+",
+            )?;
+            println!(
+                "{}: {} levels",
+                file.display(),
+                v.as_object().map_or(0, |o| o.len())
+            );
+        }
+        [w, level] if w == "skate-commands" => {
+            let v: serde_json::Value = serde_json::from_slice(&std::fs::read(&file)?)?;
+            println!("{}", views::skate_commands(&v, level)?);
+        }
+        _ => return Err(USAGE.into()),
+    }
+    Ok(())
+}
+
+/// `sheets`: side-by-side pictures of a run against SkateBIRD's reference shots ([`views::sheets`]).
+fn sheets(args: Vec<String>) -> Result<()> {
+    let (mut refs, mut run, mut out) = (None, None, None);
+    let mut args = args.into_iter();
+    while let Some(arg) = args.next() {
+        let v = PathBuf::from(args.next().ok_or(USAGE)?);
+        match arg.as_str() {
+            "--refs" => refs = Some(v),
+            "--run" => run = Some(v),
+            "--out" => out = Some(v),
+            _ => return Err(format!("unknown option {arg}; {USAGE}").into()),
+        }
+    }
+    let (Some(refs), Some(run), Some(out)) = (refs, run, out) else {
+        return Err(USAGE.into());
+    };
+    for p in views::sheets(&refs, &run, &out)? {
+        println!("{p}");
     }
     Ok(())
 }

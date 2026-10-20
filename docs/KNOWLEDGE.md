@@ -70,19 +70,19 @@ skatebird-export build --typetrees <modding>/cache/primase/pm-core/w9/typetrees.
   "<commands>" <seconds>` under `kit/run game --job` (it copies the mod in, disables every other mod, restores the
   player's mods/profile/DLL after, and refuses a level with Studio vistas). `NO_DLL=1` runs without the probe DLL.
 - Load a level: `load levels/game/dingolevel_reskate_skatebird_<level>/dingolevel_reskate_skatebird_<level>`; the
-  runner takes a screenshot at every `trainer where`. `tools/views.py skate-commands <level>` makes a run's commands.
+  runner takes a screenshot at every `trainer where`. `skatebird-export views skate-commands <level>` makes a run's
+  commands; `skatebird-export sheets --refs <ref> --run <run> --out <dir>` the side-by-sides.
 - Caleb's own install has 55 mods enabled; loading it produces a black HUB screen, so never judge a map there.
 
 ## Scripts in `tools/`
 
-- `views.py` - the fixed views per level (`data/skatebird-views.json`) and the skate commands that shoot them.
-- `install_mod.py <stage> <game> <name> --display "..."` - copy `stage/Patch` into `Mods/`, write manifest,
-  set the display name, enable it in `mods.json` (with a backup).
-- `compare_shots.py out.png left.png right.png`, `contact_sheet.py` - side-by-side verification sheets.
-- `skatebird_shot.sh`, `skatebird_reference_shots.py`, `skatebird_teleport.py`, `skatebird-teleport-plugin/` - the
-  SkateBIRD side (lab copy with BepInEx); runbook in `docs/screenshot-runbook.md`.
-- `skatebird_scan.py` - makes `data/skatebird-levels.json`; `qa_report.py` - spawn/marker checks of written maps;
-  `unitypy_census.py` - the independent census used to gate the v21 container reader.
+- `ingame_levels.sh TAG [LEVEL ...]` - every level in one skate. launch through the shared runner (see above).
+- `skatebird_scan.py` - makes `data/skatebird-levels.json` (until primase's SkateBIRD reader emits the markers).
+- `skatebird_views.sh`, `skatebird_views.py`, `skatebird_lab.sh`, `skatebird_shot.sh`, `skatebird-teleport-plugin/` -
+  the SkateBIRD side (lab copy with BepInEx); runbook `docs/screenshot-runbook.md`. The chase-camera fit that set
+  `--chase`'s defaults was a one-off (tools/skatebird_chase_fit.py, in history at ff965de..e667417).
+- `unitypy_census.py` - the independent census used to gate the v21 container reader (an oracle; belongs in
+  primase-oracles).
 - **Shell trap**: a child `bash` started from an agent's own shell is *WSL* bash (C:\WINDOWS\system32\bash.exe is
   first on PATH). `orca job run -- bash ...` starts **Git Bash**; call `"$BASH"` inside scripts.
 - Write scripts with **LF line endings** (CRLF breaks `<<'EOF'` heredocs).

@@ -8,7 +8,9 @@ Skate Bird to ReSkate."
 - `program/`: the Rust program (`skatebird-export build`) that reads each level with primase's Unity reader, runs the
   passes it chooses (`settings.rs`), writes the ReSkate map with primase's writer and compiles it with ReSkate Studio.
   primase is pinned by git rev in `program/Cargo.toml`.
-- `tools/`: the level scan, the view set (`views.py`), comparison sheets, and the SkateBIRD side of the screenshots
+- `program/` subcommands: `build` (convert + Studio compile), `package` (mod folders and zips), `views` (the view
+  set and skate's console commands for it), `sheets` (side-by-sides of a run against SkateBIRD's shots).
+- `tools/`: the game-run wrapper (`ingame_levels.sh`), the level scan (until primase reads it), and the SkateBIRD side of the screenshots
   (BepInEx teleport/camera plugin, `tools/skatebird-teleport-plugin`).
 - `data/`: level spawns, bounds and travel points (`skatebird-levels.json`), census and surface tables.
 - `docs/`: VERIFICATION (per-level parity), QA report, COMBINED_MAP, SCALE, KNOWLEDGE (format facts), and the
