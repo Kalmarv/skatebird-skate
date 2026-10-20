@@ -34,6 +34,11 @@
 // bearing (atan2(fwd.x, fwd.z)), fieldOfView and the vertical FOV of the projection matrix, the screen size, the
 // player's position, what was hidden, the colliders within 0.2 m of the camera (cam_overlaps) and the distance down
 // to the first collider below it (cam_ground). Everything is also logged to BepInEx/LogOutput.log.
+//
+// Fly mode, for getting around by hand: the fly key (BepInEx/config/skatebird.teleport.cfg, F6 by default) frees the
+// camera from the game and freezes the bird where it is; WASD moves along the view, Space up, Left Ctrl down, Left
+// Shift faster, Left Alt slower, the mouse looks (hold the right button when the cursor is free). The fly key again
+// drops the bird at the camera, facing the view's bearing. Not while a runner holds the camera.
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -113,7 +118,7 @@ namespace SkateBIRDTeleport
         public int hidden_npc_renderers;
     }
 
-    [BepInPlugin("skatebird.teleport", "SkateBIRD lab control", "0.5.0")]
+    [BepInPlugin("skatebird.teleport", "SkateBIRD lab control", "0.6.0")]
     public class TeleportPlugin : BaseUnityPlugin
     {
         private const float PollSeconds = 0.1f;
@@ -151,8 +156,31 @@ namespace SkateBIRDTeleport
             { typeof(DepthOfField), typeof(LensDistortion), typeof(ChromaticAberration), typeof(Vignette), typeof(MotionBlur) };
         private readonly HashSet<PostProcessEffectSettings> postOff = new HashSet<PostProcessEffectSettings>();
 
+        // Fly mode (see the header).
+        private const float FlySpeed = 6f;
+        private const float FlyFast = 4f;
+        private const float FlySlow = 0.25f;
+        private const float LookDegreesPerPixel = 0.15f;
+        private const float LookDegreesPerAxisUnit = 2f;
+        private BepInEx.Configuration.ConfigEntry<KeyCode> flyKey;
+        private Camera flyCamera;
+        private CinemachineBrain flyBrain;
+        private Rigidbody flyBody;
+        private bool flyBodyWasKinematic;
+        private Vector3 flyBodyPosition;
+        private Quaternion flyBodyRotation;
+        private Vector3 flyPosition;
+        private float flyYaw;
+        private float flyPitch;
+        private Vector3 lastMouse;
+        // null until probed: whether the Input Manager has the "Mouse X"/"Mouse Y" axes (a Rewired game may drop them)
+        private bool? mouseAxes;
+
         private void Awake()
         {
+            flyKey = Config.Bind("Fly", "Toggle", KeyCode.F6,
+                "Frees the camera to fly (WASD, Space up, Left Ctrl down, Left Shift fast, Left Alt slow, mouse look) "
+                + "and freezes the bird; again to drop the bird where the camera is.");
             controlDir = Path.Combine(Paths.GameRootPath, "control");
             Directory.CreateDirectory(controlDir);
             commandPath = Path.Combine(controlDir, "command.json");
@@ -178,6 +206,12 @@ namespace SkateBIRDTeleport
 
         private void Update()
         {
+            if (Input.GetKeyDown(flyKey.Value))
+            {
+                if (flyCamera != null) StopFlying(true);
+                else if (lockCamera == null) StartFlying();
+            }
+            if (flyCamera != null) Fly();
             if (lockCamera != null) HoldLock();
             if (busy || Time.unscaledTime < nextPoll) return;
             nextPoll = Time.unscaledTime + PollSeconds;
@@ -186,11 +220,17 @@ namespace SkateBIRDTeleport
 
         private void LateUpdate()
         {
+            if (flyCamera != null) HoldFlight();
             if (lockCamera != null) HoldLock();
         }
 
         private void OnAnyPreCull(Camera cam)
         {
+            if (cam != null && cam == flyCamera)
+            {
+                HoldFlight();
+                return;
+            }
             if (cam == null || cam != lockCamera) return;
             // Last word before this camera culls: no game script can move it or show the player after this.
             ApplyPose();
@@ -284,6 +324,7 @@ namespace SkateBIRDTeleport
                 Fail(cmd, "load needs scene");
                 yield break;
             }
+            StopFlying(false);
             ReleaseLock();
             var deadline = Time.unscaledTime + 30f;
             while (LoadingManager.IsLoading)
@@ -338,8 +379,14 @@ namespace SkateBIRDTeleport
             if (!TryVector(cmd.position, out pos)) { Fail(cmd, "teleport needs position [x,y,z]"); yield break; }
             var board = ImportantStuff.PlayerSkateboard;
             if (board == null) { Fail(cmd, "no player (ImportantStuff.PlayerSkateboard is null)"); yield break; }
-            var rot = Quaternion.Euler(0f, cmd.yaw, 0f);
-            // Hold through six physics steps: a moving board would otherwise be snapped back.
+            StopFlying(false);
+            yield return PlaceBoard(board, pos, Quaternion.Euler(0f, cmd.yaw, 0f));
+            Succeed(cmd, Pose(cmd));
+        }
+
+        // Puts the board at a pose, held through six physics steps: a moving board would otherwise be snapped back.
+        private static IEnumerator PlaceBoard(ISkateboardGateway board, Vector3 pos, Quaternion rot)
+        {
             for (var i = 0; i < 6; i++)
             {
                 board.Teleport(pos, rot);
@@ -352,7 +399,6 @@ namespace SkateBIRDTeleport
             }
             board.Teleport(pos, rot);
             yield return null;
-            Succeed(cmd, Pose(cmd));
         }
 
         private IEnumerator DoCamera(Command cmd)
@@ -360,6 +406,7 @@ namespace SkateBIRDTeleport
             Vector3 pos;
             if (!TryVector(cmd.position, out pos)) { Fail(cmd, "camera needs position [x,y,z]"); yield break; }
             if (!(cmd.fov > 1f && cmd.fov < 179f)) { Fail(cmd, "fov must be in (1, 179) degrees"); yield break; }
+            StopFlying(false);
             var cam = lockCamera != null ? lockCamera : Camera.main;
             if (cam == null) { Fail(cmd, "no Camera.main"); yield break; }
             if (lockCamera == null)
@@ -429,6 +476,121 @@ namespace SkateBIRDTeleport
             Succeed(cmd, Pose(cmd));
             yield return null;
             Application.Quit();
+        }
+
+        // ---- fly mode -------------------------------------------------------------------------------------------
+
+        private void StartFlying()
+        {
+            var cam = Camera.main;
+            var board = ImportantStuff.PlayerSkateboard;
+            if (cam == null || board == null || board.RigidBody == null)
+            {
+                Logger.LogWarning("FLY: no camera or no player");
+                return;
+            }
+            flyCamera = cam;
+            flyBrain = cam.GetComponent<CinemachineBrain>();
+            if (flyBrain == null) flyBrain = FindObjectOfType<CinemachineBrain>();
+            if (flyBrain != null) flyBrain.enabled = false;
+            flyBody = board.RigidBody;
+            flyBodyWasKinematic = flyBody.isKinematic;
+            flyBodyPosition = flyBody.position;
+            flyBodyRotation = flyBody.rotation;
+            flyBody.velocity = Vector3.zero;
+            flyBody.angularVelocity = Vector3.zero;
+            flyBody.isKinematic = true;
+            var t = cam.transform;
+            flyPosition = t.position;
+            var e = t.eulerAngles;
+            flyYaw = e.y;
+            flyPitch = Mathf.DeltaAngle(0f, e.x);
+            lastMouse = Input.mousePosition;
+            Logger.LogInfo("FLY ON at " + flyPosition);
+        }
+
+        // Gives the camera back; with drop, the bird is placed at the camera, facing the view's bearing (otherwise it
+        // stays where flying froze it).
+        private void StopFlying(bool drop)
+        {
+            if (flyCamera == null) return;
+            if (flyBrain != null) flyBrain.enabled = true;
+            if (flyBody != null)
+            {
+                flyBody.isKinematic = flyBodyWasKinematic;
+                var board = ImportantStuff.PlayerSkateboard;
+                if (drop && board != null)
+                    StartCoroutine(PlaceBoard(board, flyPosition, Quaternion.Euler(0f, flyYaw, 0f)));
+            }
+            Logger.LogInfo("FLY OFF at " + flyPosition + (drop ? ", bird dropped there" : ""));
+            flyCamera = null;
+            flyBrain = null;
+            flyBody = null;
+        }
+
+        private void Fly()
+        {
+            if (flyBody == null || ImportantStuff.PlayerSkateboard == null)
+            {
+                // the scene changed under us: the camera and body are gone
+                StopFlying(false);
+                return;
+            }
+            var look = MouseLook();
+            flyYaw += look.x;
+            flyPitch = Mathf.Clamp(flyPitch - look.y, -89f, 89f);
+            var rot = Quaternion.Euler(flyPitch, flyYaw, 0f);
+            var move = Vector3.zero;
+            if (Input.GetKey(KeyCode.W)) move += rot * Vector3.forward;
+            if (Input.GetKey(KeyCode.S)) move -= rot * Vector3.forward;
+            if (Input.GetKey(KeyCode.D)) move += rot * Vector3.right;
+            if (Input.GetKey(KeyCode.A)) move -= rot * Vector3.right;
+            if (Input.GetKey(KeyCode.Space)) move += Vector3.up;
+            if (Input.GetKey(KeyCode.LeftControl)) move -= Vector3.up;
+            var speed = FlySpeed;
+            if (Input.GetKey(KeyCode.LeftShift)) speed *= FlyFast;
+            if (Input.GetKey(KeyCode.LeftAlt)) speed *= FlySlow;
+            if (move.sqrMagnitude > 1f) move.Normalize();
+            flyPosition += move * speed * Time.unscaledDeltaTime;
+            HoldFlight();
+        }
+
+        // Degrees to turn this frame: the Input Manager's mouse axes where the game kept them (they move with a
+        // locked cursor too), else the cursor's movement while the right button is held.
+        private Vector2 MouseLook()
+        {
+            if (mouseAxes != false)
+            {
+                try
+                {
+                    var d = new Vector2(Input.GetAxisRaw("Mouse X"), Input.GetAxisRaw("Mouse Y"));
+                    mouseAxes = true;
+                    return d * LookDegreesPerAxisUnit;
+                }
+                catch (ArgumentException)
+                {
+                    mouseAxes = false;
+                    Logger.LogInfo("FLY: no Mouse X/Y axes, looking with the right button held");
+                }
+            }
+            var now = Input.mousePosition;
+            var delta = now - lastMouse;
+            lastMouse = now;
+            return Input.GetMouseButton(1) ? new Vector2(delta.x, delta.y) * LookDegreesPerPixel : Vector2.zero;
+        }
+
+        // The camera at the flight pose and the bird held where it was frozen, against the game's own scripts.
+        private void HoldFlight()
+        {
+            if (flyCamera == null) return;
+            if (flyBrain != null && flyBrain.enabled) flyBrain.enabled = false;
+            flyCamera.transform.SetPositionAndRotation(flyPosition, Quaternion.Euler(flyPitch, flyYaw, 0f));
+            if (flyBody != null)
+            {
+                flyBody.isKinematic = true;
+                flyBody.position = flyBodyPosition;
+                flyBody.rotation = flyBodyRotation;
+            }
         }
 
         // ---- the camera lock -------------------------------------------------------------------------------------
