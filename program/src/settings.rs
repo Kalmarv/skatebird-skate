@@ -173,7 +173,8 @@ pub fn encoding(out_root: PathBuf, name: &str) -> EncodingOptions {
     }
 }
 
-/// The preparation for the ReSkate map, in order, as the fork's map writer made it inside itself (a SkateBIRD scene
+/// The preparation for the ReSkate map, in order: vertex tints as tinted material copies where the source draws
+/// them; then as the fork's map writer made it inside itself (a SkateBIRD scene
 /// states no region, floor or texture budget, and the program places its spawn and travel markers): grind curves'
 /// prisms as Studio builds them; the markers snapped for this encoding; the water surfaces of the content, 400 m past
 /// it, no material drawn as ocean unless it says so; the pause-map picture drawn from the geometry over the content,
@@ -189,6 +190,9 @@ pub fn map_preparation(encoding: &EncodingOptions) -> Result<Vec<Box<dyn Pass>>,
         ..Default::default()
     });
     Ok(vec![
+        // per-vertex colours as tinted material copies, for the materials whose source takes them (Houdini's
+        // SpecularVertexColor; Standard and Legacy ignore COLOR_0, core.vertex_color says so)
+        Box::new(primase_reskate::tint::LowerTintReskate::uncapped()),
         Box::new(PrepareReskateGrinds::studio()),
         Box::new(SnapReskateMarkers::for_encoding(encoding)?),
         Box::new(PrepareReskateWater::new(
@@ -233,6 +237,7 @@ mod tests {
         }
         .to_string();
         for want in [
+            "lower-tint-reskate",
             "prepare-reskate-grinds",
             "snap-reskate-markers",
             "prepare-reskate-water{",

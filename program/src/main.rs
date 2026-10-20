@@ -23,6 +23,7 @@ mod compile;
 mod cutout;
 mod level;
 mod pack;
+mod package;
 mod settings;
 mod unmaterialed;
 mod uv_policy;
@@ -41,7 +42,8 @@ use primase_unity::player::Player;
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
 const USAGE: &str = "usage: skatebird-export build --typetrees <tpk> --out <folder> [--game-data <SkateBIRD_Data>] [--data <folder>] [--studio <reskate_cli.exe> [--game <skate. install>]] [--glb] [--web [--ktx2]] [--scene] [--jobs N] [--light-scale S] [--ambient-fill M] [--tag T] [LEVEL ...]
-       skatebird-export map-from-scene <scene folder> <output folder> --name <map name>";
+       skatebird-export map-from-scene <scene folder> <output folder> --name <map name>
+       skatebird-export package --out <build folder> --dest <folder> --version <version> [--data <folder>] [LEVEL ...]";
 
 /// Where Steam installs the game.
 const STEAM_DATA: &str = r"C:\Program Files (x86)\Steam\steamapps\common\SkateBIRD\SkateBIRD_Data";
@@ -76,6 +78,7 @@ fn main() -> Result<()> {
     match args.next().as_deref() {
         Some("build") => build(args.collect()),
         Some("map-from-scene") => map_from_scene(args.collect()),
+        Some("package") => package(args.collect()),
         _ => Err(USAGE.into()),
     }
 }
@@ -292,6 +295,52 @@ fn build_in_children(
     let failed = results.iter().filter(|(ok, _)| !ok).count();
     if failed > 0 {
         return Err(format!("{failed} of {} levels failed", results.len()).into());
+    }
+    Ok(())
+}
+
+/// Each built level as an installable mod folder (`<out>/<level>/mod/SkateBIRD_<level>`) and its zip in `--dest`
+/// ([`package`]).
+fn package(args: Vec<String>) -> Result<()> {
+    let (mut out, mut dest, mut version, mut wanted) = (None, None, None, Vec::new());
+    let mut data = Path::new(env!("CARGO_MANIFEST_DIR")).join("../data");
+    let mut args = args.into_iter();
+    while let Some(arg) = args.next() {
+        let mut value = || args.next().ok_or(USAGE);
+        match arg.as_str() {
+            "--out" => out = Some(PathBuf::from(value()?)),
+            "--dest" => dest = Some(PathBuf::from(value()?)),
+            "--version" => version = Some(value()?),
+            "--data" => data = PathBuf::from(value()?),
+            _ if arg.starts_with("--") => {
+                return Err(format!("unknown option {arg}; {USAGE}").into());
+            }
+            _ => wanted.push(arg),
+        }
+    }
+    let (Some(out), Some(dest), Some(version)) = (out, dest, version) else {
+        return Err(format!("package needs --out, --dest and --version; {USAGE}").into());
+    };
+    let levels = level::read_levels(&data.join("skatebird-levels.json"))?;
+    let chosen: Vec<&level::Level> = if wanted.is_empty() {
+        levels.values().collect()
+    } else {
+        wanted
+            .iter()
+            .map(|id| {
+                levels
+                    .get(id)
+                    .ok_or_else(|| format!("no level {id} in the scan"))
+            })
+            .collect::<std::result::Result<_, _>>()?
+    };
+    std::fs::create_dir_all(&dest)?;
+    for l in chosen {
+        let name = settings::map_name(&l.id);
+        let folder = package::mod_folder(&out.join(&l.id), l, &name, &version)?;
+        let zip = dest.join(format!("{name}-{version}.zip"));
+        let bytes = package::zip(&folder, &zip)?;
+        println!("{}: {} ({:.1} MB)", l.id, zip.display(), bytes as f64 / 1e6);
     }
     Ok(())
 }
