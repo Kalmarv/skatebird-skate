@@ -16,10 +16,11 @@ travel), on primase main.
 - Matching method: fixed views (`data/skatebird-views.json`); SkateBIRD camera fitted to skate's chase camera;
   SkateBIRD references `cache/skatebird/ref/<level>/` (no UI, player or NPC birds).
 ## Shipped
-- 0.1.0 test zips for Caleb (not published): `releases/skatebird/0.1.0/SkateBIRD_<level>-0.1.0.zip` x8 (16-30 MB),
-  copy in `X:/modding-archive/skatebird/releases/0.1.0`. Built on primase 6feaa93f (job 43a1cdd9), packaged by the
-  program (job f158b2f6). Not loaded in game by me: this build adds vertex tints and the fill-light clearance over
-  run t5's; Caleb is testing it himself (gameplay too).
+- 0.2.0 test zips for Caleb (not published): releases/skatebird/0.2.0/SkateBIRD_<level>-0.2.0.zip x8 (16-30 MB), copy in
+  X:/modding-archive/skatebird/releases/0.2.0. primase main 062d6943 (everything on primase: markers, ambient fill,
+  shader waves 1-2 incl. the Voronoi bake of 10 materials on 6 levels, compile stage), build job 4f7def3f (21 min,
+  the Voronoi bake most of it), package 88fa3edb. Not loaded in game by me: Caleb tests it himself.
+- 0.1.0 test zips (superseded): releases/skatebird/0.1.0.
 
 ## In flight
 Nothing running.
