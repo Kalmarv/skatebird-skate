@@ -78,8 +78,9 @@ skatebird-export build --typetrees <modding>/cache/primase/pm-core/w9/typetrees.
 
 - `ingame_levels.sh TAG [LEVEL ...]` - every level in one skate. launch through the shared runner (see above).
 - `skatebird_scan.py` - makes `data/skatebird-levels.json` (until primase's SkateBIRD reader emits the markers).
-- `skatebird_views.sh`, `skatebird_views.py`, `skatebird_lab.sh`, `skatebird_shot.sh`, `skatebird-teleport-plugin/` -
-  the SkateBIRD side (lab copy with BepInEx); runbook `docs/screenshot-runbook.md`. The chase-camera fit that set
+- `skatebird_views.sh` (a wrapper over the program's `skatebird-shots`, `program/src/shots.rs`), `skatebird_lab.sh`,
+  `skatebird_shot.sh`, `skatebird-teleport-plugin/` - the SkateBIRD side (lab copy with BepInEx); runbook
+  `docs/screenshot-runbook.md`. The chase-camera fit that set
   `--chase`'s defaults was a one-off (tools/skatebird_chase_fit.py, in history at ff965de..e667417).
 - `unitypy_census.py` - the independent census used to gate the v21 container reader (an oracle; belongs in
   primase-oracles).

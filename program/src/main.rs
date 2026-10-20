@@ -23,6 +23,7 @@ mod compile;
 mod level;
 mod package;
 mod settings;
+mod shots;
 mod uv_policy;
 mod variants;
 mod views;
@@ -44,7 +45,8 @@ const USAGE: &str = "usage: skatebird-export build --typetrees <tpk> --out <fold
        skatebird-export package --out <build folder> --dest <folder> --version <version> [--data <folder>] [LEVEL ...]
        skatebird-export views make [--data <folder>]            (writes <data>/skatebird-views.json)
        skatebird-export views skate-commands LEVEL [--data <folder>]
-       skatebird-export sheets --refs <SkateBIRD shots> --run <run folder> --out <folder>";
+       skatebird-export sheets --refs <SkateBIRD shots> --run <run folder> --out <folder>
+       skatebird-export skatebird-shots <level>[,<level>...] <out> [--chase] [--back D] [--eye H] [--fov F] [--pitch P] [--yaw-offset Y] [--settle S] [--load-settle S] [--keep-post] [--keep-npcs] [--keep] [--data <folder>]";
 
 /// Where Steam installs the game.
 const STEAM_DATA: &str = r"C:\Program Files (x86)\Steam\steamapps\common\SkateBIRD\SkateBIRD_Data";
@@ -82,6 +84,7 @@ fn main() -> Result<()> {
         Some("package") => package(args.collect()),
         Some("views") => views_command(args.collect()),
         Some("sheets") => sheets(args.collect()),
+        Some("skatebird-shots") => skatebird_shots(args.collect()),
         _ => Err(USAGE.into()),
     }
 }
@@ -403,6 +406,80 @@ fn sheets(args: Vec<String>) -> Result<()> {
     };
     for p in views::sheets(&refs, &run, &out)? {
         println!("{p}");
+    }
+    Ok(())
+}
+
+/// `skatebird-shots`: SkateBIRD's reference shots of the levels' views in one launch of the lab copy ([`shots`]):
+/// the eye preset, or with `--chase` skate.'s third-person camera, each value overridable; exit status 1 when a shot
+/// or check failed.
+fn skatebird_shots(args: Vec<String>) -> Result<()> {
+    let mut data = Path::new(env!("CARGO_MANIFEST_DIR")).join("../data");
+    let mut o = shots::Options::default();
+    let (mut chase, mut over) = (false, Vec::new());
+    let mut words = Vec::new();
+    let mut args = args.into_iter();
+    while let Some(arg) = args.next() {
+        let number = |args: &mut std::vec::IntoIter<String>| -> Result<f64> {
+            let v = args.next().ok_or(USAGE)?;
+            Ok(v.parse::<f64>()
+                .ok()
+                .filter(|n| n.is_finite())
+                .ok_or(format!("{arg} {v}: a number"))?)
+        };
+        match arg.as_str() {
+            "--chase" => chase = true,
+            "--back" | "--eye" | "--fov" | "--pitch" | "--yaw-offset" => {
+                let n = number(&mut args)?;
+                over.push((arg.clone(), n));
+            }
+            "--settle" => o.settle = number(&mut args)?,
+            "--load-settle" => o.load_settle = number(&mut args)?,
+            "--keep-post" => o.keep_post = true,
+            "--keep-npcs" => o.keep_npcs = true,
+            "--keep" => o.keep_game = true,
+            "--data" => data = PathBuf::from(args.next().ok_or(USAGE)?),
+            _ if arg.starts_with("--") => {
+                return Err(format!("unknown option {arg}; {USAGE}").into());
+            }
+            _ => words.push(arg),
+        }
+    }
+    let [levels, out] = &words[..] else {
+        return Err(USAGE.into());
+    };
+    if chase {
+        o.mode = "chase";
+        o.camera = shots::Camera::CHASE;
+    }
+    for (name, n) in over {
+        let c = &mut o.camera;
+        *match name.as_str() {
+            "--back" => &mut c.back,
+            "--eye" => &mut c.eye,
+            "--fov" => &mut c.fov,
+            "--pitch" => &mut c.pitch,
+            _ => &mut c.yaw_offset,
+        } = n;
+    }
+    if !(o.camera.fov > 1.0 && o.camera.fov < 179.0) {
+        return Err(format!("--fov {}: between 1 and 179 degrees", o.camera.fov).into());
+    }
+    let views: serde_json::Value =
+        serde_json::from_slice(&std::fs::read(data.join("skatebird-views.json"))?)?;
+    let levels: Vec<String> = levels
+        .split(',')
+        .filter(|l| !l.is_empty())
+        .map(str::to_owned)
+        .collect();
+    let failed = shots::run(&views, &levels, Path::new(out), &o)?;
+    let summary: Vec<String> = failed
+        .iter()
+        .map(|(l, n)| format!("{l} {n} failed"))
+        .collect();
+    println!("summary: {}", summary.join(", "));
+    if failed.iter().any(|(_, n)| *n > 0) {
+        std::process::exit(1);
     }
     Ok(())
 }

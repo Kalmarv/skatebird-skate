@@ -31,6 +31,11 @@ C:/Users/kalmarv/modding/kit/run game --job -- "$BASH" tools/skatebird_views.sh 
   delete through them; remove one with `rmdir`); BepInEx 5.4.23.5 win x64 (zip pinned by sha256 in
   `cache/skatebird/downloads`); `BepInEx/plugins/SkateBIRDTeleport.dll`. The game runs without Steam
   (`SteamClient.Init` failure is caught), and the save in LocalLow is shared with the Steam copy.
+- **Runner**: the program's `skatebird-shots` (`program/src/shots.rs`; `tools/skatebird_views.sh` checks the lab and
+  runs it, `SKATEBIRD_EXPORT` picks the build). It replaced `tools/skatebird_views.py` on 2026-10-19: job f7c1b3b5
+  (level2 `--chase`) gave the same requested poses and read-backs as the Python run's `ref/level2` to the last digit,
+  the same checks and NPC counts, and pixel-identical frames except 37 and 65 pixels of animation in two of them.
+  `cargo test` runs the whole protocol against a stub plugin (`shots::tests`).
 - **Control**: the plugin reads `<lab>/control/command.json` and answers in `reply.json`; ops `load`, `screen`,
   `teleport`, `camera`, `shot`, `readback`, `release`, `quit` (protocol at the top of `Plugin.cs`). No keyboard input,
   no console, no window capture: the plugin loads the scene with `LoadingManager.LoadScene`, sets
