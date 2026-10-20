@@ -1,12 +1,18 @@
 //! The stage after compiling: each level as an installable ReSkate mod. `<build>/<level>/mod/SkateBIRD_<level>/`
 //! holds Studio's Patch (with its `.reskate-studio-patch` marker, which the launcher requires), the map's
-//! `trainer.json` (the trainer's spots: the level's travel points), a `manifest.json` and the level's name as the
-//! game shows it; then `SkateBIRD_<level>-<version>.zip` of that folder in the releases folder. Nothing in it adapts
+//! `trainer.json` (the trainer's spots: the level's travel points), a `manifest.json`, the Thunderstore page
+//! (`README.md`, its pictures in the repository's `media/`) and the level's name as the game shows it; then `SkateBIRD_<level>-<version>.zip` of that folder in the releases folder. Nothing in it adapts
 //! the map.
 use std::io::Write;
 use std::path::{Path, PathBuf};
 
 use skatebird_export::levels::Level;
+
+/// The public repository: the manifest's `website_url`, and where the README's pictures are served from (`media/`).
+pub const REPOSITORY: &str = "https://github.com/Kalmarv/skatebird-skate";
+/// The README's pictures: `<MEDIA>/<map name>.jpg` (a full-screen shot in skate.) and `<map name>_overhead.jpg` (the
+/// pause map's view from above).
+pub const MEDIA: &str = "https://raw.githubusercontent.com/Kalmarv/skatebird-skate/main/media";
 
 /// The mod's picture: the launcher shows a mod folder's `icon.png`, 256 x 256 (as the GTA and Sledding releases ship
 /// theirs).
@@ -52,9 +58,14 @@ pub fn mod_folder(
         "name": name,
         "author": "Kalmarv",
         "version_number": version,
+        "website_url": REPOSITORY,
         "dependencies": [],
-        "description": format!("SkateBIRD's {} as a skate. level, converted from the game's own files with primase.", level.name),
+        "description": format!(
+            "SkateBIRD's {} as a skate. map, converted from the game's own files. Unofficial fan port.",
+            level.name
+        ),
     });
+    write(&out.join("README.md"), readme(level, name).as_bytes())?;
     write(
         &out.join("manifest.json"),
         &serde_json::to_vec_pretty(&manifest).map_err(|e| e.to_string())?,
@@ -63,6 +74,50 @@ pub fn mod_folder(
         write(&out.join("icon.png"), &icon(png)?)?;
     }
     Ok(out)
+}
+
+/// The Thunderstore page of a level's package: what it is, its pictures, what is in it, how to install it.
+pub fn readme(level: &Level, name: &str) -> String {
+    let title = format!("SkateBIRD: {}", capitalised(level.name));
+    format!(
+        "# {title}
+
+SkateBIRD's **{level}** level as a skateable map for skate., through ReSkate. Rebuilt from the game's own level data,
+materials and lights. An unofficial fan port: SkateBIRD is by Glass Bottom Games.
+
+![{title} in skate.]({MEDIA}/{name}.jpg)
+
+## Overhead map
+The level from above, as the pause map shows it.
+
+![{title} from above]({MEDIA}/{name}_overhead.jpg)
+
+## In the map
+- The level as you skate it in SkateBIRD: every ramp, rail and prop, with the game's own collision.
+- SkateBIRD's grind rails, clotheslines and ropes included, as grindable rails.
+- Lit by the sun and sky through the room, with the level's own lamps.
+- The spawn and 5 fast-travel points at the game's own reset positions.
+- Mission pickups, mission birds and unlocks left out: the level as it stands between missions.
+
+## Install
+1. Install skate. and ReSkate.
+2. Install this package from the ReSkate launcher's **MODS** page (Thunderstore), or drag the zip onto the launcher.
+3. Pick **{title}** from the level list.
+
+Converted with [primase](https://github.com/kalmarv/primase); the conversion is open: {REPOSITORY}
+",
+        level = level.name,
+    )
+}
+
+fn capitalised(name: &str) -> String {
+    name.split(' ')
+        .map(|w| {
+            let mut c = w.chars();
+            c.next().map_or(String::new(), |f| f.to_uppercase().chain(c).collect())
+        })
+        .collect::<Vec<_>>()
+        .join(" ")
 }
 
 /// A screenshot (PNG) as the mod's picture: its centre square, averaged down to [`ICON_SIZE`] (each icon pixel the
