@@ -26,11 +26,20 @@ travel), on primase main.
   map over the play space with only walls/ceilings left out; lab plugin fly mode (F6 / L3).
 - 0.2.0 / 0.1.0 test zips (superseded): releases/skatebird/0.2.0, 0.1.0.
 
-## In flight (2026-10-20 night, Caleb asleep: "you can launch skate yourself to finish testing")
-- Orca job f1af824f: build-0.3.1 levels 4, 5, 7, 12, 13 then package all 8 into releases/skatebird/0.3.0 (levels 1-3
-  already built in build-0.3.1 and packaged 22:33).
-- Orca job 64b20afe (after f1af824f): kit/run game, tools/ingame_levels.sh night-031, all 8 levels, shots in
-  cache/skatebird/runs/night-031. Check: office/server room starts lit, flashback spawn on the ground.
+## Night test 2026-10-20 (Caleb asleep; results for the morning)
+- Build: all 8 levels in cache/skatebird/build-0.3.1 (jobs f1af824f + the first three in-session), packaged into
+  releases/skatebird/0.3.0 (zips 16-32 MB; icons for 1, 2, 5, 7, 12, 13).
+- Game run 64b20afe (kit/run game, ingame.sh copy mode, all 8 in one launch): 32 of 32 shots, no crash dumps; contact
+  sheet cache/skatebird/runs/night-031/sheet.jpg. Office start (shot 9) and server room start (13) in daylight with sky
+  overhead (ceilings not drawn); flashback spawns on the floor (21; spawn y 1.189 -> 0.0). Still very dark only right
+  under big structures (bedroom 2 under the shelving, 19; flashback under the table, 23; playground under the play
+  structure, 26): a real shadow plus skate's weak bounce light, the trade of dropping the fill lights. Left for Caleb.
+- Offline: server room and office rays up from the start meet nothing (ceiling omitted); pause maps textured with only
+  walls/ceilings left out (office floor and server tower show).
+- Not switched: primase's generic set-shadow-casting + lower-reskate-shadows (2e03ee20). Check job 53e3bd86: bedroom 2
+  gets 149 non-casting materials vs 111, the 38 extras being the scene's own castShadows Off (the Unity reader still
+  states core.shadows). Reported to the owner and lanes; main stays on 95ba2b9a; patch in
+  scratch/skatebird/skatebird-coord/diag/shadow-switch-2e03ee20.patch.
 
 ## Known gaps
 1. Fill lights show as bright spots where they sit near ceilings/walls (the writer gives every light specular 1).
