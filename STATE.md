@@ -39,6 +39,7 @@ Nothing running.
    census JSON out of the repo.
 
 ## Decided (Caleb's words; never dropped, only replaced by a newer decision)
+- 2026-10-19 · "Wait until all additions are in": switch code as each primase promotion lands, but no rebuild, game run or new zips until all have.
 - 2026-10-19 · Shader list approved (via the modding coordinator): primase wave 1 Legacy Bumped family, Autodesk Interactive, Houdini specular, Self-Illumin/Unlit as emission; wave 2 Voronoi as a bake; Two Tone stays base colour with a notice.
 - 2026-10-19 · Interior light: ambient as "Fill lights" (shadowless point grid from SkateBIRD's ambient); brightness "x10000" the standard calibration (run light1).
 - 2026-10-19 · Language/shape: "this should be 90% rust when it's "done". Using primase, with maybe a handful of scripts"; "This is my goal for all game readers I think. The mod is fine" (the C# BepInEx plugin stays); order: after the side-by-sides (repo cleanup, then the primase promotion requests; plan in this session: ~1,100 of the program's 1,821 Rust lines to primase).
