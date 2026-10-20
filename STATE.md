@@ -32,12 +32,13 @@ Nothing running.
 3. Materials: bedroom bowl floor/supports, playground gravel tiling, leaves sparser than SkateBIRD's.
 
 ## Caleb's 0.2.0 test findings (open)
-All bedroom 1 (level1) so far. Caleb decided (2026-10-19): "any mission only objects should be removed".
+Mostly bedroom 1 (level1). Caleb (2026-10-19): "I think lights, mission, grinds, waypoint cleanup and they're almost
+ready to release" (he takes the mod images himself). Status: lights wired (5), waypoints done (9), frosted glass
+wired (7), missions (1/3/4/10) and grinds (6) wait on primase-gta-lane.
 1. Floating pretzels / "tape" on the line: mission collectibles (`SkateCollectible`, "Munch The Leftovers" snacks;
    shown only during their mission) with every `EnableOneAtRandom` candidate stacked (pretzel, donut).
-2. Floor colour differs (grey speckle in SkateBIRD, smooth maroon in skate): open. The Voronoi bakes look right
-   (office carpet red velvet bakes dark maroon, as SkateBIRD draws the office carpet); which floor this is still to
-   find.
+2. Floor colour differs (grey speckle in SkateBIRD, smooth maroon in skate): Caleb, "I think the floor might just be
+   the lighting". Parked behind 5. The Voronoi bakes look right (office carpet red velvet bakes dark maroon).
 3. Flasks above the magazine ramps: "Elevated Thinking" collectibles (`Science Formula Collectible / Visual States /
    Not Collected / flask_erlenmeyer`, `SkateCollectible`).
 4. Big cups above the stapler ramps: "Crucibird / Cups To Stall" (`SkateCollectible`, `TweenToPosOnEnable`).
@@ -46,27 +47,32 @@ All bedroom 1 (level1) so far. Caleb decided (2026-10-19): "any mission only obj
    Away" (`MissionToggled`) are world state, kept as the scene has them. Fix: the reader states `SkateCollectible`,
    `EnableOneAtRandom`, `MissionGiver`; the program leaves collectible and giver subtrees out.
 5. Lighting poor overall, very dark under the bed. Caleb's idea: let the room shell pass light and light by the sky.
-   Lever found: skate materials take `cast_shadows` (writer: `material.rs`, `map.rs` ~2339; no pass sets it yet).
-   Proposed test: shell materials (`Level Elements / Bounds`) cast no shadows, so noon sun and sky reach inside.
+   Wired (primase 949dcb01 `SetReskateShadowCasting`, after raise-skate): `settings::room_shell` per indoor level
+   (level1 `Level Elements/Bounds/`, level3 `Level Bounds/`, level4 `Room Bounds/`, level5 `Bounds/`, level7
+   `Brick Bedroom/Bounds/`; the reader's bare-`/` paths; outdoor 2/12/13 none), shared=copy. The ambient fill lights
+   are gone (Caleb: "with the lighting change let's remove the ambient lights cause we won't need it").
 6. Clotheslines not grindable: SkateBIRD's grinds are `GrindableRail` point chains (level1: 540 nodes, 155 chains;
    raw layout: prev PPtr, next PPtr, two more PPtrs, flags), no colliders; the ropes (`CurvedLine3D` meshes) have no
    collision, so nothing grinds. The map has 0 grind curves (`prepare-reskate-grinds`: "made prisms": 0). Fix: the
    reader states the chains, lowered to `skate.grind_curve` (primase has curves and Studio's prisms already).
 7. Glass tabletop invisible though it collides: `Level Elements / Thin Table / OfficeTable / Table Glass`, "Clean Shiny
    Glass" alpha 0x06, drawn as a cutout at 0.5 by `prepare-reskate-blended-surfaces` (its documented "glass mostly
-   vanishes"). ClearGlass (windows, 0x7d) vanishes too. Caleb: make it slightly cloudy. Fix: the pass draws a
-   uniform-alpha (glass) material under the cutoff as opaque frosted glass instead of dropping it.
+   vanishes"). ClearGlass (windows, 0x7d) vanishes too. Caleb: make it slightly cloudy. Wired: primase 949dcb01
+   `UniformAlpha::Frost{opacity: 0.35, grey: 0.8}` (opaque, a*base + (1-a)*grey, a = max(alpha, 0.35)).
 8. Cup top z-fighting (a non-mission cup, `Level Elements / ... / Cup` + `Lid` "Glass_MAT" alpha 0x90, kept opaque by
    the cutout): the lid now draws solid over the cup's top; geometry gap to check.
+9. "Way too many mission markers" (rooftop, up to 20 travel points): done in the program: travel points are reset
+   positions only (givers go with the missions), the start first, spread to `settings::TRAVEL_POINTS` = 5.
+10. A floating skateboard: the player's own board, `Skateboard For Skating` (`SkateboardGateway`), placed in every
+   scene; also `Unlocks / ... Unlocking Collectible` (`PermanentUnlockingCollectible`: copper decks, wheels, clothes)
+   and `Main Camera / Mission Arrow` (levels 7, 12). Added to primase-gta-lane's mission-only drop.
 
 ## Next
-0. In flight on primase (2026-10-19), pin each rev as it lands, rebuild only on Caleb's go:
-   - primase-owner -> reskate lane: `set-reskate-shadow-casting{materials=...|placements=<prefix>, shared=copy|refuse}`
-     (program: room shell placements, shared=copy); `prepare-reskate-blended-surfaces` gains required
-     `uniform=cutout|frost{opacity=F}` (program: `frost{opacity=0.35}`).
-   - primase-gta-lane: reader states SkateCollectible / EnableOneAtRandom / MissionGiver + a pass dropping collectible
-     and giver subtrees; GrindableRail chains read and lowered to `skate.grind_curve`.
-1. 0.2.0 zips (primase 062d6943, everything on primase) to Caleb; he tests in game himself.
+0. Waiting on primase-gta-lane (2026-10-19): the reader states SkateCollectible / PermanentUnlockingCollectible /
+   EnableOneAtRandom / MissionGiver / SkateboardGateway, with a pass dropping those subtrees and `Main Camera`'s
+   (MissionToggled world state kept); GrindableRail chains read and lowered to `skate.grind_curve`. Then pin, wire,
+   and on Caleb's go build 0.3.0 (level-name maps; tell Caleb to remove the SkateBIRD_levelN mods).
+1. Program pinned to primase main 949dcb01 (shadow casting, frost); 0.2.0 zips (062d6943) are what Caleb tests.
 2. Later, only when Caleb says go (via the modding coordinator): the conversion as one readable recipe, ~100-150
    lines (read_level + read_markers + read_voronoi_programs, one Pipeline of typed passes from Unity lowering to ReSkate
    preparation, write_map, compile_map); the tooling (shots, views, sheets, packaging) in its own folder or small binary crate, nothing fancy, so program/ is only the conversion; no
@@ -74,6 +80,11 @@ All bedroom 1 (level1) so far. Caleb decided (2026-10-19): "any mission only obj
    markers instead of level.rs.
 
 ## Decided (Caleb's words; never dropped, only replaced by a newer decision)
+- 2026-10-19 · Release gate: "lights, mission, grinds, waypoint cleanup and they're almost ready to release"; mod images: "I'll take SS of the maps".
+- 2026-10-19 · Missions: "any mission only objects should be removed". Markers: "way too many mission markers" (now 5).
+- 2026-10-19 · Lighting: "make the room material allow light to pass through and just use skybox lighting"; "with the lighting change let's remove the ambient lights cause we won't need it" (replaces the "Fill lights" decision below).
+- 2026-10-19 · Glass: "I get it's glass but lets make it slightly more cloudy". Grinds: "you can't grind on the clothesline ... I want to".
+- 2026-10-19 · Lab plugin fly mode: "push a button and I just float in the air"; controller: "left stick press to activate then just thumb sticks to move and look, lt down, rt up".
 - 2026-10-19 · "Wait until all additions are in": switch code as each primase promotion lands, but no rebuild, game run or new zips until all have.
 - 2026-10-19 · Shader list approved (via the modding coordinator): primase wave 1 Legacy Bumped family, Autodesk Interactive, Houdini specular, Self-Illumin/Unlit as emission; wave 2 Voronoi as a bake; Two Tone stays base colour with a notice.
 - 2026-10-19 · Interior light: ambient as "Fill lights" (shadowless point grid from SkateBIRD's ambient); brightness "x10000" the standard calibration (run light1).

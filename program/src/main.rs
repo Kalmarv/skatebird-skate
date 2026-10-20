@@ -481,6 +481,10 @@ fn convert(
     let programs = primase_skatebird::read_voronoi_programs(player, &mut w)?;
     println!("Voronoi shader programs read: {programs:?}");
     println!("markers read: {mr:?}");
+    // what the game's scripts make of the scene: mission-only objects, the player's board, the camera's, and the
+    // grind rails as curves
+    let scripted = primase_skatebird::read_scripted(player, l.id, &mut w)?;
+    println!("scripted: {scripted:?}");
     println!(
         "read {}: {} renderers, {} tree renderers, {} prototypes, {} primitives, {} materials, {} textures, {} \
          terrains, {} lights (sun named: {}), {} colliders ({} by trees); axes {:?}, conditioned {:?}, LODGroups {:?}, \
@@ -509,6 +513,7 @@ fn convert(
         report.notices,
         report.colliders_not_colliding
     );
+    run(&mut w, vec![Box::new(settings::mission_props())])?;
     // the lowering, as a pipeline: each pass whose input the level has, verified after each
     for p in settings::lowering()? {
         // a pass's input may come from an earlier pass (terrain textures for normalize-normals)
@@ -531,9 +536,7 @@ fn convert(
     let space =
         level::play_space(&w).ok_or("the level has no collision to measure its play space by")?;
     let markers = level::markers(&w, l.id, space)?;
-    // SkateBIRD's ambient as fill lights over the play space
     println!("play space (core frame): {space:?}");
-    run(&mut w, vec![Box::new(settings::ambient_fill(space)?)])?;
     let lights = match outputs.light_scale {
         Some(s) => primase_reskate::passes::LightCalibration::Scale(s),
         None => settings::LIGHTS,
@@ -558,6 +561,8 @@ fn convert(
             )),
         ],
     )?;
+    // the game's grind rails as skate's grind curves (prepare-reskate-grinds hangs their prisms)
+    run(&mut w, vec![Box::new(settings::grind_curves())])?;
     // a normal map's scale is a material value the target has no slot for; it goes into the pixels
     show(
         "bake-normal-scale",
@@ -570,6 +575,10 @@ fn convert(
             &settings::raise(l.id, surfaces.clone(), lights)?,
         )?,
     );
+    // an indoor level's room shell lets the sun and sky in
+    if let Some(shadows) = settings::shadow_casting(l.id)? {
+        run(&mut w, vec![Box::new(shadows)])?;
+    }
     let travel = level::add_markers(&mut w, &markers);
     println!(
         "markers: spawn {} at {:?} (core frame), yaw {:.4}; {travel} travel",

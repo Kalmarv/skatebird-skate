@@ -4,11 +4,12 @@
 //! level into the world, each with its GameObject's world matrix in the core frame (Unity (x, y, z) is (x, y, -z)).
 //! The program's policy over them, after the level's state is resolved (what is stored inactive is gone): the spawn
 //! is the `ResetPosition` marked `startingPosition` ([`settings::fallback_spawn`] where a level has none: level7), and
-//! the travel points are every reset position and mission giver. A marker's (east, north) is the core frame's (x, z)
-//! and its height y; a core forward (x, z) faces the scene yaw `atan2(x, z)`.
+//! the travel points are a few reset positions spread over the level ([`curate`]). Mission givers are not travel
+//! points: the maps carry no missions. A marker's (east, north) is the core frame's (x, z) and its height y; a core
+//! forward (x, z) faces the scene yaw `atan2(x, z)`.
 use primase_core::{Name, Transform, World};
 use primase_reskate::dialect::{MarkerKind, SkateMarker};
-use primase_skatebird::components::{SkatebirdMissionGiver, SkatebirdResetPosition};
+use primase_skatebird::components::SkatebirdResetPosition;
 
 use crate::settings;
 
@@ -85,7 +86,6 @@ pub fn markers(w: &World, level: &str, space: [[f64; 3]; 2]) -> Result<Markers, 
     };
     let mut spawn = None;
     let mut resets = Vec::new();
-    let mut givers = Vec::new();
     for (e, r) in w.iter::<SkatebirdResetPosition>() {
         let Some(t) = w.get::<Transform>(e) else {
             continue;
@@ -99,18 +99,7 @@ pub fn markers(w: &World, level: &str, space: [[f64; 3]; 2]) -> Result<Markers, 
         }
         resets.push((r.starting_position, p));
     }
-    for (e, g) in w.iter::<SkatebirdMissionGiver>() {
-        let Some(t) = w.get::<Transform>(e) else {
-            continue;
-        };
-        let label = g
-            .title
-            .clone()
-            .filter(|t| !t.is_empty())
-            .unwrap_or_else(|| name(e));
-        givers.push(point(label, t));
-    }
-    let travel = curate(resets, givers, space);
+    let travel = curate(resets, space, settings::TRAVEL_POINTS);
     let (spawn, starting) = match spawn {
         Some(s) => (s, true),
         None => (
@@ -127,30 +116,20 @@ pub fn markers(w: &World, level: &str, space: [[f64; 3]; 2]) -> Result<Markers, 
     })
 }
 
-/// The travel points, as the game scan chose them (tools/skatebird_scan.py until 2026-10-19): the reset positions
-/// inside the play space (10 m margin), the starting one first, then spread farthest-first to 8 in all (12 when the
-/// level has no mission givers); the mission givers inside it, one per label, spread to 8. At most 20, under Studio's
-/// 25.
-fn curate(resets: Vec<(bool, Point)>, givers: Vec<Point>, space: [[f64; 3]; 2]) -> Vec<Point> {
+/// The travel points: the reset positions inside the play space (10 m margin), the starting one first, then spread
+/// farthest-first to `n` in all.
+fn curate(resets: Vec<(bool, Point)>, space: [[f64; 3]; 2], n: usize) -> Vec<Point> {
     let inside = |p: &Point| {
         (0..3).all(|i| space[0][i] - 10.0 <= p.position[i] && p.position[i] <= space[1][i] + 10.0)
     };
-    let mut by_label: Vec<Point> = Vec::new();
-    for g in givers.into_iter().filter(|g| inside(g)) {
-        if !by_label.iter().any(|b| b.name == g.name) {
-            by_label.push(g);
-        }
-    }
-    let cap = if by_label.is_empty() { 12 } else { 8 };
     let (starters, rest): (Vec<_>, Vec<_>) = resets
         .into_iter()
         .filter(|(_, p)| inside(p))
         .partition(|(s, _)| *s);
     let mut chosen: Vec<Point> = starters.into_iter().take(1).map(|(_, p)| p).collect();
     let rest: Vec<Point> = rest.into_iter().map(|(_, p)| p).collect();
-    let left = cap - chosen.len();
+    let left = n.saturating_sub(chosen.len());
     chosen.extend(spread(rest, left));
-    chosen.extend(spread(by_label, 8));
     chosen
 }
 
@@ -314,15 +293,10 @@ mod curate_tests {
             .map(|i| (i == 5, at(&format!("r{i}"), f64::from(i) * 5.0)))
             .collect();
         resets.push((false, at("far", 500.0)));
-        let givers = vec![at("Jodie", 10.0), at("Jodie", 20.0), at("Reuben", 30.0)];
-        let t = curate(resets, givers, space);
-        assert_eq!(t.len(), 8 + 2);
+        let t = curate(resets, space, 5);
+        assert_eq!(t.len(), 5);
         assert_eq!(t[0].name, "r5", "the starting reset position first");
         assert!(t.iter().all(|p| p.name != "far"), "outside the play space");
-        assert_eq!(
-            t.iter().filter(|p| p.name == "Jodie").count(),
-            1,
-            "one giver per label"
-        );
+        assert!(t.iter().any(|p| p.name == "r0") && t.iter().any(|p| p.name == "r19"), "spread to both ends");
     }
 }

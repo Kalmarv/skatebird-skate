@@ -35,10 +35,12 @@
 // player's position, what was hidden, the colliders within 0.2 m of the camera (cam_overlaps) and the distance down
 // to the first collider below it (cam_ground). Everything is also logged to BepInEx/LogOutput.log.
 //
-// Fly mode, for getting around by hand: the fly key (BepInEx/config/skatebird.teleport.cfg, F6 by default) frees the
-// camera from the game and freezes the bird where it is; WASD moves along the view, Space up, Left Ctrl down, Left
-// Shift faster, Left Alt slower, the mouse looks (hold the right button when the cursor is free). The fly key again
-// drops the bird at the camera, facing the view's bearing. Not while a runner holds the camera.
+// Fly mode, for getting around by hand: the fly key (BepInEx/config/skatebird.teleport.cfg, F6 by default) or a
+// controller's left stick press frees the camera from the game and freezes the bird where it is. Keyboard: WASD moves
+// along the view, Space up, Left Ctrl down, Left Shift faster, Left Alt slower, the mouse looks (hold the right button
+// when the cursor is free). Controller (XInput, read directly, whatever the game maps): left stick moves, right stick
+// looks, left trigger down, right trigger up, right bumper faster, left bumper slower. The toggle again drops the bird
+// at the camera, facing the view's bearing. Not while a runner holds the camera.
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -172,6 +174,8 @@ namespace SkateBIRDTeleport
         private Vector3 flyPosition;
         private float flyYaw;
         private float flyPitch;
+        private const float PadLookDegreesPerSecond = 140f;
+        private readonly XInputPad pad = new XInputPad();
         private Vector3 lastMouse;
         // null until probed: whether the Input Manager has the "Mouse X"/"Mouse Y" axes (a Rewired game may drop them)
         private bool? mouseAxes;
@@ -206,7 +210,8 @@ namespace SkateBIRDTeleport
 
         private void Update()
         {
-            if (Input.GetKeyDown(flyKey.Value))
+            pad.Poll();
+            if (Input.GetKeyDown(flyKey.Value) || pad.Pressed(XInputPad.LeftThumb))
             {
                 if (flyCamera != null) StopFlying(true);
                 else if (lockCamera == null) StartFlying();
@@ -536,7 +541,7 @@ namespace SkateBIRDTeleport
                 StopFlying(false);
                 return;
             }
-            var look = MouseLook();
+            var look = MouseLook() + pad.RightStick * (PadLookDegreesPerSecond * Time.unscaledDeltaTime);
             flyYaw += look.x;
             flyPitch = Mathf.Clamp(flyPitch - look.y, -89f, 89f);
             var rot = Quaternion.Euler(flyPitch, flyYaw, 0f);
@@ -547,9 +552,12 @@ namespace SkateBIRDTeleport
             if (Input.GetKey(KeyCode.A)) move -= rot * Vector3.right;
             if (Input.GetKey(KeyCode.Space)) move += Vector3.up;
             if (Input.GetKey(KeyCode.LeftControl)) move -= Vector3.up;
+            var stick = pad.LeftStick;
+            move += rot * Vector3.forward * stick.y + rot * Vector3.right * stick.x;
+            move += Vector3.up * (pad.RightTrigger - pad.LeftTrigger);
             var speed = FlySpeed;
-            if (Input.GetKey(KeyCode.LeftShift)) speed *= FlyFast;
-            if (Input.GetKey(KeyCode.LeftAlt)) speed *= FlySlow;
+            if (Input.GetKey(KeyCode.LeftShift) || pad.Held(XInputPad.RightShoulder)) speed *= FlyFast;
+            if (Input.GetKey(KeyCode.LeftAlt) || pad.Held(XInputPad.LeftShoulder)) speed *= FlySlow;
             if (move.sqrMagnitude > 1f) move.Normalize();
             flyPosition += move * speed * Time.unscaledDeltaTime;
             HoldFlight();
@@ -905,6 +913,119 @@ namespace SkateBIRDTeleport
         private static string Format(string format, params object[] args)
         {
             return string.Format(CultureInfo.InvariantCulture, format, args);
+        }
+    }
+
+    // The first connected XInput controller, read straight from Windows (Xbox pads, and others through Steam Input):
+    // independent of the game's Rewired mappings. Polled once a frame; sticks past the standard dead zones scaled to
+    // -1..1, triggers 0..1. No controller (or no XInput DLL): everything reads at rest.
+    public class XInputPad
+    {
+        public const ushort LeftThumb = 0x0040;
+        public const ushort LeftShoulder = 0x0100;
+        public const ushort RightShoulder = 0x0200;
+        private const short LeftDeadZone = 7849;
+        private const short RightDeadZone = 8689;
+        private const byte TriggerThreshold = 30;
+
+        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
+        private struct Gamepad
+        {
+            public ushort buttons;
+            public byte leftTrigger;
+            public byte rightTrigger;
+            public short thumbLX;
+            public short thumbLY;
+            public short thumbRX;
+            public short thumbRY;
+        }
+
+        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
+        private struct State
+        {
+            public uint packet;
+            public Gamepad pad;
+        }
+
+        [System.Runtime.InteropServices.DllImport("xinput1_4.dll", EntryPoint = "XInputGetState")]
+        private static extern uint GetState14(uint user, out State state);
+
+        [System.Runtime.InteropServices.DllImport("xinput9_1_0.dll", EntryPoint = "XInputGetState")]
+        private static extern uint GetState910(uint user, out State state);
+
+        // 0: try xinput1_4, 1: xinput9_1_0 (Windows 7), 2: neither loads
+        private int dll;
+        private ushort buttons;
+        private ushort previous;
+
+        public Vector2 LeftStick { get; private set; }
+        public Vector2 RightStick { get; private set; }
+        public float LeftTrigger { get; private set; }
+        public float RightTrigger { get; private set; }
+
+        public void Poll()
+        {
+            previous = buttons;
+            for (uint user = 0; user < 4; user++)
+            {
+                State s;
+                if (!Read(user, out s)) continue;
+                var p = s.pad;
+                buttons = p.buttons;
+                LeftStick = Stick(p.thumbLX, p.thumbLY, LeftDeadZone);
+                RightStick = Stick(p.thumbRX, p.thumbRY, RightDeadZone);
+                LeftTrigger = Trigger(p.leftTrigger);
+                RightTrigger = Trigger(p.rightTrigger);
+                return;
+            }
+            buttons = 0;
+            LeftStick = RightStick = Vector2.zero;
+            LeftTrigger = RightTrigger = 0f;
+        }
+
+        public bool Held(ushort button)
+        {
+            return (buttons & button) != 0;
+        }
+
+        // Down this frame, up the frame before.
+        public bool Pressed(ushort button)
+        {
+            return (buttons & button) != 0 && (previous & button) == 0;
+        }
+
+        private bool Read(uint user, out State s)
+        {
+            s = default(State);
+            while (dll < 2)
+            {
+                try
+                {
+                    return (dll == 0 ? GetState14(user, out s) : GetState910(user, out s)) == 0;
+                }
+                catch (DllNotFoundException)
+                {
+                    dll++;
+                }
+                catch (EntryPointNotFoundException)
+                {
+                    dll++;
+                }
+            }
+            return false;
+        }
+
+        private static Vector2 Stick(short x, short y, short deadZone)
+        {
+            var v = new Vector2(x, y);
+            var m = v.magnitude;
+            if (m <= deadZone) return Vector2.zero;
+            return v / m * Mathf.Min((m - deadZone) / (32767f - deadZone), 1f);
+        }
+
+        private static float Trigger(byte t)
+        {
+            return t <= TriggerThreshold ? 0f : (t - TriggerThreshold) / (255f - TriggerThreshold);
         }
     }
 }

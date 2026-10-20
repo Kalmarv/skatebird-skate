@@ -24,15 +24,16 @@ use primase_reskate::prepare::{
     PrepareReskateWater, RaiseOptions, SnapReskateMarkers, WaterExtent,
 };
 
-/// raise-skate's light calibration: SkateBIRD's lights (and its ambient's fill lights) are in Unity built-in units,
-/// relative to its sun (intensity 1), not physical candela, so primase's standard calibration (3.007e-4, fitted to
-/// GTA's physical lights) leaves its interiors black. 10,000 times the standard, chosen by in-game comparison of x100,
-/// x1000 and x10000 on the office, server room and bedroom 2 (run light1; Caleb, 2026-10-19: "x10000").
+/// raise-skate's light calibration: SkateBIRD's lights are in Unity built-in units, relative to its sun (intensity 1),
+/// not physical candela, so primase's standard calibration (3.007e-4, fitted to GTA's physical lights) leaves its
+/// interiors black. 10,000 times the standard, chosen by in-game comparison of x100, x1000 and x10000 on the office,
+/// server room and bedroom 2 (run light1; Caleb, 2026-10-19: "x10000").
 pub const LIGHTS: LightCalibration = LightCalibration::Scale(3.007);
-/// The ambient's fill lights' spacing, metres ([`crate::ambient`]).
-pub const AMBIENT_FILL: f64 = 15.0;
 /// A collision soup larger than this on an axis is not play space (skyline backdrops; the buildings' 360 m sides).
 pub const PLAY_SPACE_MAX: f64 = 100.0;
+/// Travel markers per level, the starting position included (Caleb, 2026-10-19, of 0.2.0's up to 20: "way too many
+/// mission markers").
+pub const TRAVEL_POINTS: usize = 5;
 
 /// The levels the program converts: SkateBIRD's skateable scenes (BuildSettings 1-5, 7, 12, 13) and the game's
 /// names for them.
@@ -81,20 +82,63 @@ pub fn fallback_spawn(level: &str) -> Option<Point> {
     })
 }
 
-/// SkateBIRD's ambient as fill lights ([`primase_lighting::FillAmbientLights`]) over the play space (core frame),
-/// [`AMBIENT_FILL`] metres apart on a lattice anchored at the play space's Unity minimum corner, every cell meeting
-/// it, none within a quarter spacing of a surface, each reaching 1.5 spacings.
-pub fn ambient_fill(space: [[f64; 3]; 2]) -> Result<primase_lighting::FillAmbientLights, String> {
-    let [lo, hi] = space;
-    let grid = primase_lighting::FillGrid::new(
-        [lo[0], lo[1], hi[2]],
-        AMBIENT_FILL,
-        space,
-        primase_lighting::FillCells::Meeting,
-        AMBIENT_FILL / 4.0,
-        AMBIENT_FILL * 1.5,
-    )?;
-    Ok(primase_lighting::FillAmbientLights::new(grid))
+/// What the maps leave out of the scene (Caleb, 2026-10-19: "any mission only objects should be removed"; "there's a
+/// random floating skateboard"): mission collectibles, mission-giver birds and their dressing, unlock pickups, the
+/// player's own board and what hangs under the scene camera (the HUD's mission arrow). An `EnableOneAtRandom` group
+/// outside those stays whole; objects a mission toggles stay as the scene stores them.
+pub fn mission_props() -> primase_skatebird::passes::OmitSkatebirdMissionProps {
+    use primase_skatebird::components::SkatebirdRole;
+    primase_skatebird::passes::OmitSkatebirdMissionProps {
+        roles: BTreeSet::from([
+            SkatebirdRole::Collectible,
+            SkatebirdRole::MissionGiver,
+            SkatebirdRole::BirbDecorator,
+            SkatebirdRole::UnlockingCollectible,
+            SkatebirdRole::PlayerBoard,
+            SkatebirdRole::Camera,
+        ]),
+    }
+}
+
+/// SkateBIRD's grind rails (`GrindableRail` chains, read as curves of kind `rail`) as skate grind curves: 30 mm, on
+/// Studio's metal rail surface (Caleb, 2026-10-19: "you can't grind on the clothesline ... I want to").
+pub fn grind_curves() -> primase_reskate::passes::LowerReskateGrindCurves {
+    primase_reskate::passes::LowerReskateGrindCurves {
+        kinds: BTreeSet::from(["rail".to_owned()]),
+        radius: 0.03,
+        surface: "metal_rail".into(),
+    }
+}
+
+/// An indoor level's room shell: the hierarchy under which its walls, ceiling and floor are placed, as the prefix of
+/// their placements' names (the Unity reader names a placement by its GameObject path, joined by `/`), found by
+/// renderer census (scratch scripts/roots_census.py). The outdoor levels (rooftop, playground, skate heaven) have none.
+pub fn room_shell(level: &str) -> Option<&'static str> {
+    match level {
+        "level1" => Some("Level Elements/Bounds/"),
+        "level3" => Some("Level Bounds/"),
+        "level4" => Some("Room Bounds/"),
+        "level5" => Some("Bounds/"),
+        "level7" => Some("Brick Bedroom/Bounds/"),
+        _ => None,
+    }
+}
+
+/// The room shell casts no shadow, so skate's sun and sky light the room inside (Caleb, 2026-10-19: "make the room
+/// material allow light to pass through and just use skybox lighting"; it replaces 0.2.0's ambient fill lights). A
+/// shell material drawn outside the shell too gets a copy for the shell.
+pub fn shadow_casting(
+    level: &str,
+) -> Result<Option<primase_reskate::passes::SetReskateShadowCasting>, String> {
+    room_shell(level)
+        .map(|shell| {
+            primase_reskate::passes::SetReskateShadowCasting::new(
+                BTreeSet::new(),
+                BTreeSet::from([shell.to_owned()]),
+                primase_reskate::passes::SharedMaterials::Copy,
+            )
+        })
+        .transpose()
 }
 /// The web tile set's cell, metres.
 pub const WEB_TILE: f64 = 200.0;
@@ -219,12 +263,19 @@ pub fn raise(
 }
 
 /// Blended surfaces (not decals, not water) as alpha-tested cutouts at 0.5: Studio compiles a blended material to the
-/// stock decal/blend programs, which skate doesn't draw as world geometry (level12's canopies vanished).
+/// stock decal/blend programs, which skate doesn't draw as world geometry (level12's canopies vanished). Glass (a
+/// uniform alpha below the cutoff, which a cutout drops: level1's glass tabletop vanished but collided) is drawn
+/// opaque as frosted glass instead, over a light grey (0.8 linear) at least 35% its own colour (Caleb, 2026-10-19:
+/// "I get it's glass but lets make it slightly more cloudy").
 pub fn blended_surfaces() -> Result<primase_reskate::passes::PrepareReskateBlendedSurfaces, String>
 {
     primase_reskate::passes::PrepareReskateBlendedSurfaces::new(
         0.5,
         primase_reskate::passes::BlendedSelection::All,
+        primase_reskate::passes::UniformAlpha::Frost {
+            opacity: 0.35,
+            grey: 0.8,
+        },
     )
 }
 
