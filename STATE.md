@@ -34,7 +34,7 @@ Nothing running.
 1. 0.2.0 zips (primase 062d6943, everything on primase) to Caleb; he tests in game himself.
 2. Later, only when Caleb says go (via the modding coordinator): the conversion as one readable recipe, ~100-150
    lines (read_level + read_markers + read_voronoi_programs, one Pipeline of typed passes from Unity lowering to ReSkate
-   preparation, write_map, compile_map); the matching tooling (shots, views, sheets) as its own small binary; no
+   preparation, write_map, compile_map); the tooling (shots, views, sheets, packaging) in its own folder or small binary crate, nothing fancy, so program/ is only the conversion; no
    hand-printed reports (notices); raise-skate and bake-normal-scale as passes; markers from primase_skatebird's core
    markers instead of level.rs.
 
