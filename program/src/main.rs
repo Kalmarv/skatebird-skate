@@ -477,6 +477,7 @@ fn map_from_scene(args: Vec<String>) -> Result<()> {
         Path::new(out),
         &name,
         primase_reskate::prepare::PauseExtent::Content,
+        primase_reskate::passes::PauseLeaveOut::Nothing,
     )
     .map(|_| ())
 }
@@ -538,6 +539,9 @@ fn convert(
         } else {
             println!("{}: nothing to lower", p.name());
         }
+    }
+    if let Some(ceilings) = settings::hidden_ceilings(l.id) {
+        run(&mut w, vec![Box::new(ceilings)])?;
     }
     println!("lowered in {:.1} s", started.elapsed().as_secs_f64());
     std::fs::create_dir_all(out)?;
@@ -615,6 +619,7 @@ fn convert(
         out,
         &settings::map_name(&outputs.named(l.id)),
         settings::pause_extent(space),
+        settings::pause_leave_out(l.id),
     )
 }
 
@@ -698,9 +703,10 @@ fn write_the_map(
     out: &Path,
     name: &str,
     pause: primase_reskate::prepare::PauseExtent,
+    leave_out: primase_reskate::passes::PauseLeaveOut,
 ) -> Result<PathBuf> {
     let encoding = settings::encoding(out.join("map"), name);
-    run(w, settings::map_preparation(&encoding, pause)?)?;
+    run(w, settings::map_preparation(&encoding, pause, leave_out)?)?;
     let r = primase_reskate::write_map(w, Path::new(""), &encoding)?;
     println!(
         "map '{}': {} tiles, {} merged placements / {:.2} M tris, {} instances of {} prototypes, {} object records, \

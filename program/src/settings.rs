@@ -120,15 +120,56 @@ pub fn room_shell(level: &str) -> &'static [&'static str] {
         // Caleb, 2026-10-19, of 0.3.0: "office still has a mesh we need to [not] shadow cast"
         "level3" => &[
             "Level Bounds/",
+            // the cubicles' tall carpeted surround walls shade the start (sky rays from it: 8 of 48 blocked by them)
+            "Level Elements/Cubicle Park/Surround/",
             "Level Elements/Ceiling Lights/",
             "Level Elements/Light Wall/",
             "Level Elements/Window Struts/",
             "Level Elements/CEO Office/CEO Office Bounds/",
         ],
-        "level4" => &["Room Bounds/"],
+        // the server tower's stacked floors shadow the start beneath them black (skate has little bounce light):
+        // Caleb, 2026-10-19: "just make the floors or whatever above not shadow cast"
+        "level4" => &["Room Bounds/", "Main Tower/"],
         "level5" => &["Bounds/"],
         "level7" => &["Brick Bedroom/Bounds/"],
         _ => &[],
+    }
+}
+
+/// The ceilings the maps don't draw: the office's and the server room's, high out of reach, cast no shadow but drew
+/// as black slabs overhead, lit only from below (Caleb, 2026-10-19: "looks fine... until you look up"); their
+/// collision stays. The other ceilings are low and lit, and stay.
+pub fn hidden_ceilings(level: &str) -> Option<primase_meshops::OmitPlacements> {
+    let prefixes: &[&str] = match level {
+        "level3" => &["Level Bounds/Ceiling"],
+        "level4" => &["Room Bounds/Ceiling"],
+        _ => return None,
+    };
+    Some(primase_meshops::OmitPlacements {
+        prefixes: prefixes.iter().map(|p| (*p).to_owned()).collect(),
+        collision: primase_meshops::PlacementCollision::Keep,
+    })
+}
+
+/// What the pause map's overhead view leaves out: an indoor level's walls and ceiling (which hide the room from
+/// above), its floor and the structures that cast no shadow kept; nothing in the outdoor levels.
+pub fn pause_leave_out(level: &str) -> primase_reskate::passes::PauseLeaveOut {
+    let prefixes: &[&str] = match level {
+        "level1" => &["Level Elements/Bounds/"],
+        "level3" => &[
+            "Level Bounds/Longer Wall",
+            "Level Bounds/Shorter Wall",
+            "Level Elements/Ceiling Lights/",
+        ],
+        "level4" => &["Room Bounds/Wall"],
+        "level5" => &["Bounds/"],
+        "level7" => &["Brick Bedroom/Bounds/"],
+        _ => &[],
+    };
+    if prefixes.is_empty() {
+        primase_reskate::passes::PauseLeaveOut::Nothing
+    } else {
+        primase_reskate::passes::PauseLeaveOut::Placements(prefixes.iter().map(|p| (*p).to_owned()).collect())
     }
 }
 
@@ -396,6 +437,7 @@ pub fn encoding(out_root: PathBuf, name: &str) -> EncodingOptions {
 pub fn map_preparation(
     encoding: &EncodingOptions,
     pause: PauseExtent,
+    leave_out: primase_reskate::passes::PauseLeaveOut,
 ) -> Result<Vec<Box<dyn Pass>>, String> {
     let cap = primase_image::CapTextures::new(MAP_TEXTURE_CAP)?.with_mode(primase_image::CapMode {
         normals: primase_image::NormalDownscale::Box,
@@ -416,11 +458,10 @@ pub fn map_preparation(
         Box::new(PrepareReskatePauseMap::new(PauseSource::Geometry {
             height: PAUSE_MAP_HEIGHT,
             extent: pause,
-            // a top-down picture of what's in the level: the room shell (what casts no shadow: walls and ceiling)
-            // left out, each surface in its texture (Caleb, 2026-10-19: "we need the actual overhead view, probably
-            // with the same meshes that don't shadow cast not shown")
+            // a top-down picture of what's in the level, `leave_out` ([`pause_leave_out`] for a level) left out, each
+            // surface in its texture (Caleb, 2026-10-19: "we need the actual overhead view")
             drawing: primase_reskate::passes::PauseDrawing {
-                leave_out: primase_reskate::passes::PauseLeaveOut::Shadowless,
+                leave_out,
                 colour: primase_reskate::passes::PauseColour::Texture,
             },
         })?),
@@ -452,7 +493,12 @@ mod tests {
     fn the_map_preparation_states_its_choices() {
         let e = encoding(PathBuf::from("out"), "SkateBIRD_level2");
         let text = Pipeline {
-            passes: map_preparation(&e, PauseExtent::Content).unwrap(),
+            passes: map_preparation(
+                &e,
+                PauseExtent::Content,
+                primase_reskate::passes::PauseLeaveOut::Nothing,
+            )
+            .unwrap(),
         }
         .to_string();
         for want in [
