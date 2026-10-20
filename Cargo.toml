@@ -1,0 +1,5 @@
+# The SkateBIRD conversion (program/: the recipe) and its tooling (tools/skatebird-tools: packaging, views, shots,
+# sheets), one workspace so primase is built once.
+[workspace]
+members = ["program", "tools/skatebird-tools"]
+resolver = "3"

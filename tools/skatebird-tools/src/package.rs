@@ -6,7 +6,7 @@
 use std::io::Write;
 use std::path::{Path, PathBuf};
 
-use crate::level::Level;
+use skatebird_export::levels::Level;
 
 /// The mod's picture: the launcher shows a mod folder's `icon.png`, 256 x 256 (as the GTA and Sledding releases ship
 /// theirs).

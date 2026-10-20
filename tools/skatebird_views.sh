@@ -14,11 +14,11 @@
 # vertical FOV F; defaults D 0, H 1.6, P 0, F 60, or with --chase skate.'s fitted third-person camera (D -0.3, H 1.5,
 # P 1.2, F 55.3); 1024x576 windowed, HUD, bird and NPCs (--keep-npcs keeps them) hidden, lens effects off
 # (--keep-post keeps them). Writes <outdir>/<view index>_<name>.png, <outdir>/poses.json (read-back pose and checks
-# per shot) and <outdir>/plugin.log. Needs the lab copy (tools/skatebird_lab.sh) and the program (cargo build --release
-# in program/; SKATEBIRD_EXPORT to use another build). The plugin's protocol: tools/skatebird-teleport-plugin/Plugin.cs.
+# per shot) and <outdir>/plugin.log. Needs the lab copy (tools/skatebird_lab.sh) and the tooling (cargo build --release
+# -p skatebird-tools; SKATEBIRD_TOOLS to use another build). The plugin's protocol: tools/skatebird-teleport-plugin/Plugin.cs.
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-X=${SKATEBIRD_EXPORT:-/c/Users/kalmarv/modding/.targets/skatebird-coord/release/skatebird-export.exe}
+X=${SKATEBIRD_TOOLS:-/c/Users/kalmarv/modding/games/skatebird/target/release/skatebird-tools.exe}
 if [ $# -lt 2 ]; then
   awk 'NR > 1 && /^set -euo/ { exit } NR > 1 { sub(/^# ?/, ""); print }' "$0"
   exit 2

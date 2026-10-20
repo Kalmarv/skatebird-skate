@@ -859,6 +859,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "skatebird-tools"
+version = "0.1.0"
+dependencies = [
+ "primase-image",
+ "serde_json",
+ "skatebird-export",
+ "zip",
+]
+
+[[package]]
 name = "spin"
 version = "0.12.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"

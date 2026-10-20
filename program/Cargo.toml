@@ -19,4 +19,9 @@ primase-web = { git = "https://github.com/kalmarv/primase.git", rev = "2e03ee20"
 serde_json = "=1.0.154"
 zip = { version = "2", default-features = false, features = ["deflate"] }
 
-[workspace]
+[lib]
+path = "src/lib.rs"
+
+[[bin]]
+name = "skatebird-export"
+path = "src/main.rs"

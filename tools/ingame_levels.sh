@@ -10,13 +10,14 @@ W=$(cd "$(dirname "$0")/.." && pwd)
 E=/c/Users/kalmarv/modding/reskate/reskate-tools/ports/gta/engine
 B=${BUILD:-/c/Users/kalmarv/modding/cache/skatebird/build}
 R=/c/Users/kalmarv/modding/cache/skatebird/runs/$TAG
-# the program (cargo build --release in program/); SKATEBIRD_EXPORT to use another build
-X=${SKATEBIRD_EXPORT:-/c/Users/kalmarv/modding/.targets/skatebird-coord/release/skatebird-export.exe}
+# the tooling (cargo build --release -p skatebird-tools in the repo); SKATEBIRD_TOOLS to use another build
+X=${SKATEBIRD_TOOLS:-/c/Users/kalmarv/modding/games/skatebird/target/release/skatebird-tools.exe}
 LEVELS=("$@"); [ ${#LEVELS[@]} -gt 0 ] || LEVELS=(level1 level2 level3 level4 level5 level7 level12 level13)
 SRCS=; NAMES=; CMDS="wait 100"; SECS=100
 for L in "${LEVELS[@]}"; do
   # the packaged mod folder (what a player installs) when there is one, else Studio's Patch
-  M=$("$X" views map-name "$L" | tr -d '')
+  M=$("$X" views map-name "$L" | tr -d '
+')
   S=$B/$L/mod/$M; [ -d "$S" ] || S=$B/$L/stage/Patch
   [ -d "$S" ] || { echo "$L: no mod or stage in $B"; exit 2; }
   SRCS+=${SRCS:+,}$S; NAMES+=${NAMES:+,}$M

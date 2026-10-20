@@ -1,0 +1,13 @@
+[package]
+name = "skatebird-tools"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+# The tooling around the conversion: the release packaging (mod folders, icons, zips), the skate. view commands, the
+# SkateBIRD reference shots (the lab copy and its BepInEx plugin) and the side-by-side sheets. Not the conversion.
+[dependencies]
+skatebird-export = { path = "../../program" }
+primase-image = { git = "https://github.com/kalmarv/primase.git", rev = "2e03ee20" }
+serde_json = "=1.0.154"
+zip = { version = "2", default-features = false, features = ["deflate"] }

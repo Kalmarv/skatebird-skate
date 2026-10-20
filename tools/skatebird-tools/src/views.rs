@@ -27,7 +27,7 @@ pub fn skate_commands(views: &Value, level: &str) -> Result<String, String> {
     let asset = {
         let l = format!(
             "dingolevel_reskate_{}",
-            crate::settings::map_name(level).to_lowercase()
+            skatebird_export::levels::map_name(level).to_lowercase()
         );
         format!("levels/game/{l}/{l}")
     };

@@ -13,13 +13,6 @@ use primase_skatebird::components::SkatebirdResetPosition;
 
 use crate::settings;
 
-/// A level the program converts: its scene file's name (`level2`) and the game's name for it (`rooftop`).
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct Level {
-    pub id: &'static str,
-    pub name: &'static str,
-}
-
 /// A spawn or travel point in the core frame: metres, and the scene yaw in degrees (0 faces +z, clockwise from
 /// above, as the map writer reads it).
 #[derive(Clone, Debug, PartialEq)]
@@ -36,27 +29,6 @@ pub struct Markers {
     /// Whether the spawn is the game's own starting reset position (else the program's fallback).
     pub starting: bool,
     pub travel: Vec<Point>,
-}
-
-/// The levels of [`settings::LEVELS`] named in `wanted` (all when it is empty).
-pub fn chosen(wanted: &[String]) -> Result<Vec<Level>, String> {
-    if wanted.is_empty() {
-        return Ok(settings::LEVELS.to_vec());
-    }
-    wanted
-        .iter()
-        .map(|id| {
-            settings::LEVELS
-                .iter()
-                .find(|l| l.id == id)
-                .copied()
-                .ok_or_else(|| format!("no level {id} (the program converts {:?})", ids()))
-        })
-        .collect()
-}
-
-fn ids() -> Vec<&'static str> {
-    settings::LEVELS.iter().map(|l| l.id).collect()
 }
 
 /// A Unity yaw (0 faces Unity +Z) as the scene's: `180 - a`, i.e. `atan2(sin a, -cos a)` (the mirror turns +Z into -Z).
@@ -310,11 +282,6 @@ mod tests {
         assert_eq!(s.snap, None);
     }
 
-    #[test]
-    fn the_program_converts_eight_levels() {
-        assert_eq!(chosen(&[]).unwrap().len(), 8);
-        assert!(chosen(&["level6".into()]).is_err());
-    }
 }
 
 #[cfg(test)]
