@@ -38,7 +38,10 @@ pub fn specialize(world: &mut World) -> Result<PassLog, String> {
         .collect();
     for prototype in unplaced {
         world.remove::<MaterialVariants>(prototype);
-        log.count("unplaced prototypes' material variants left out", 1);
+        log.approximate(
+            "material variants of a prototype nobody places left out (a program choice: none is chosen)",
+            1,
+        );
     }
     for (prototype, used) in placements {
         let source = world.get::<Mesh>(prototype).unwrap().clone();

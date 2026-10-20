@@ -27,6 +27,7 @@ pub(crate) fn pack_orm(world: &mut World) -> Result<PassLog, String> {
     let mut cache: BTreeMap<(Entity, Entity), Entity> = BTreeMap::new();
     let mut packed = 0u64;
     let mut resampled = 0u64;
+    let mut from_full = 0u64;
     for (e, m) in materials {
         let (Some(mr), Some(ao)) = (m.metallic_roughness_texture, m.occlusion_texture) else {
             continue;
@@ -34,9 +35,9 @@ pub(crate) fn pack_orm(world: &mut World) -> Result<PassLog, String> {
         if mr.texture == ao.texture {
             continue;
         }
-        if mr.texcoord != ao.texcoord || mr.wrap != ao.wrap {
+        if mr.texcoord != ao.texcoord || mr.wrap != ao.wrap || mr.transform != ao.transform {
             return Err(format!(
-                "material {e:?}: occlusion and metallic-roughness sample different coordinate sets or wraps"
+                "material {e:?}: occlusion and metallic-roughness sample different coordinate sets, wraps or                  transforms"
             ));
         }
         let tex = if let Some(&t) = cache.get(&(mr.texture, ao.texture)) {
@@ -56,6 +57,18 @@ pub(crate) fn pack_orm(world: &mut World) -> Result<PassLog, String> {
                             "material {e:?}: mask textures must be linear RGBA8 before packing"
                         ));
                     }
+                    for (i, l) in t.levels.iter().enumerate() {
+                        let (w, h) = (
+                            (t.width >> i).max(1) as usize,
+                            (t.height >> i).max(1) as usize,
+                        );
+                        if l.len() != w * h * 4 {
+                            return Err(format!(
+                                "material {e:?}: a mask texture's level {i} holds {} bytes, not {w} x {h} x 4",
+                                l.len()
+                            ));
+                        }
+                    }
                 }
                 let mut levels = Vec::with_capacity(src_mr.levels.len());
                 for (i, mr_level) in src_mr.levels.iter().enumerate() {
@@ -63,12 +76,23 @@ pub(crate) fn pack_orm(world: &mut World) -> Result<PassLog, String> {
                         (src_mr.width >> i).max(1) as usize,
                         (src_mr.height >> i).max(1) as usize,
                     );
-                    let ao_level = src_ao.levels.get(i);
+                    // an occlusion texture with fewer levels: its full level, sampled nearest (counted)
+                    let ai = if i < src_ao.levels.len() {
+                        i
+                    } else {
+                        from_full += 1;
+                        0
+                    };
+                    let Some(a) = src_ao.levels.get(ai) else {
+                        return Err(format!(
+                            "material {e:?}: the occlusion texture has no levels"
+                        ));
+                    };
                     let (aw, ah) = (
-                        (src_ao.width >> i).max(1) as usize,
-                        (src_ao.height >> i).max(1) as usize,
+                        (src_ao.width >> ai).max(1) as usize,
+                        (src_ao.height >> ai).max(1) as usize,
                     );
-                    if ao_level.is_some() && (aw != w || ah != h) {
+                    if aw != w || ah != h {
                         resampled += 1;
                     }
                     let mut out = Vec::with_capacity(w * h * 4);
@@ -76,14 +100,11 @@ pub(crate) fn pack_orm(world: &mut World) -> Result<PassLog, String> {
                         for x in 0..w {
                             let at = (y * w + x) * 4;
                             let mr_px = &mr_level[at..at + 4];
-                            let occlusion = match ao_level {
-                                Some(a) if aw == w && ah == h => a[at],
-                                Some(a) => {
-                                    let (sx, sy) = (x * aw / w, y * ah / h);
-                                    let oat = (sy * aw + sx) * 4;
-                                    a.get(oat).copied().unwrap_or(255)
-                                }
-                                None => 255,
+                            let occlusion = if aw == w && ah == h {
+                                a[at]
+                            } else {
+                                let (sx, sy) = (x * aw / w, y * ah / h);
+                                a[(sy * aw + sx) * 4]
                             };
                             out.extend_from_slice(&[occlusion, mr_px[1], mr_px[2], 255]);
                         }
@@ -129,6 +150,12 @@ pub(crate) fn pack_orm(world: &mut World) -> Result<PassLog, String> {
         log.approximate(
             "occlusion levels resampled to the metallic-roughness texture's size",
             resampled,
+        );
+    }
+    if from_full > 0 {
+        log.approximate(
+            "occlusion levels taken from the occlusion texture's full level (it has fewer levels)",
+            from_full,
         );
     }
     Ok(log)

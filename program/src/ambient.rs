@@ -34,12 +34,23 @@ pub fn add_fill(w: &mut World, bounds: ([f64; 3], [f64; 3]), spacing: f64) -> Pa
         log.count("levels without an ambient: no fill", 1);
         return log;
     };
-    // trilight: the mean of the three colours; flat (3): the sky colour alone
-    let colours: Vec<[f32; 4]> = if a.mode == 3 {
-        vec![a.sky]
-    } else {
-        vec![a.sky, a.equator, a.ground]
+    // trilight (1): the mean of the three colours; flat (3): the sky colour alone; skybox (0) and custom (4) light
+    // from a probe or cubemap the reader doesn't read: their stored colours stand in, reported
+    let colours: Vec<[f32; 4]> = match a.mode {
+        1 => vec![a.sky, a.equator, a.ground],
+        3 => vec![a.sky],
+        m => {
+            log.approximate(
+                &format!("ambient mode {m} (skybox or custom) approximated by its stored sky, equator and ground"),
+                1,
+            );
+            vec![a.sky, a.equator, a.ground]
+        }
     };
+    log.approximate(
+        "the ambient's colours reduced to their mean for the fill lights",
+        1,
+    );
     let mut mean = [0.0f32; 3];
     for c in &colours {
         for (m, v) in mean.iter_mut().zip(c) {
