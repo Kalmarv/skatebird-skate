@@ -102,12 +102,17 @@ pub fn markers(w: &World, level: &str, space: [[f64; 3]; 2]) -> Result<Markers, 
     let travel = curate(resets, space, settings::TRAVEL_POINTS);
     let (spawn, starting) = match spawn {
         Some(s) => (s, true),
-        None => (
-            settings::fallback_spawn(level).ok_or(format!(
+        None => {
+            let mut s = settings::fallback_spawn(level).ok_or(format!(
                 "{level}: no starting reset position and no fallback"
-            ))?,
-            false,
-        ),
+            ))?;
+            // the game's start stood on a mission object the map leaves out (level7's): the spawn drops to the first
+            // collision below it (Caleb, 2026-10-19: "flash back you spawn in the air")
+            if let Some(y) = ground_below(w, s.position) {
+                s.position[1] = y;
+            }
+            (s, false)
+        }
     };
     Ok(Markers {
         spawn,
@@ -190,6 +195,44 @@ pub fn add_markers(w: &mut World, m: &Markers) -> usize {
         w.insert(e, marker(MarkerKind::Travel, p));
     }
     m.travel.len()
+}
+
+/// The height of the first collision surface straight below `p` (core frame; a surface up to 5 cm above `p` counts,
+/// so a point standing on one keeps it): the highest triangle of any placed collision soup whose ground footprint
+/// holds `p`'s (x, z), at its height there. None when nothing is below.
+pub fn ground_below(w: &World, p: [f64; 3]) -> Option<f64> {
+    let mut best: Option<f64> = None;
+    for (e, c) in w.iter::<primase_core::Collision>() {
+        let t = w.get::<Transform>(e);
+        let at = |i: u32| -> [f64; 3] {
+            let v = c.positions[i as usize];
+            match t {
+                Some(t) => std::array::from_fn(|r| {
+                    (0..3).map(|k| f64::from(t.cols[k][r]) * f64::from(v[k])).sum::<f64>() + f64::from(t.cols[3][r])
+                }),
+                None => v.map(f64::from),
+            }
+        };
+        for tri in &c.triangles {
+            let [a, b, d] = tri.map(at);
+            // barycentric coordinates of (p.x, p.z) in the triangle's ground footprint
+            let det = (b[2] - d[2]) * (a[0] - d[0]) + (d[0] - b[0]) * (a[2] - d[2]);
+            if det.abs() < 1e-12 {
+                continue;
+            }
+            let l1 = ((b[2] - d[2]) * (p[0] - d[0]) + (d[0] - b[0]) * (p[2] - d[2])) / det;
+            let l2 = ((d[2] - a[2]) * (p[0] - d[0]) + (a[0] - d[0]) * (p[2] - d[2])) / det;
+            let l3 = 1.0 - l1 - l2;
+            if l1 < 0.0 || l2 < 0.0 || l3 < 0.0 {
+                continue;
+            }
+            let y = l1 * a[1] + l2 * b[1] + l3 * d[1];
+            if y <= p[1] + 0.05 && best.is_none_or(|h| y > h) {
+                best = Some(y);
+            }
+        }
+    }
+    best
 }
 
 /// The play space in the core frame (min and max corners): the box of every collision soup placed in the world, each
@@ -298,5 +341,29 @@ mod curate_tests {
         assert_eq!(t[0].name, "r5", "the starting reset position first");
         assert!(t.iter().all(|p| p.name != "far"), "outside the play space");
         assert!(t.iter().any(|p| p.name == "r0") && t.iter().any(|p| p.name == "r19"), "spread to both ends");
+    }
+}
+
+#[cfg(test)]
+mod ground_tests {
+    use super::*;
+
+    /// A floor at y 0 and a table top at y 1 over x 0..1: the spawn at y 3 over the table lands on it, over the bare
+    /// floor on the floor, and below everything finds nothing.
+    #[test]
+    fn the_spawn_drops_to_the_first_surface_below() {
+        let mut w = World::new();
+        let quad = |x0: f32, x1: f32, y: f32| primase_core::Collision {
+            positions: vec![[x0, y, -5.0], [x1, y, -5.0], [x1, y, 5.0], [x0, y, 5.0]],
+            triangles: vec![[0, 1, 2], [0, 2, 3]],
+            surfaces: vec![0, 0],
+        };
+        let floor = w.spawn();
+        w.insert(floor, quad(-5.0, 5.0, 0.0));
+        let table = w.spawn();
+        w.insert(table, quad(0.0, 1.0, 1.0));
+        assert_eq!(ground_below(&w, [0.5, 3.0, 0.0]), Some(1.0));
+        assert_eq!(ground_below(&w, [-2.0, 3.0, 0.0]), Some(0.0));
+        assert_eq!(ground_below(&w, [0.5, -1.0, 0.0]), None);
     }
 }

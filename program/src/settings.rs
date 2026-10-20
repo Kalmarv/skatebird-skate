@@ -110,17 +110,25 @@ pub fn grind_curves() -> primase_reskate::passes::LowerReskateGrindCurves {
     }
 }
 
-/// An indoor level's room shell: the hierarchy under which its walls, ceiling and floor are placed, as the prefix of
-/// their placements' names (the Unity reader names a placement by its GameObject path, joined by `/`), found by
-/// renderer census (scratch scripts/roots_census.py). The outdoor levels (rooftop, playground, skate heaven) have none.
-pub fn room_shell(level: &str) -> Option<&'static str> {
+/// An indoor level's room shell: what closes the room in from the sun and sky (walls, ceiling, floor, and in the
+/// office its ceiling light panels, window wall and the CEO office's own walls), as prefixes of their placements' names
+/// (the Unity reader names a placement by its GameObject path, joined by `/`), found by renderer census (scratch
+/// scripts/roots_census.py). The outdoor levels (rooftop, playground, skate heaven) have none.
+pub fn room_shell(level: &str) -> &'static [&'static str] {
     match level {
-        "level1" => Some("Level Elements/Bounds/"),
-        "level3" => Some("Level Bounds/"),
-        "level4" => Some("Room Bounds/"),
-        "level5" => Some("Bounds/"),
-        "level7" => Some("Brick Bedroom/Bounds/"),
-        _ => None,
+        "level1" => &["Level Elements/Bounds/"],
+        // Caleb, 2026-10-19, of 0.3.0: "office still has a mesh we need to [not] shadow cast"
+        "level3" => &[
+            "Level Bounds/",
+            "Level Elements/Ceiling Lights/",
+            "Level Elements/Light Wall/",
+            "Level Elements/Window Struts/",
+            "Level Elements/CEO Office/CEO Office Bounds/",
+        ],
+        "level4" => &["Room Bounds/"],
+        "level5" => &["Bounds/"],
+        "level7" => &["Brick Bedroom/Bounds/"],
+        _ => &[],
     }
 }
 
@@ -130,15 +138,16 @@ pub fn room_shell(level: &str) -> Option<&'static str> {
 pub fn shadow_casting(
     level: &str,
 ) -> Result<Option<primase_reskate::passes::SetReskateShadowCasting>, String> {
-    room_shell(level)
-        .map(|shell| {
-            primase_reskate::passes::SetReskateShadowCasting::new(
-                BTreeSet::new(),
-                BTreeSet::from([shell.to_owned()]),
-                primase_reskate::passes::SharedMaterials::Copy,
-            )
-        })
-        .transpose()
+    let shell = room_shell(level);
+    if shell.is_empty() {
+        return Ok(None);
+    }
+    primase_reskate::passes::SetReskateShadowCasting::new(
+        BTreeSet::new(),
+        shell.iter().map(|p| (*p).to_owned()).collect(),
+        primase_reskate::passes::SharedMaterials::Copy,
+    )
+    .map(Some)
 }
 /// The web tile set's cell, metres.
 pub const WEB_TILE: f64 = 200.0;
@@ -378,7 +387,7 @@ pub fn encoding(out_root: PathBuf, name: &str) -> EncodingOptions {
 /// states no region, floor or texture budget, and the program places its spawn and travel markers): grind curves'
 /// prisms as Studio builds them; the markers snapped for this encoding; the water surfaces of the content, 400 m past
 /// it, no material drawn as ocean unless it says so; the pause-map picture drawn from the geometry over `pause`
-/// ([`pause_extent`] for a level), 2,160 px high; textures capped at 256 px (stored levels, else the 2 x 2 box, normal maps alike); tints multiplied
+/// ([`pause_extent`] for a level), 2,160 px high, in its textures, without the room shell; textures capped at 256 px (stored levels, else the 2 x 2 box, normal maps alike); tints multiplied
 /// into texture copies; triangles over Studio's 256 texture repeats left out of repeating decals, and a repeating
 /// blended surface with such a triangle drawn as a cutout twin (what the fork's writer did inside itself); the
 /// overlays stacked 4 mm apart; the blend chains cut on the 200 m grid; the collision laid out as the fork's writer
@@ -407,6 +416,13 @@ pub fn map_preparation(
         Box::new(PrepareReskatePauseMap::new(PauseSource::Geometry {
             height: PAUSE_MAP_HEIGHT,
             extent: pause,
+            // a top-down picture of what's in the level: the room shell (what casts no shadow: walls and ceiling)
+            // left out, each surface in its texture (Caleb, 2026-10-19: "we need the actual overhead view, probably
+            // with the same meshes that don't shadow cast not shown")
+            drawing: primase_reskate::passes::PauseDrawing {
+                leave_out: primase_reskate::passes::PauseLeaveOut::Shadowless,
+                colour: primase_reskate::passes::PauseColour::Texture,
+            },
         })?),
         Box::new(cap),
         Box::new(PrepareReskateTextures),
