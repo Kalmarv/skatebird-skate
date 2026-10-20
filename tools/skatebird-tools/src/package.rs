@@ -82,8 +82,7 @@ pub fn readme(level: &Level, name: &str) -> String {
     format!(
         "# {title}
 
-SkateBIRD's **{level}** level as a skateable map for skate., through ReSkate. Rebuilt from the game's own level data,
-materials and lights. An unofficial fan port: SkateBIRD is by Glass Bottom Games.
+SkateBIRD's **{level}** level as a skateable map for skate., through ReSkate. Rebuilt from the game's own level data, materials and lights. An unofficial fan port: SkateBIRD is by Glass Bottom Games.
 
 ![{title} in skate.]({MEDIA}/{name}.jpg)
 
