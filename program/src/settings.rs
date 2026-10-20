@@ -130,6 +130,8 @@ pub fn lowering() -> Vec<Box<dyn Pass>> {
         }),
         Box::new(primase_unity::drawn::UnityDrawn),
         Box::new(primase_unity::lower::LowerUnityPbr),
+        // SkateBIRD's Bumped Specular Voronoi (gravel, carpet) baked from its own compiled shader into textures
+        Box::new(primase_skatebird::passes::voronoi::LowerSkatebirdVoronoi),
         Box::new(primase_unity::lower_terrain::LowerUnityTerrain),
         Box::new(primase_unity::lower_collision::LowerUnityCollision),
         Box::new(primase_unity::lower_lights::LowerUnityLights),

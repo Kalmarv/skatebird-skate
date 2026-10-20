@@ -476,6 +476,8 @@ fn convert(
     let started = std::time::Instant::now();
     let report = read_level(player, l.id, &mut w)?;
     let mr = primase_skatebird::read_markers(player, l.id, &mut w)?;
+    let programs = primase_skatebird::read_voronoi_programs(player, &mut w)?;
+    println!("Voronoi shader programs read: {programs:?}");
     println!("markers read: {mr:?}");
     println!(
         "read {}: {} renderers, {} tree renderers, {} prototypes, {} primitives, {} materials, {} textures, {} \
