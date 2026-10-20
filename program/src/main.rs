@@ -462,7 +462,13 @@ fn map_from_scene(args: Vec<String>) -> Result<()> {
     let mut w = World::new();
     primase_reskate::read::interchange::read(scene, &mut w)?;
     primase_reskate::read::interchange::load(scene, &mut w)?;
-    write_the_map(&mut w, Path::new(out), &name).map(|_| ())
+    write_the_map(
+        &mut w,
+        Path::new(out),
+        &name,
+        primase_reskate::prepare::PauseExtent::Content,
+    )
+    .map(|_| ())
 }
 
 /// One level into `out`: read, lowered, the optional outputs, then raised for skate and written as its map; returns
@@ -594,7 +600,12 @@ fn convert(
         let r = primase_reskate::write::interchange::write(&w, &out.join("skate").join("scene"))?;
         println!("skate scene: {} tables written", r.tables.len());
     }
-    write_the_map(&mut w, out, &settings::map_name(&outputs.named(l.id)))
+    write_the_map(
+        &mut w,
+        out,
+        &settings::map_name(&outputs.named(l.id)),
+        settings::pause_extent(space),
+    )
 }
 
 /// Runs `passes` with the pass manager (each verified after it runs) and prints each one's counts.
@@ -672,9 +683,14 @@ fn one_uv_set(w: &mut World) -> Result<()> {
 
 /// The ReSkate map of a raised world into `<out>/map/<name>`: prepared as the program chooses ([`settings`]), then
 /// the writer; returns the map folder.
-fn write_the_map(w: &mut World, out: &Path, name: &str) -> Result<PathBuf> {
+fn write_the_map(
+    w: &mut World,
+    out: &Path,
+    name: &str,
+    pause: primase_reskate::prepare::PauseExtent,
+) -> Result<PathBuf> {
     let encoding = settings::encoding(out.join("map"), name);
-    run(w, settings::map_preparation(&encoding)?)?;
+    run(w, settings::map_preparation(&encoding, pause)?)?;
     let r = primase_reskate::write_map(w, Path::new(""), &encoding)?;
     println!(
         "map '{}': {} tiles, {} merged placements / {:.2} M tris, {} instances of {} prototypes, {} object records, \

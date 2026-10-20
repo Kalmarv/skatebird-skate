@@ -158,6 +158,14 @@ pub const WATER_MARGIN: f32 = 400.0;
 /// The pause-map picture's height, pixels (`map_height`, build.rs:76).
 pub const PAUSE_MAP_HEIGHT: usize = 2160;
 
+/// The pause map's ground over a level's play space (core frame; the picture's north is -z): the map's content extent
+/// reaches the skyline backdrops kilometres out, which left the level a speck (Caleb, 2026-10-19: "map is fucked we
+/// need the actual overhead view").
+pub fn pause_extent(space: [[f64; 3]; 2]) -> PauseExtent {
+    let [lo, hi] = space;
+    PauseExtent::Rect([lo[0] as f32, -hi[2] as f32, hi[0] as f32, -lo[2] as f32])
+}
+
 /// The lowering, in order: the level as stored (every state axis at its default: what is off stays off), each
 /// prototype's finest level of detail, what Unity draws, its materials, terrain, collision and lights lowered,
 /// normal maps to glTF's convention, collision shapes as triangles (the writers here take triangles), and last before
@@ -369,14 +377,17 @@ pub fn encoding(out_root: PathBuf, name: &str) -> EncodingOptions {
 /// them; then as the fork's map writer made it inside itself (a SkateBIRD scene
 /// states no region, floor or texture budget, and the program places its spawn and travel markers): grind curves'
 /// prisms as Studio builds them; the markers snapped for this encoding; the water surfaces of the content, 400 m past
-/// it, no material drawn as ocean unless it says so; the pause-map picture drawn from the geometry over the content,
-/// 2,160 px high; textures capped at 256 px (stored levels, else the 2 x 2 box, normal maps alike); tints multiplied
+/// it, no material drawn as ocean unless it says so; the pause-map picture drawn from the geometry over `pause`
+/// ([`pause_extent`] for a level), 2,160 px high; textures capped at 256 px (stored levels, else the 2 x 2 box, normal maps alike); tints multiplied
 /// into texture copies; triangles over Studio's 256 texture repeats left out of repeating decals, and a repeating
 /// blended surface with such a triangle drawn as a cutout twin (what the fork's writer did inside itself); the
 /// overlays stacked 4 mm apart; the blend chains cut on the 200 m grid; the collision laid out as the fork's writer
 /// did (a leaf's rare surfaces coalesced into its common one, corners welded to the millimetre); at most 1,000 chain
 /// objects (a fixed count, so no map summary). No light cap.
-pub fn map_preparation(encoding: &EncodingOptions) -> Result<Vec<Box<dyn Pass>>, String> {
+pub fn map_preparation(
+    encoding: &EncodingOptions,
+    pause: PauseExtent,
+) -> Result<Vec<Box<dyn Pass>>, String> {
     let cap = primase_image::CapTextures::new(MAP_TEXTURE_CAP)?.with_mode(primase_image::CapMode {
         normals: primase_image::NormalDownscale::Box,
         ..Default::default()
@@ -395,7 +406,7 @@ pub fn map_preparation(encoding: &EncodingOptions) -> Result<Vec<Box<dyn Pass>>,
         )?),
         Box::new(PrepareReskatePauseMap::new(PauseSource::Geometry {
             height: PAUSE_MAP_HEIGHT,
-            extent: PauseExtent::Content,
+            extent: pause,
         })?),
         Box::new(cap),
         Box::new(PrepareReskateTextures),
@@ -425,7 +436,7 @@ mod tests {
     fn the_map_preparation_states_its_choices() {
         let e = encoding(PathBuf::from("out"), "SkateBIRD_level2");
         let text = Pipeline {
-            passes: map_preparation(&e).unwrap(),
+            passes: map_preparation(&e, PauseExtent::Content).unwrap(),
         }
         .to_string();
         for want in [
