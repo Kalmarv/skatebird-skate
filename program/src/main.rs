@@ -543,6 +543,10 @@ fn convert(
     if let Some(ceilings) = settings::hidden_ceilings(l.id) {
         run(&mut w, vec![Box::new(ceilings)])?;
     }
+    // an indoor level's room shell lets the sun and sky in
+    if let Some(shadows) = settings::shadow_casting(l.id)? {
+        run(&mut w, vec![Box::new(shadows)])?;
+    }
     println!("lowered in {:.1} s", started.elapsed().as_secs_f64());
     std::fs::create_dir_all(out)?;
     if outputs.glb {
@@ -595,10 +599,8 @@ fn convert(
             &settings::raise(l.id, surfaces.clone(), lights)?,
         )?,
     );
-    // an indoor level's room shell lets the sun and sky in
-    if let Some(shadows) = settings::shadow_casting(l.id)? {
-        run(&mut w, vec![Box::new(shadows)])?;
-    }
+    // what casts no shadow (the room shell) as skate materials that cast none
+    run(&mut w, vec![Box::new(primase_reskate::passes::LowerReskateShadows)])?;
     let travel = level::add_markers(&mut w, &markers);
     println!(
         "markers: spawn {} at {:?} (core frame), yaw {:.4}; {travel} travel",

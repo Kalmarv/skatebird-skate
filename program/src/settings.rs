@@ -174,21 +174,16 @@ pub fn pause_leave_out(level: &str) -> primase_reskate::passes::PauseLeaveOut {
 }
 
 /// The room shell casts no shadow, so skate's sun and sky light the room inside (Caleb, 2026-10-19: "make the room
-/// material allow light to pass through and just use skybox lighting"; it replaces 0.2.0's ambient fill lights). A
-/// shell material drawn outside the shell too gets a copy for the shell.
-pub fn shadow_casting(
-    level: &str,
-) -> Result<Option<primase_reskate::passes::SetReskateShadowCasting>, String> {
+/// material allow light to pass through and just use skybox lighting"; it replaces 0.2.0's ambient fill lights): the
+/// program's choice (Caleb: shadow casting is a program choice, not read from the source), stated on the placements;
+/// `lower-reskate-shadows` gives them non-casting skate materials after raise-skate (a material casting placements
+/// share is copied for the shell).
+pub fn shadow_casting(level: &str) -> Result<Option<primase_meshops::SetShadowCasting>, String> {
     let shell = room_shell(level);
     if shell.is_empty() {
         return Ok(None);
     }
-    primase_reskate::passes::SetReskateShadowCasting::new(
-        BTreeSet::new(),
-        shell.iter().map(|p| (*p).to_owned()).collect(),
-        primase_reskate::passes::SharedMaterials::Copy,
-    )
-    .map(Some)
+    primase_meshops::SetShadowCasting::new(shell.iter().map(|p| (*p).to_owned()).collect(), false).map(Some)
 }
 /// The web tile set's cell, metres.
 pub const WEB_TILE: f64 = 200.0;
