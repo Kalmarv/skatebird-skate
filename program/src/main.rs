@@ -23,7 +23,6 @@ mod compile;
 mod level;
 mod package;
 mod settings;
-mod unmaterialed;
 mod uv_policy;
 mod variants;
 mod views;
@@ -500,7 +499,11 @@ fn convert(
     // skate does not draw blended world geometry: blended surfaces (not decals) as cutouts
     run(&mut w, vec![Box::new(settings::blended_surfaces()?)])?;
     one_uv_set(&mut w)?;
-    show("leave-out-unmaterialed", &unmaterialed::leave_out(&mut w)?);
+    // a part with no material (an empty Unity material slot) has no surface skate can draw
+    run(
+        &mut w,
+        vec![Box::new(primase_meshops::OmitMateriallessPrimitives)],
+    )?;
     // skate's materials carry one wrap for all their textures: take the base colour's; and one mask image:
     // occlusion, roughness and metallic pack into it
     run(
