@@ -218,6 +218,28 @@ pub fn blended_surfaces() -> Result<primase_reskate::passes::PrepareReskateBlend
     )
 }
 
+/// skate's one texture-coordinate set, as the program chooses it: a primitive stored without the set its texture
+/// samples reads (0, 0) in Unity, so it gets the set as zeros; variants nobody places are discarded (they choose
+/// nothing) and each placement's material variant gets geometry of its own; then every slot samples as the base
+/// colour does (a slot that tiles otherwise adopts it, reported), the tiling baked into the coordinates.
+pub fn one_uv_set() -> Vec<Box<dyn Pass>> {
+    vec![
+        Box::new(FillMissingTexcoords),
+        Box::new(primase_meshops::SpecializeMaterialVariants::new(
+            primase_meshops::UnusedVariants::Discard,
+        )),
+        Box::new(primase_reskate::passes::PrepareReskateUvTransforms::new(
+            primase_core::pbr::TextureSlot::BaseColor,
+            primase_reskate::passes::SamplingConflicts::Adopt,
+        )),
+    ]
+}
+
+/// One wrap per material: every slot wraps as the base colour wraps along u.
+pub fn one_wrap() -> Result<primase_reskate::passes::PrepareReskateWrap, String> {
+    primase_reskate::passes::PrepareReskateWrap::new(primase_core::pbr::TextureSlot::BaseColor, 0)
+}
+
 /// The map's (and the mod folder's) name for a level.
 pub fn map_name(level: &str) -> String {
     format!("SkateBIRD_{level}")

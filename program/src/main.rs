@@ -22,10 +22,7 @@ mod level;
 mod package;
 mod settings;
 mod shots;
-mod uv_policy;
-mod variants;
 mod views;
-mod wrap;
 
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
@@ -545,12 +542,12 @@ fn convert(
         &mut w,
         vec![Box::new(primase_meshops::OmitMateriallessPrimitives)],
     )?;
-    // skate's materials carry one wrap for all their textures: take the base colour's; and one mask image:
-    // occlusion, roughness and metallic pack into it
+    // skate's materials carry one wrap for all their textures, and one mask image: occlusion, roughness and metallic
+    // pack into it
     run(
         &mut w,
         vec![
-            Box::new(wrap::UnifyTextureWrap),
+            Box::new(settings::one_wrap()?),
             Box::new(primase_image::PackOrm::new(
                 primase_image::OrmSize::MetallicRoughness,
                 primase_image::MissingLevels::Generate,
@@ -655,17 +652,9 @@ fn write_web(w: &World, ktx2: bool, out: &Path) -> Result<()> {
     Ok(())
 }
 
-/// skate's one texture-coordinate set: every material's tiling baked into its primitives' coordinates. A primitive
-/// stored without the set its texture samples reads (0, 0) in Unity, so it gets the set as zeros first; placements
-/// with other materials get their own geometry; then the base tiling is kept ([`uv_policy`]).
+/// skate's one texture-coordinate set ([`settings::one_uv_set`]).
 fn one_uv_set(w: &mut World) -> Result<()> {
-    run(
-        w,
-        vec![Box::new(primase_gltf::prepare::FillMissingTexcoords)],
-    )?;
-    show("specialize-variants", &variants::specialize(w)?);
-    show("preserve-base-tiling", &uv_policy::preserve_base_tiling(w)?);
-    Ok(())
+    run(w, settings::one_uv_set())
 }
 
 /// The ReSkate map of a raised world into `<out>/map/<name>`: prepared as the program chooses ([`settings`]), then
