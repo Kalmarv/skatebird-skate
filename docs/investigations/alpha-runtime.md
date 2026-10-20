@@ -73,7 +73,7 @@ UV repair until those jobs complete. Existing alpha exporter executable and outp
 
 Actual game shader `sharedassets0.assets:1207`, Houdini/SpecularVertexColor, ForwardBase/DIRECTIONAL:
 VS passes COLOR0 to the pixel shader, which multiplies sampled base * material colour * vertex RGB.
-Private disassembly and selection metadata: `research/shaders/Houdini_SpecularVertexColor/manifest.json`.
+Private disassembly and selection metadata: `X:/modding-archive/skatebird/research/shaders/Houdini_SpecularVertexColor/manifest.json`.
 Selected VS program0 SHA256 `337da3887b79679dc50ede08d245283b0a01ce6a0499a9ae5b37cb118124e1e8`;
 PS program16 SHA256 `5d577ec7a928b405965d9e003229a430fd5221a935b1b6896faf9a42ca073489`.
 Earlier depth-only program34/36 files are not evidence for this claim. The actual ForwardBase tags select 0/16.
@@ -223,7 +223,7 @@ Therefore no evidence yet to force Bird leaves to cutout or double-sided. Fixed 
 for other shaders is a separate owner gap, not this Standard material's cause.
 
 Gravel shader extraction43b304a4 passed: sharedassets0.assets:1196, Bumped Specular Voronoi,
-FORWARD pass. Exact DXBC hashes and disassemblies in research/shaders/Bumped Specular Voronoi.
+FORWARD pass. Exact DXBC hashes and disassemblies in X:/modding-archive/skatebird/research/shaders/Bumped Specular Voronoi.
 VS program0 emits two transformed UV pairs. PS program8 uses nested -1..1 loops, sine/fract
 cell hash, exp2(-7.213475*distance_squared) weights, derivative sampling and normalization,
 separately for colour and packed normal; then reconstructs normal Z. It is not ordinary base sampling.
@@ -261,7 +261,7 @@ Shiny/Unlit Two Tone extractiondd3a61bf succeeded (sharedassets0.assets:1194, FO
 Pixel program8 computes view-vector/normal dot and light-vector/normal dot, a power-based edge
 term and interpolation of two constant colours, and samples reflection cubemaps. It is not a
 constant unlit colour despite its name. Current fallback loses this view/light-dependent shading.
-Private disassemblies/manifests stored in research/shaders/Shiny_Unlit Two Tone. No speculative
+Private disassemblies/manifests stored in X:/modding-archive/skatebird/research/shaders/Shiny_Unlit Two Tone. No speculative
 shader implementation added; faithful gravel texture baking needs UV-domain sampling (not merely
 changing its normal texture), and Shiny cannot be faithfully collapsed to one constant base colour.
 
