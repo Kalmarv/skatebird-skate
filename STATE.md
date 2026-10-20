@@ -6,31 +6,30 @@ Done = each level matches SkateBIRD at fixed views in side-by-sides Caleb accept
 travel), on primase main.
 
 ## What works (verified)
-- The program (`program/`, `skatebird-export build --jobs 3`) reads, lowers, writes and Studio-compiles every level
-  from the scan's spawn/travel data: all 8 in 2 m 34 s on primase f374e4e7 (job 96742069). Choices in
-  `program/src/settings.rs`; compile resident, no LODs, no GI, noon (so no Studio vistas).
-- In game (shared runner): level1, level2 load, no dumps (runs t1/t2). Rooftop geometry matches SkateBIRD at the
-  spawn view (Caleb: "that looks matched").
-- Matching method: fixed views (`data/skatebird-views.json`, spawn + 3 travel anchors); SkateBIRD camera fitted to
-  skate's chase camera (F 55.3 deg vertical, 1.5 m up; skate's framing varies ~7 deg pitch / 4 deg yaw per launch);
-  SkateBIRD reference shots of all 8 levels, no UI/player/NPCs: `cache/skatebird/ref/<level>/` (job dad3987b).
-- One-launch runs: reskate-tools ingame.sh takes several mods (492b302); `tools/ingame_levels.sh`.
-
+- The program (`program/`, `skatebird-export build --jobs 3`) reads, lowers, writes and Studio-compiles all 8 levels
+  from the scan's spawn/travel data in ~100 s on primase main 6feaa93f (job 4658f24a). Choices in
+  `program/src/settings.rs`: compile resident, no LODs, no GI, noon; lights x10000 the standard calibration plus
+  SkateBIRD's ambient as 15 m fill lights; blended surfaces (not decals) as 0.5 cutouts.
+- In game, all 8 in one launch (run t5, job bd52e06d): 32/32 view shots, no crash dumps. Side-by-sides
+  `cache/skatebird/compare/t5/<level>.jpg` shown to Caleb: geometry matches on every level; interiors lit (office,
+  server room, bedroom 2); playground canopies drawn. Rooftop matched earlier (Caleb: "that looks matched").
+- Matching method: fixed views (`data/skatebird-views.json`); SkateBIRD camera fitted to skate's chase camera;
+  SkateBIRD references `cache/skatebird/ref/<level>/` (no UI, player or NPC birds).
 ## Shipped
 Nothing.
 
 ## In flight
-- All 8 levels in one skate launch (job 9a27d3ba, run t3), then side-by-sides for Caleb.
+Nothing running.
 
-## Blockers / known gaps
-1. primase fixes are on primase-work only (f374e4e7: lowerings declare their effects; aa7daf03 level7 decode;
-   72172370 screen-camera rule): they must reach main before done; the owner is landing them.
-2. Teleport views all face Unity yaw 180 (skate has no console turn): several face walls; pick better view points.
-3. From the old fork, unchecked on main: dark office/server interiors (ambient), playground canopies, office UV.
+## Known gaps
+1. Fill lights show as bright spots where they sit near ceilings/walls (the writer gives every light specular 1).
+2. Teleport views all face Unity yaw 180 (skate has no console turn): several face walls; skate's camera sits behind
+   the skater there.
+3. Materials: bedroom bowl floor/supports, playground gravel tiling, leaves sparser than SkateBIRD's.
 
 ## Next
-1. Side-by-sides of all 8 for Caleb; per-level differences and their causes.
-2. Polish in order: canopies, office UV, ambient lighting, tint, gravel, two-tone. Then gameplay checks.
+1. Caleb's verdict on the t5 sheets; then the remaining polish (fill-light spots, office UV, tint, gravel, two-tone).
+2. Gameplay checks nobody ran: roll, grind, collision, travel points.
 3. Held for Caleb's go: promotion requests (level scan into primase's SkateBIRD crate; variants, unmaterialed,
    unify-texture-wrap, pack-orm passes).
 
