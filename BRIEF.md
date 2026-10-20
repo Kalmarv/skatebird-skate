@@ -131,4 +131,5 @@ References to read
 - kb (no `games/skatebird` page exists yet): `projects/primase` (SkateBIRD sections), `topics/windows-shell-traps`
   (PowerShell wrapper traps that cost this port four jobs).
 - `work\review\ds-modding-primase.md` (TAKE/DROP for the fork commits), `work\primase\unity-reader\{STATUS,RESUME,AMBIENT-EVIDENCE}.md`.
-- Unity built-in shader source 2019.4.20f1: `work\primase\unity-reader\ext`; extracted DXBC in `research/shaders`.
+- Unity built-in shader source 2019.4.20f1: `cache/primase/unity-shaders/builtin_shaders-2019.4.20f1` (Unity's official
+  zip); extracted DXBC: `X:/modding-archive/skatebird/research/shaders` (game-derived, kept out of the repo).
