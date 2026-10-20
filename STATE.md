@@ -60,6 +60,12 @@ All bedroom 1 (level1) so far. Caleb decided (2026-10-19): "any mission only obj
    the cutout): the lid now draws solid over the cup's top; geometry gap to check.
 
 ## Next
+0. In flight on primase (2026-10-19), pin each rev as it lands, rebuild only on Caleb's go:
+   - primase-owner -> reskate lane: `set-reskate-shadow-casting{materials=...|placements=<prefix>, shared=copy|refuse}`
+     (program: room shell placements, shared=copy); `prepare-reskate-blended-surfaces` gains required
+     `uniform=cutout|frost{opacity=F}` (program: `frost{opacity=0.35}`).
+   - primase-gta-lane: reader states SkateCollectible / EnableOneAtRandom / MissionGiver + a pass dropping collectible
+     and giver subtrees; GrindableRail chains read and lowered to `skate.grind_curve`.
 1. 0.2.0 zips (primase 062d6943, everything on primase) to Caleb; he tests in game himself.
 2. Later, only when Caleb says go (via the modding coordinator): the conversion as one readable recipe, ~100-150
    lines (read_level + read_markers + read_voronoi_programs, one Pipeline of typed passes from Unity lowering to ReSkate
