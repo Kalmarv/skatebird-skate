@@ -170,25 +170,21 @@ pub fn icon(png: &[u8]) -> Result<Vec<u8>, String> {
     .map_err(|e| format!("icon: {e}"))
 }
 
-/// `folder` zipped as `zip`, its files under the folder's name (no ZIP64 records: the launcher's reader rejects them
-/// below 4 GiB).
+/// `folder`'s contents zipped as `zip`, at the zip's root as Thunderstore packages them (`manifest.json`, `icon.png`
+/// and `README.md` at the root: the launcher showed no icon for a zip with them under a folder); no ZIP64 records (the
+/// launcher's reader rejects them below 4 GiB).
 pub fn zip(folder: &Path, zip: &Path) -> Result<u64, String> {
     let file = std::fs::File::create(zip).map_err(|e| format!("{}: {e}", zip.display()))?;
     let mut w = zip::ZipWriter::new(std::io::BufWriter::new(file));
     let options = zip::write::SimpleFileOptions::default()
         .compression_method(zip::CompressionMethod::Deflated)
         .large_file(false);
-    let root = folder
-        .file_name()
-        .ok_or("a folder without a name")?
-        .to_string_lossy()
-        .into_owned();
     let mut files = Vec::new();
     list(folder, &mut files)?;
     files.sort();
     for f in &files {
         let rel = f.strip_prefix(folder).map_err(|e| e.to_string())?;
-        let name = format!("{root}/{}", rel.to_string_lossy().replace('\\', "/"));
+        let name = rel.to_string_lossy().replace('\\', "/");
         w.start_file(name, options).map_err(|e| e.to_string())?;
         w.write_all(&std::fs::read(f).map_err(|e| format!("{}: {e}", f.display()))?)
             .map_err(|e| e.to_string())?;
