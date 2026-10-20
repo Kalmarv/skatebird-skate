@@ -31,12 +31,12 @@ Nothing running.
 3. Materials: bedroom bowl floor/supports, playground gravel tiling, leaves sparser than SkateBIRD's.
 
 ## Next
-1. Caleb's findings from the 0.1.0 zips.
-2. Switch the program to primase's versions as they land: the program's passes (ORM pack, variants/single
-   sampling, blended-as-cutout, ambient to lights; review docs/primase-promote-review.md), the worlds/skatebird
-   marker reader (GTA lane; then level.rs and tools/skatebird_scan.py retire), the Unity shader waves.
-3. Then repo cleanup toward ~90% Rust (Caleb): views/compare/install tools into the program; research/ and the
-   census JSON out of the repo.
+1. 0.2.0 zips (primase 062d6943, everything on primase) to Caleb; he tests in game himself.
+2. Later, only when Caleb says go (via the modding coordinator): the conversion as one readable recipe, ~100-150
+   lines (read_level + read_markers + read_voronoi_programs, one Pipeline of typed passes from Unity lowering to ReSkate
+   preparation, write_map, compile_map); the matching tooling (shots, views, sheets) as its own small binary; no
+   hand-printed reports (notices); raise-skate and bake-normal-scale as passes; markers from primase_skatebird's core
+   markers instead of level.rs.
 
 ## Decided (Caleb's words; never dropped, only replaced by a newer decision)
 - 2026-10-19 · "Wait until all additions are in": switch code as each primase promotion lands, but no rebuild, game run or new zips until all have.
