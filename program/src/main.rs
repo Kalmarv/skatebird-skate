@@ -37,7 +37,7 @@ type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
 const USAGE: &str = "usage: skatebird-export build --typetrees <tpk> --out <folder> [--game-data <SkateBIRD_Data>] [--data <folder>] [--studio <reskate_cli.exe> [--game <skate. install>]] [--glb] [--web [--ktx2]] [--scene] [--jobs N] [--light-scale S] [--tag T] [LEVEL ...]
        skatebird-export map-from-scene <scene folder> <output folder> --name <map name>
-       skatebird-export package --out <build folder> --dest <folder> --version <version> [LEVEL ...]
+       skatebird-export package --out <build folder> --dest <folder> --version <version> [--icons <folder of LEVEL.png>] [LEVEL ...]
        skatebird-export views skate-commands LEVEL [--data <folder>]
        skatebird-export views map-name LEVEL
        skatebird-export sheets --refs <SkateBIRD shots> --run <run folder> --out <folder>
@@ -294,7 +294,7 @@ fn build_in_children(
 /// Each built level as an installable mod folder (`<out>/<level>/mod/SkateBIRD_<level>`) and its zip in `--dest`
 /// ([`package`]).
 fn package(args: Vec<String>) -> Result<()> {
-    let (mut out, mut dest, mut version, mut wanted) = (None, None, None, Vec::new());
+    let (mut out, mut dest, mut version, mut icons, mut wanted) = (None, None, None, None, Vec::new());
     let mut args = args.into_iter();
     while let Some(arg) = args.next() {
         let mut value = || args.next().ok_or(USAGE);
@@ -302,6 +302,7 @@ fn package(args: Vec<String>) -> Result<()> {
             "--out" => out = Some(PathBuf::from(value()?)),
             "--dest" => dest = Some(PathBuf::from(value()?)),
             "--version" => version = Some(value()?),
+            "--icons" => icons = Some(PathBuf::from(value()?)),
             _ if arg.starts_with("--") => {
                 return Err(format!("unknown option {arg}; {USAGE}").into());
             }
@@ -315,7 +316,16 @@ fn package(args: Vec<String>) -> Result<()> {
     std::fs::create_dir_all(&dest)?;
     for l in chosen {
         let name = settings::map_name(l.id);
-        let folder = package::mod_folder(&out.join(l.id), &l, &name, &version)?;
+        // the mod's picture: `<icons>/<level>.png`, a screenshot of the level in skate
+        let shot = icons.as_ref().map(|d| d.join(format!("{}.png", l.id)));
+        let png = match &shot {
+            Some(p) if p.is_file() => Some(std::fs::read(p)?),
+            _ => None,
+        };
+        if png.is_none() {
+            println!("{}: no icon ({})", l.id, shot.map_or("no --icons".into(), |p| format!("{} missing", p.display())));
+        }
+        let folder = package::mod_folder(&out.join(l.id), &l, &name, &version, png.as_deref())?;
         let zip = dest.join(format!("{name}-{version}.zip"));
         let bytes = package::zip(&folder, &zip)?;
         println!("{}: {} ({:.1} MB)", l.id, zip.display(), bytes as f64 / 1e6);
