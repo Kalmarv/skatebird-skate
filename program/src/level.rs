@@ -1,142 +1,194 @@
-//! What the program knows of each SkateBIRD level, from the game's own scan (`data/skatebird-levels.json`, made by
-//! `tools/skatebird_scan.py`): its name, its spawn (the `ResetPosition` marked `startingPosition`, else where the
-//! scene places `Player Birb`) and its travel points (the game's `ResetPosition` anchors and mission givers); and the
-//! skate markers made of them.
+//! The SkateBIRD levels the program converts, and the skate markers made of the game's own spawn and travel points.
 //!
-//! Unity (x, y, z) is scene (x, y, -z) (the reader's frame), and a Unity yaw `a` (0 faces +Z, clockwise from above)
-//! is the scene yaw `180 - a` (the mirror turns +Z into -Z): `atan2(sin a, -cos a)`.
-use std::collections::BTreeMap;
-use std::path::Path;
-
-use primase_core::World;
+//! primase's SkateBIRD reader (`primase_skatebird::read_markers`) reads every `ResetPosition` and `MissionGiver` of a
+//! level into the world, each with its GameObject's world matrix in the core frame (Unity (x, y, z) is (x, y, -z)).
+//! The program's policy over them, after the level's state is resolved (what is stored inactive is gone): the spawn
+//! is the `ResetPosition` marked `startingPosition` ([`settings::fallback_spawn`] where a level has none: level7), and
+//! the travel points are every reset position and mission giver. A marker's (east, north) is the core frame's (x, z)
+//! and its height y; a core forward (x, z) faces the scene yaw `atan2(x, z)`.
+use primase_core::{Name, Transform, World};
 use primase_reskate::dialect::{MarkerKind, SkateMarker};
+use primase_skatebird::components::{SkatebirdMissionGiver, SkatebirdResetPosition};
 
-/// A level's spawn or travel point, in Unity's coordinates as the game stores it.
+use crate::settings;
+
+/// A level the program converts: its scene file's name (`level2`) and the game's name for it (`rooftop`).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct Level {
+    pub id: &'static str,
+    pub name: &'static str,
+}
+
+/// A spawn or travel point in the core frame: metres, and the scene yaw in degrees (0 faces +z, clockwise from
+/// above, as the map writer reads it).
 #[derive(Clone, Debug, PartialEq)]
 pub struct Point {
     pub name: String,
-    /// Metres.
     pub position: [f64; 3],
-    /// Degrees, 0 faces +Z, clockwise seen from above.
     pub yaw_deg: f64,
 }
 
-/// One level as the program converts it.
+/// A level's spawn and travel points.
 #[derive(Clone, Debug)]
-pub struct Level {
-    /// The scene's file name (`level2`).
-    pub id: String,
-    /// The game's name for it (`rooftop`).
-    pub name: String,
+pub struct Markers {
     pub spawn: Point,
+    /// Whether the spawn is the game's own starting reset position (else the program's fallback).
+    pub starting: bool,
     pub travel: Vec<Point>,
-    /// The play space: the box of the level's enabled, non-trigger colliders (Unity min and max corners), those over
-    /// 100 m (skyline backdrops) left out; `None` when the scan has none.
-    pub bounds: Option<([f64; 3], [f64; 3])>,
 }
 
-/// Every level of the scan, by id, in the scan's order of ids.
-pub fn read_levels(path: &Path) -> Result<BTreeMap<String, Level>, String> {
-    let text = std::fs::read(path).map_err(|e| format!("{}: {e}", path.display()))?;
-    let doc: serde_json::Value =
-        serde_json::from_slice(&text).map_err(|e| format!("{}: {e}", path.display()))?;
-    let levels = doc
-        .get("levels")
-        .and_then(serde_json::Value::as_object)
-        .ok_or_else(|| format!("{}: no levels", path.display()))?;
-    let mut out = BTreeMap::new();
-    for (id, l) in levels {
-        let what = format!("{}: levels.{id}", path.display());
-        let spawn = l
-            .get("spawn")
-            .filter(|s| !s.is_null())
-            .or_else(|| l.get("player_birb_instance"))
-            .ok_or_else(|| format!("{what}: no spawn and no player_birb_instance"))?;
-        let travel = l
-            .get("travel_points")
-            .and_then(serde_json::Value::as_array)
-            .ok_or_else(|| format!("{what}: no travel_points"))?;
-        out.insert(
-            id.clone(),
-            Level {
-                id: id.clone(),
-                name: l
-                    .get("name")
-                    .and_then(serde_json::Value::as_str)
-                    .unwrap_or(id)
-                    .to_owned(),
-                spawn: point(spawn, "spawn", &format!("{what}.spawn"))?,
-                travel: travel
-                    .iter()
-                    .enumerate()
-                    .map(|(i, p)| {
-                        point(
-                            p,
-                            &format!("Travel {i}"),
-                            &format!("{what}.travel_points[{i}]"),
-                        )
-                    })
-                    .collect::<Result<_, _>>()?,
-                bounds: bounds(l),
-            },
-        );
+/// The levels of [`settings::LEVELS`] named in `wanted` (all when it is empty).
+pub fn chosen(wanted: &[String]) -> Result<Vec<Level>, String> {
+    if wanted.is_empty() {
+        return Ok(settings::LEVELS.to_vec());
     }
-    Ok(out)
+    wanted
+        .iter()
+        .map(|id| {
+            settings::LEVELS
+                .iter()
+                .find(|l| l.id == id)
+                .copied()
+                .ok_or_else(|| format!("no level {id} (the program converts {:?})", ids()))
+        })
+        .collect()
 }
 
-fn bounds(l: &serde_json::Value) -> Option<([f64; 3], [f64; 3])> {
-    let corner = |k: &str| -> Option<[f64; 3]> {
-        let a = l.get("bounds")?.get(k)?.as_array()?;
-        Some([
-            a.first()?.as_f64()?,
-            a.get(1)?.as_f64()?,
-            a.get(2)?.as_f64()?,
-        ])
-    };
-    Some((corner("min")?, corner("max")?))
+fn ids() -> Vec<&'static str> {
+    settings::LEVELS.iter().map(|l| l.id).collect()
 }
 
-fn point(v: &serde_json::Value, default_name: &str, what: &str) -> Result<Point, String> {
-    let position = v
-        .get("position")
-        .and_then(serde_json::Value::as_array)
-        .filter(|p| p.len() == 3)
-        .ok_or_else(|| format!("{what}: position needs 3 numbers"))?;
-    let mut xyz = [0.0; 3];
-    for (out, c) in xyz.iter_mut().zip(position) {
-        *out = c
-            .as_f64()
-            .ok_or_else(|| format!("{what}: position is not a number"))?;
-    }
-    Ok(Point {
-        name: v
-            .get("name")
-            .and_then(serde_json::Value::as_str)
-            .unwrap_or(default_name)
-            .to_owned(),
-        position: xyz,
-        yaw_deg: v
-            .get("yaw_deg")
-            .and_then(serde_json::Value::as_f64)
-            .unwrap_or(0.0),
-    })
-}
-
-/// A Unity yaw as the scene's (see the module documentation).
+/// A Unity yaw (0 faces Unity +Z) as the scene's: `180 - a`, i.e. `atan2(sin a, -cos a)` (the mirror turns +Z into -Z).
 pub fn scene_yaw(unity_yaw_deg: f64) -> f64 {
     let a = unity_yaw_deg.to_radians();
     a.sin().atan2(-a.cos()).to_degrees()
 }
 
-/// The marker of `p` in the scene: at the game's own height (a ceiling above it must not win), facing its yaw.
+/// The point of an entity's core transform: its translation, and the yaw its GameObject's forward faces. The core
+/// frame mirrors z, so Unity's local +Z is the transform's -z column (checked against the game's own yaws: level2's
+/// start, Unity 172.9341 -> scene 7.0659; level1's, Unity -54.8157 -> scene 234.8157).
+fn point(name: String, t: &Transform) -> Point {
+    let [x, _, z] = t.cols[2];
+    Point {
+        name,
+        position: t.cols[3].map(f64::from),
+        yaw_deg: (-f64::from(x)).atan2(-f64::from(z)).to_degrees(),
+    }
+}
+
+/// The level's spawn and travel points from the markers primase read into `w` (see the module documentation), the
+/// travel points chosen within `space` (the play space, core frame) by [`curate`].
+pub fn markers(w: &World, level: &str, space: [[f64; 3]; 2]) -> Result<Markers, String> {
+    let name = |e| {
+        w.get::<Name>(e)
+            .map_or_else(|| format!("{e:?}"), |n| n.0.clone())
+    };
+    let mut spawn = None;
+    let mut resets = Vec::new();
+    let mut givers = Vec::new();
+    for (e, r) in w.iter::<SkatebirdResetPosition>() {
+        let Some(t) = w.get::<Transform>(e) else {
+            continue;
+        };
+        let p = point(name(e), t);
+        if r.starting_position {
+            if spawn.is_some() {
+                return Err(format!("{level}: more than one starting reset position"));
+            }
+            spawn = Some(p.clone());
+        }
+        resets.push((r.starting_position, p));
+    }
+    for (e, g) in w.iter::<SkatebirdMissionGiver>() {
+        let Some(t) = w.get::<Transform>(e) else {
+            continue;
+        };
+        let label = g
+            .title
+            .clone()
+            .filter(|t| !t.is_empty())
+            .unwrap_or_else(|| name(e));
+        givers.push(point(label, t));
+    }
+    let travel = curate(resets, givers, space);
+    let (spawn, starting) = match spawn {
+        Some(s) => (s, true),
+        None => (
+            settings::fallback_spawn(level).ok_or(format!(
+                "{level}: no starting reset position and no fallback"
+            ))?,
+            false,
+        ),
+    };
+    Ok(Markers {
+        spawn,
+        starting,
+        travel,
+    })
+}
+
+/// The travel points, as the game scan chose them (tools/skatebird_scan.py until 2026-10-19): the reset positions
+/// inside the play space (10 m margin), the starting one first, then spread farthest-first to 8 in all (12 when the
+/// level has no mission givers); the mission givers inside it, one per label, spread to 8. At most 20, under Studio's
+/// 25.
+fn curate(resets: Vec<(bool, Point)>, givers: Vec<Point>, space: [[f64; 3]; 2]) -> Vec<Point> {
+    let inside = |p: &Point| {
+        (0..3).all(|i| space[0][i] - 10.0 <= p.position[i] && p.position[i] <= space[1][i] + 10.0)
+    };
+    let mut by_label: Vec<Point> = Vec::new();
+    for g in givers.into_iter().filter(|g| inside(g)) {
+        if !by_label.iter().any(|b| b.name == g.name) {
+            by_label.push(g);
+        }
+    }
+    let cap = if by_label.is_empty() { 12 } else { 8 };
+    let (starters, rest): (Vec<_>, Vec<_>) = resets
+        .into_iter()
+        .filter(|(_, p)| inside(p))
+        .partition(|(s, _)| *s);
+    let mut chosen: Vec<Point> = starters.into_iter().take(1).map(|(_, p)| p).collect();
+    let rest: Vec<Point> = rest.into_iter().map(|(_, p)| p).collect();
+    let left = cap - chosen.len();
+    chosen.extend(spread(rest, left));
+    chosen.extend(spread(by_label, 8));
+    chosen
+}
+
+/// At most `n` of `pool`, the first and then each the one farthest from those taken.
+fn spread(pool: Vec<Point>, n: usize) -> Vec<Point> {
+    if pool.len() <= n {
+        return pool;
+    }
+    let d2 = |a: &Point, b: &Point| {
+        (0..3)
+            .map(|i| (a.position[i] - b.position[i]).powi(2))
+            .sum::<f64>()
+    };
+    let nearest = |i: usize, taken: &[usize]| {
+        taken
+            .iter()
+            .map(|&t| d2(&pool[i], &pool[t]))
+            .fold(f64::INFINITY, f64::min)
+    };
+    let mut taken = vec![0usize];
+    while taken.len() < n {
+        let next = (0..pool.len())
+            .filter(|i| !taken.contains(i))
+            .max_by(|&a, &b| nearest(a, &taken).total_cmp(&nearest(b, &taken)))
+            .expect("fewer taken than the pool");
+        taken.push(next);
+    }
+    taken.into_iter().map(|i| pool[i].clone()).collect()
+}
+
 fn marker(kind: MarkerKind, p: &Point) -> SkateMarker {
     SkateMarker {
         kind,
         position: Some((
-            [p.position[0] as f32, -(p.position[2] as f32)],
+            [p.position[0] as f32, p.position[2] as f32],
             Some(p.position[1] as f32),
         )),
-        yaw: Some(scene_yaw(p.yaw_deg)),
+        yaw: Some(p.yaw_deg),
         m: None,
         blueprint: None,
         snap: None,
@@ -147,17 +199,57 @@ fn marker(kind: MarkerKind, p: &Point) -> SkateMarker {
     }
 }
 
-/// The level's spawn marker (named `spawn`) and one travel marker per travel point; returns the travel count.
-pub fn add_markers(w: &mut World, level: &Level) -> usize {
+/// The spawn marker (named `spawn`) and one travel marker per travel point, at the game's own heights (a ceiling above
+/// must not win); returns the travel count.
+pub fn add_markers(w: &mut World, m: &Markers) -> usize {
     let e = w.spawn();
-    w.insert(e, primase_core::Name("spawn".into()));
-    w.insert(e, marker(MarkerKind::Spawn, &level.spawn));
-    for p in &level.travel {
+    w.insert(e, Name("spawn".into()));
+    w.insert(e, marker(MarkerKind::Spawn, &m.spawn));
+    for p in &m.travel {
         let e = w.spawn();
-        w.insert(e, primase_core::Name(p.name.clone()));
+        w.insert(e, Name(p.name.clone()));
         w.insert(e, marker(MarkerKind::Travel, p));
     }
-    level.travel.len()
+    m.travel.len()
+}
+
+/// The play space in the core frame (min and max corners): the box of every collision soup placed in the world, each
+/// soup over [`settings::PLAY_SPACE_MAX`] on an axis left out (skyline backdrops and the buildings' 360 m sides).
+pub fn play_space(w: &World) -> Option<[[f64; 3]; 2]> {
+    let mut lo = [f64::INFINITY; 3];
+    let mut hi = [f64::NEG_INFINITY; 3];
+    let placed = |c: &primase_core::Collision, t: Option<&Transform>| {
+        let mut a = [f64::INFINITY; 3];
+        let mut b = [f64::NEG_INFINITY; 3];
+        for p in &c.positions {
+            let q: [f64; 3] = match t {
+                Some(t) => std::array::from_fn(|r| {
+                    (0..3)
+                        .map(|k| f64::from(t.cols[k][r]) * f64::from(p[k]))
+                        .sum::<f64>()
+                        + f64::from(t.cols[3][r])
+                }),
+                None => p.map(f64::from),
+            };
+            for i in 0..3 {
+                a[i] = a[i].min(q[i]);
+                b[i] = b[i].max(q[i]);
+            }
+        }
+        (a, b)
+    };
+    for (e, c) in w.iter::<primase_core::Collision>() {
+        let (a, b) = placed(c, w.get::<Transform>(e));
+        // a soup too large on an axis (or with no finite extent) is not play space
+        if (0..3).any(|i| (b[i] - a[i]).is_nan() || b[i] - a[i] > settings::PLAY_SPACE_MAX) {
+            continue;
+        }
+        for i in 0..3 {
+            lo[i] = lo[i].min(a[i]);
+            hi[i] = hi[i].max(b[i]);
+        }
+    }
+    (lo[0] <= hi[0]).then_some([lo, hi])
 }
 
 #[cfg(test)]
@@ -165,42 +257,72 @@ mod tests {
     use super::*;
 
     #[test]
-    fn levels_from_the_scan_become_markers() {
-        let dir = std::env::temp_dir().join(format!("skatebird-levels-{}", std::process::id()));
-        std::fs::create_dir_all(&dir).unwrap();
-        let path = dir.join("skatebird-levels.json");
-        std::fs::write(
-            &path,
-            r#"{"game":"SkateBIRD","levels":{
-                "level2":{"name":"rooftop",
-                  "spawn":{"position":[-18.7,1.189,84.8],"yaw_deg":172.9341},
-                  "travel_points":[{"name":"Lower Roof","position":[-109.6,-3.0,89.0],"yaw_deg":0.0}]},
-                "level7":{"name":"flashback","spawn":null,
-                  "player_birb_instance":{"position":[0.0,1.189,0.0],"yaw_deg":172.9341},"travel_points":[]}}}"#,
-        )
-        .unwrap();
-        let levels = read_levels(&path).unwrap();
-        assert_eq!(levels["level7"].spawn.position, [0.0, 1.189, 0.0]);
-
+    fn markers_face_their_forward_and_sit_at_their_height() {
+        // level2's starting reset position: Unity (-18.7, 1.189, 84.8), yaw 172.9341 -> core (-18.7, 1.189, -84.8),
+        // facing core (sin a, 0, -cos a), the transform's -z column (as primase's reader gives it)
+        let a = 172.9341f64.to_radians();
+        let t = Transform {
+            cols: [
+                [(-a.cos()) as f32, 0.0, (-a.sin()) as f32],
+                [0.0, 1.0, 0.0],
+                [(-a.sin()) as f32, 0.0, a.cos() as f32],
+                [-18.7, 1.189, -84.8],
+            ],
+        };
+        let p = point("Middle Roof".into(), &t);
+        assert!(
+            (p.yaw_deg - scene_yaw(172.9341)).abs() < 1e-4,
+            "{}",
+            p.yaw_deg
+        );
+        assert!((p.yaw_deg - 7.0659).abs() < 1e-3);
         let mut w = World::new();
-        assert_eq!(add_markers(&mut w, &levels["level2"]), 1);
-        let mut found: Vec<(String, SkateMarker)> = w
-            .iter::<SkateMarker>()
-            .map(|(e, m)| (w.get::<primase_core::Name>(e).unwrap().0.clone(), m.clone()))
+        let m = Markers {
+            spawn: p,
+            starting: true,
+            travel: vec![],
+        };
+        assert_eq!(add_markers(&mut w, &m), 0);
+        let (_, s) = w.iter::<SkateMarker>().next().unwrap();
+        assert_eq!(s.position, Some(([-18.7, -84.8], Some(1.189))));
+        assert_eq!(s.snap, None);
+    }
+
+    #[test]
+    fn the_program_converts_eight_levels() {
+        assert_eq!(chosen(&[]).unwrap().len(), 8);
+        assert!(chosen(&["level6".into()]).is_err());
+    }
+}
+
+#[cfg(test)]
+mod curate_tests {
+    use super::*;
+
+    fn at(name: &str, x: f64) -> Point {
+        Point {
+            name: name.into(),
+            position: [x, 0.0, 0.0],
+            yaw_deg: 0.0,
+        }
+    }
+
+    #[test]
+    fn travel_points_are_capped_spread_and_inside() {
+        let space = [[0.0, -1.0, -1.0], [100.0, 1.0, 1.0]];
+        let mut resets: Vec<(bool, Point)> = (0..20)
+            .map(|i| (i == 5, at(&format!("r{i}"), f64::from(i) * 5.0)))
             .collect();
-        found.sort_by(|a, b| a.0.cmp(&b.0));
-        let (name, lower) = &found[0];
-        assert_eq!(name, "Lower Roof");
-        assert_eq!(lower.kind, MarkerKind::Travel);
-        assert_eq!(lower.position, Some(([-109.6, -89.0], Some(-3.0))));
-        assert!((lower.yaw.unwrap() - 180.0).abs() < 1e-9);
-        let (name, spawn) = &found[1];
-        assert_eq!(name, "spawn");
-        assert_eq!(spawn.kind, MarkerKind::Spawn);
-        assert_eq!(spawn.position, Some(([-18.7, -84.8], Some(1.189))));
-        // the frozen table the program replaces: level2's scene yaw 7.0659
-        assert!((spawn.yaw.unwrap() - 7.0659).abs() < 1e-3);
-        assert_eq!(spawn.snap, None);
-        std::fs::remove_dir_all(&dir).ok();
+        resets.push((false, at("far", 500.0)));
+        let givers = vec![at("Jodie", 10.0), at("Jodie", 20.0), at("Reuben", 30.0)];
+        let t = curate(resets, givers, space);
+        assert_eq!(t.len(), 8 + 2);
+        assert_eq!(t[0].name, "r5", "the starting reset position first");
+        assert!(t.iter().all(|p| p.name != "far"), "outside the play space");
+        assert_eq!(
+            t.iter().filter(|p| p.name == "Jodie").count(),
+            1,
+            "one giver per label"
+        );
     }
 }

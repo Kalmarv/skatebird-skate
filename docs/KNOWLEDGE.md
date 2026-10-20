@@ -57,7 +57,8 @@ skatebird-export build --typetrees <modding>/cache/primase/pm-core/w9/typetrees.
 ```
 
 - Per level: `<out>/<level>/map/SkateBIRD_<level>` (the normalized map) and `<out>/<level>/stage/Patch` (the mod
-  folder `SkateBIRD_<level>`). Spawn and travel points come from `data/skatebird-levels.json`; every choice is in
+  folder `SkateBIRD_<level>`). Spawn and travel points come from primase's SkateBIRD reader (`primase_skatebird::read_markers`; the
+  program picks them: `program/src/level.rs`); every choice is in
   `program/src/settings.rs`, the Studio compile's too (`--no-stream --no-lods --no-gi --time-of-day noon`).
 - `--no-stream` keeps these small levels resident: no WorldPartition cells, so none of Studio's own vista proxies,
   and the shared runner's vista guard (`check_no_studio_vistas.py`) passes (level2, 2026-10-19).
@@ -77,7 +78,8 @@ skatebird-export build --typetrees <modding>/cache/primase/pm-core/w9/typetrees.
 ## Scripts in `tools/`
 
 - `ingame_levels.sh TAG [LEVEL ...]` - every level in one skate. launch through the shared runner (see above).
-- `skatebird_scan.py` - makes `data/skatebird-levels.json` (until primase's SkateBIRD reader emits the markers).
+- `skatebird_scan.py`, `data/skatebird-levels.json` - the old scan, kept until the reader-based markers are checked
+  against it in game, then removed.
 - `skatebird_views.sh` (a wrapper over the program's `skatebird-shots`, `program/src/shots.rs`), `skatebird_lab.sh`,
   `skatebird-teleport-plugin/` - the SkateBIRD side (lab copy with BepInEx); runbook
   `docs/screenshot-runbook.md`. The chase-camera fit that set

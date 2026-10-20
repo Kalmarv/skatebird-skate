@@ -10,6 +10,8 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::path::PathBuf;
 
 use primase_core::pass::Pass;
+
+use crate::level::{Level, Point};
 use primase_gltf::prepare::{FillMissingTexcoords, PrepareGltfMaterials, UnitValue};
 use primase_reskate::EncodingOptions;
 use primase_reskate::components::{CollisionSurfaces, CollisionWeld};
@@ -29,6 +31,71 @@ use primase_reskate::prepare::{
 pub const LIGHTS: LightCalibration = LightCalibration::Scale(3.007);
 /// The ambient's fill lights' spacing, metres ([`crate::ambient`]).
 pub const AMBIENT_FILL: f64 = 15.0;
+/// A collision soup larger than this on an axis is not play space (skyline backdrops; the buildings' 360 m sides).
+pub const PLAY_SPACE_MAX: f64 = 100.0;
+
+/// The levels the program converts: SkateBIRD's skateable scenes (BuildSettings 1-5, 7, 12, 13) and the game's
+/// names for them.
+pub const LEVELS: [Level; 8] = [
+    Level {
+        id: "level1",
+        name: "bedroom 1",
+    },
+    Level {
+        id: "level2",
+        name: "rooftop",
+    },
+    Level {
+        id: "level3",
+        name: "office",
+    },
+    Level {
+        id: "level4",
+        name: "server room",
+    },
+    Level {
+        id: "level5",
+        name: "bedroom 2",
+    },
+    Level {
+        id: "level7",
+        name: "flashback",
+    },
+    Level {
+        id: "level12",
+        name: "playground",
+    },
+    Level {
+        id: "level13",
+        name: "skate heaven",
+    },
+];
+
+/// The spawn of a level with no starting reset position: level7 (flashback), where the game starts the player at
+/// its `Player Birb` placement, Unity (0, 1.189, 0) facing yaw 172.9341.
+pub fn fallback_spawn(level: &str) -> Option<Point> {
+    (level == "level7").then(|| Point {
+        name: "spawn".into(),
+        position: [0.0, 1.189, 0.0],
+        yaw_deg: crate::level::scene_yaw(172.9341),
+    })
+}
+
+/// SkateBIRD's ambient as fill lights ([`primase_lighting::FillAmbientLights`]) over the play space (core frame),
+/// [`AMBIENT_FILL`] metres apart on a lattice anchored at the play space's Unity minimum corner, every cell meeting
+/// it, none within a quarter spacing of a surface, each reaching 1.5 spacings.
+pub fn ambient_fill(space: [[f64; 3]; 2]) -> Result<primase_lighting::FillAmbientLights, String> {
+    let [lo, hi] = space;
+    let grid = primase_lighting::FillGrid::new(
+        [lo[0], lo[1], hi[2]],
+        AMBIENT_FILL,
+        space,
+        primase_lighting::FillCells::Meeting,
+        AMBIENT_FILL / 4.0,
+        AMBIENT_FILL * 1.5,
+    )?;
+    Ok(primase_lighting::FillAmbientLights::new(grid))
+}
 /// The web tile set's cell, metres.
 pub const WEB_TILE: f64 = 200.0;
 /// The largest file a web tile may carry before its cell is split, bytes: 96 MiB.
@@ -70,6 +137,10 @@ pub fn lowering() -> Vec<Box<dyn Pass>> {
         Box::new(primase_meshops::TessellateColliders),
         Box::new(primase_meshops::BakeNonrigid {
             mirrors: primase_meshops::Mirrors::Bake,
+        }),
+        // the scene's ambient as core's (a linear gradient); a skybox scene by its probe's average
+        Box::new(primase_unity::lower_ambient::LowerUnityAmbient {
+            probe: primase_unity::lower_ambient::UnityAmbientProbe::ProbeAverage,
         }),
     ]
 }
@@ -155,14 +226,14 @@ pub fn map_name(level: &str) -> String {
 /// The Studio compile of a level's map: resident (`--no-stream`: these levels are small, so no WorldPartition cells
 /// and none of Studio's own vista proxies, which hung the GPU on large maps), the game's own geometry at every distance
 /// (`--no-lods`: SkateBIRD has no LODs, Studio's would be decimations), no baked GI, compiled at noon.
-pub fn studio_compile() -> [&'static str; 5] {
-    [
-        "--no-stream",
-        "--no-lods",
-        "--no-gi",
-        "--time-of-day",
-        "noon",
-    ]
+pub fn studio_compile() -> primase_reskate::compile::CompileChoices {
+    primase_reskate::compile::CompileChoices {
+        streaming: Some(primase_reskate::compile::Streaming::Resident),
+        lods: false,
+        gi: false,
+        time_of_day: Some(primase_reskate::compile::TimeOfDay::Noon),
+        pause_map: None,
+    }
 }
 
 /// How the map is encoded (the fork's `BuildOptions` defaults, build.rs:63-87, and the map name the program gives):

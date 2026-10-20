@@ -1,4 +1,6 @@
-//! The fixed views each level is compared at, the same in SkateBIRD and in skate., and the side-by-side sheets.
+//! The fixed views each level is compared at, the same in SkateBIRD and in skate., and the side-by-side sheets. The
+//! views are data (`data/skatebird-views.json`: per level the spawn and 3 of its travel anchors spread over the list,
+//! made once from the game's scan on 2026-10-19; every non-spawn view looks along Unity yaw 180).
 //!
 //! A view is a place on the ground in Unity coordinates (metres) and the Unity yaw the camera looks along. skate's own
 //! coordinates are the scene's: Unity (x, y, z) is skate (x, y, -z) (`trainer where` at level2's spawn, Unity
@@ -6,42 +8,14 @@
 //! is shot where the level starts (facing the spawn's yaw), and `trainer tp` leaves the skater at heading 0 (skate +z,
 //! Unity -z: Unity yaw 180), so every other view looks along Unity yaw 180, with skate's third-person chase camera.
 //! SkateBIRD's camera is put where that camera is (tools/skatebird_views.sh --chase).
-use std::collections::BTreeMap;
 use std::path::Path;
 
-use serde_json::{Value, json};
+use serde_json::Value;
 
-use crate::level::Level;
-
-/// Travel anchors per level besides the spawn.
-const EXTRA: usize = 3;
 /// Metres above the anchor a teleport lands (skate drops the skater onto the ground).
 const LIFT: f64 = 0.3;
-/// The Unity yaw a skater faces after `trainer tp` (skate heading 0).
-const TELEPORT_YAW: f64 = 180.0;
 /// Seconds a view is held after its shot is asked for: under load the runner's capture starts 15-20 s late.
 const HOLD: u32 = 25;
-
-/// The views of every level: the spawn, then [`EXTRA`] of its travel anchors spread over the list.
-pub fn make(levels: &BTreeMap<String, Level>) -> Value {
-    let mut out = serde_json::Map::new();
-    for (id, l) in levels {
-        let mut views = vec![
-            json!({"name": "spawn", "position": l.spawn.position, "yaw_deg": l.spawn.yaw_deg}),
-        ];
-        let others: Vec<_> = l
-            .travel
-            .iter()
-            .filter(|p| p.position != l.spawn.position)
-            .collect();
-        let step = (others.len() / EXTRA).max(1);
-        for p in others.iter().step_by(step).take(EXTRA) {
-            views.push(json!({"name": p.name, "position": p.position, "yaw_deg": TELEPORT_YAW}));
-        }
-        out.insert(id.clone(), json!({"name": l.name, "views": views}));
-    }
-    Value::Object(out)
-}
 
 /// RESKATE_STARTUP_COMMANDS for one level's run (a variant `level3_T` has `level3`'s views): load it, settle, a shot
 /// at the spawn, then a teleport and a shot per other view (each `trainer where` is a shot).

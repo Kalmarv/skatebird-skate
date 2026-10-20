@@ -9,7 +9,7 @@
 //! skatebird-export map-from-scene <scene folder> <output folder> --name <map name>
 //! ```
 //!
-//! `build` converts the levels named (every level of `data/skatebird-levels.json` when none is), each into
+//! `build` converts the levels named (every level of [`settings::LEVELS`] when none is), each into
 //! `<out>/<level>/`: `map/SkateBIRD_<level>` (the ReSkate map, with the game's spawn and travel points), and with
 //! `--studio` its compile `stage/Patch` (the mod folder `SkateBIRD_<level>`, against `--game`, default
 //! `$RESKATE_GAME`). `--glb` adds the level as one glTF, `--web` the web tile set (`--ktx2`: KTX2 textures),
@@ -18,8 +18,6 @@
 //! exit code says whether all did. `map-from-scene` makes the map of a skate scene folder the same way. Every pass's
 //! counts and approximations are printed.
 
-mod ambient;
-mod compile;
 mod level;
 mod package;
 mod settings;
@@ -40,10 +38,9 @@ use primase_unity::player::Player;
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
-const USAGE: &str = "usage: skatebird-export build --typetrees <tpk> --out <folder> [--game-data <SkateBIRD_Data>] [--data <folder>] [--studio <reskate_cli.exe> [--game <skate. install>]] [--glb] [--web [--ktx2]] [--scene] [--jobs N] [--light-scale S] [--ambient-fill M] [--tag T] [LEVEL ...]
+const USAGE: &str = "usage: skatebird-export build --typetrees <tpk> --out <folder> [--game-data <SkateBIRD_Data>] [--data <folder>] [--studio <reskate_cli.exe> [--game <skate. install>]] [--glb] [--web [--ktx2]] [--scene] [--jobs N] [--light-scale S] [--tag T] [LEVEL ...]
        skatebird-export map-from-scene <scene folder> <output folder> --name <map name>
-       skatebird-export package --out <build folder> --dest <folder> --version <version> [--data <folder>] [LEVEL ...]
-       skatebird-export views make [--data <folder>]            (writes <data>/skatebird-views.json)
+       skatebird-export package --out <build folder> --dest <folder> --version <version> [LEVEL ...]
        skatebird-export views skate-commands LEVEL [--data <folder>]
        skatebird-export sheets --refs <SkateBIRD shots> --run <run folder> --out <folder>
        skatebird-export skatebird-shots <level>[,<level>...] <out> [--chase] [--back D] [--eye H] [--fov F] [--pitch P] [--yaw-offset Y] [--settle S] [--load-settle S] [--keep-post] [--keep-npcs] [--keep] [--data <folder>]";
@@ -60,8 +57,6 @@ struct Outputs {
     scene: bool,
     /// `--light-scale S`: lights calibrated by this scale instead of [`settings::LIGHTS`].
     light_scale: Option<f64>,
-    /// `--ambient-fill SPACING`: the ambient's fill lights this many metres apart instead of [`settings::AMBIENT_FILL`].
-    fill: Option<f64>,
     /// `--tag T`: the level's folder, map and mod named `..._T`, so variants of a level stand side by side.
     tag: Option<String>,
 }
@@ -128,7 +123,7 @@ fn build(args: Vec<String>) -> Result<()> {
             "--web" => outputs.web = true,
             "--ktx2" => outputs.ktx2 = true,
             "--scene" => outputs.scene = true,
-            "--light-scale" | "--ambient-fill" | "--tag" => {
+            "--light-scale" | "--tag" => {
                 let text = value()?.to_string_lossy().into_owned();
                 let number = || {
                     text.parse::<f64>()
@@ -138,7 +133,6 @@ fn build(args: Vec<String>) -> Result<()> {
                 };
                 match arg.as_str() {
                     "--light-scale" => outputs.light_scale = Some(number()?),
-                    "--ambient-fill" => outputs.fill = Some(number()?),
                     _ => outputs.tag = Some(text.clone()),
                 }
             }
@@ -155,7 +149,7 @@ fn build(args: Vec<String>) -> Result<()> {
         return Err(format!("--ktx2 needs --web; {USAGE}").into());
     }
     let studio = match studio_cli {
-        Some(cli) => Some(compile::Studio {
+        Some(cli) => Some(primase_reskate::compile::Studio {
             cli,
             game: match game.or_else(|| std::env::var_os("RESKATE_GAME").map(PathBuf::from)) {
                 Some(g) => g,
@@ -165,21 +159,9 @@ fn build(args: Vec<String>) -> Result<()> {
         None if game.is_some() => return Err("--game needs --studio".into()),
         None => None,
     };
-    let levels = level::read_levels(&data.join("skatebird-levels.json"))?;
     let surfaces: BTreeMap<String, String> =
         serde_json::from_slice(&std::fs::read(data.join("skatebird-surfaces.json"))?)?;
-    let chosen: Vec<&level::Level> = if wanted.is_empty() {
-        levels.values().collect()
-    } else {
-        wanted
-            .iter()
-            .map(|id| {
-                levels
-                    .get(id)
-                    .ok_or_else(|| format!("no level {id} in the scan"))
-            })
-            .collect::<std::result::Result<_, _>>()?
-    };
+    let chosen = level::chosen(&wanted)?;
     if jobs > 1 && chosen.len() > 1 {
         return build_in_children(&chosen, &pass_on, jobs, &out, &outputs);
     }
@@ -191,17 +173,23 @@ fn build(args: Vec<String>) -> Result<()> {
     for l in chosen {
         println!("== {} ({})", l.id, l.name);
         let started = std::time::Instant::now();
-        let named = outputs.named(&l.id);
+        let named = outputs.named(l.id);
         let dir = out.join(&named);
-        let result = convert(&player, l, &surfaces, &outputs, &dir).and_then(|map| {
+        let result = convert(&player, &l, &surfaces, &outputs, &dir).and_then(|map| {
             let Some(studio) = &studio else {
                 return Ok(format!("map {}", map.display()));
             };
-            let c = compile::compile(
+            // the stage is replaced: Studio's compile refuses a folder with anything in it
+            let stage = dir.join("stage");
+            if stage.exists() {
+                std::fs::remove_dir_all(&stage)?;
+            }
+            let c = primase_reskate::compile::compile_map(
                 studio,
                 &map,
-                &dir.join("stage"),
+                &stage,
                 &settings::map_name(&named),
+                &settings::studio_compile(),
             )?;
             Ok(format!(
                 "map and Studio compile ({:.0} s, {} warnings, log {}): {}",
@@ -240,7 +228,7 @@ fn build(args: Vec<String>) -> Result<()> {
 /// `build` of each level in its own process (the same options, that one level), `jobs` at a time, each one's output
 /// in `<out>/<level>/build.log`; then each level's result line.
 fn build_in_children(
-    chosen: &[&level::Level],
+    chosen: &[level::Level],
     options: &[String],
     jobs: usize,
     out: &Path,
@@ -248,21 +236,21 @@ fn build_in_children(
 ) -> Result<()> {
     let exe = std::env::current_exe()?;
     let started = std::time::Instant::now();
-    let mut queue: std::collections::VecDeque<&level::Level> = chosen.iter().copied().collect();
+    let mut queue: std::collections::VecDeque<&level::Level> = chosen.iter().collect();
     let mut running: Vec<(&level::Level, PathBuf, std::process::Child)> = Vec::new();
     let mut results = Vec::new();
     while !queue.is_empty() || !running.is_empty() {
         while running.len() < jobs
             && let Some(l) = queue.pop_front()
         {
-            let dir = out.join(outputs.named(&l.id));
+            let dir = out.join(outputs.named(l.id));
             std::fs::create_dir_all(&dir)?;
             let log = dir.join("build.log");
             let file = std::fs::File::create(&log)?;
             let child = std::process::Command::new(&exe)
                 .arg("build")
                 .args(options)
-                .args(["--jobs", "1", &l.id])
+                .args(["--jobs", "1", l.id])
                 .stdout(file.try_clone()?)
                 .stderr(file)
                 .spawn()?;
@@ -309,7 +297,6 @@ fn build_in_children(
 /// ([`package`]).
 fn package(args: Vec<String>) -> Result<()> {
     let (mut out, mut dest, mut version, mut wanted) = (None, None, None, Vec::new());
-    let mut data = Path::new(env!("CARGO_MANIFEST_DIR")).join("../data");
     let mut args = args.into_iter();
     while let Some(arg) = args.next() {
         let mut value = || args.next().ok_or(USAGE);
@@ -317,7 +304,6 @@ fn package(args: Vec<String>) -> Result<()> {
             "--out" => out = Some(PathBuf::from(value()?)),
             "--dest" => dest = Some(PathBuf::from(value()?)),
             "--version" => version = Some(value()?),
-            "--data" => data = PathBuf::from(value()?),
             _ if arg.starts_with("--") => {
                 return Err(format!("unknown option {arg}; {USAGE}").into());
             }
@@ -327,23 +313,11 @@ fn package(args: Vec<String>) -> Result<()> {
     let (Some(out), Some(dest), Some(version)) = (out, dest, version) else {
         return Err(format!("package needs --out, --dest and --version; {USAGE}").into());
     };
-    let levels = level::read_levels(&data.join("skatebird-levels.json"))?;
-    let chosen: Vec<&level::Level> = if wanted.is_empty() {
-        levels.values().collect()
-    } else {
-        wanted
-            .iter()
-            .map(|id| {
-                levels
-                    .get(id)
-                    .ok_or_else(|| format!("no level {id} in the scan"))
-            })
-            .collect::<std::result::Result<_, _>>()?
-    };
+    let chosen = level::chosen(&wanted)?;
     std::fs::create_dir_all(&dest)?;
     for l in chosen {
-        let name = settings::map_name(&l.id);
-        let folder = package::mod_folder(&out.join(&l.id), l, &name, &version)?;
+        let name = settings::map_name(l.id);
+        let folder = package::mod_folder(&out.join(l.id), &l, &name, &version)?;
         let zip = dest.join(format!("{name}-{version}.zip"));
         let bytes = package::zip(&folder, &zip)?;
         println!("{}: {} ({:.1} MB)", l.id, zip.display(), bytes as f64 / 1e6);
@@ -351,7 +325,7 @@ fn package(args: Vec<String>) -> Result<()> {
     Ok(())
 }
 
-/// `views make`: the views file from the scan; `views skate-commands LEVEL`: one run's console commands ([`views`]).
+/// `views skate-commands LEVEL`: one run's console commands for the views of `data/skatebird-views.json` ([`views`]).
 fn views_command(args: Vec<String>) -> Result<()> {
     let mut data = Path::new(env!("CARGO_MANIFEST_DIR")).join("../data");
     let mut words = Vec::new();
@@ -364,21 +338,6 @@ fn views_command(args: Vec<String>) -> Result<()> {
     }
     let file = data.join("skatebird-views.json");
     match &words[..] {
-        [w] if w == "make" => {
-            let levels = level::read_levels(&data.join("skatebird-levels.json"))?;
-            let v = views::make(&levels);
-            std::fs::write(
-                &file,
-                serde_json::to_string_pretty(&v)?
-                    + "
-",
-            )?;
-            println!(
-                "{}: {} levels",
-                file.display(),
-                v.as_object().map_or(0, |o| o.len())
-            );
-        }
         [w, level] if w == "skate-commands" => {
             let v: serde_json::Value = serde_json::from_slice(&std::fs::read(&file)?)?;
             println!("{}", views::skate_commands(&v, level)?);
@@ -518,7 +477,9 @@ fn convert(
 ) -> Result<PathBuf> {
     let mut w = World::new();
     let started = std::time::Instant::now();
-    let report = read_level(player, &l.id, &mut w)?;
+    let report = read_level(player, l.id, &mut w)?;
+    let mr = primase_skatebird::read_markers(player, l.id, &mut w)?;
+    println!("markers read: {mr:?}");
     println!(
         "read {}: {} renderers, {} tree renderers, {} prototypes, {} primitives, {} materials, {} textures, {} \
          terrains, {} lights (sun named: {}), {} colliders ({} by trees); axes {:?}, conditioned {:?}, LODGroups {:?}, \
@@ -559,16 +520,19 @@ fn convert(
     println!("lowered in {:.1} s", started.elapsed().as_secs_f64());
     std::fs::create_dir_all(out)?;
     if outputs.glb {
-        write_glb(&w, &l.id, out)?;
+        write_glb(&w, l.id, out)?;
     }
     if outputs.web {
         write_web(&w, outputs.ktx2, out)?;
     }
-    let spacing = outputs.fill.unwrap_or(settings::AMBIENT_FILL);
-    let bounds = l
-        .bounds
-        .ok_or("the ambient fill needs the level's bounds in the scan")?;
-    show("ambient-fill", &ambient::add_fill(&mut w, bounds, spacing));
+    // the game's spawn and travel points, as the level stands after its state is resolved
+    // the play space: the level's collision, without backdrops
+    let space =
+        level::play_space(&w).ok_or("the level has no collision to measure its play space by")?;
+    let markers = level::markers(&w, l.id, space)?;
+    // SkateBIRD's ambient as fill lights over the play space
+    println!("play space (core frame): {space:?}");
+    run(&mut w, vec![Box::new(settings::ambient_fill(space)?)])?;
     let lights = match outputs.light_scale {
         Some(s) => primase_reskate::passes::LightCalibration::Scale(s),
         None => settings::LIGHTS,
@@ -602,19 +566,25 @@ fn convert(
         "raise-skate",
         &primase_reskate::prepare::raise_skate(
             &mut w,
-            &settings::raise(&l.id, surfaces.clone(), lights)?,
+            &settings::raise(l.id, surfaces.clone(), lights)?,
         )?,
     );
-    let travel = level::add_markers(&mut w, l);
+    let travel = level::add_markers(&mut w, &markers);
     println!(
-        "markers: spawn at {:?} (Unity), yaw {}; {travel} travel",
-        l.spawn.position, l.spawn.yaw_deg
+        "markers: spawn {} at {:?} (core frame), yaw {:.4}; {travel} travel",
+        if markers.starting {
+            "the starting reset position"
+        } else {
+            "the program's fallback"
+        },
+        markers.spawn.position,
+        markers.spawn.yaw_deg
     );
     if outputs.scene {
         let r = primase_reskate::write::interchange::write(&w, &out.join("skate").join("scene"))?;
         println!("skate scene: {} tables written", r.tables.len());
     }
-    write_the_map(&mut w, out, &settings::map_name(&outputs.named(&l.id)))
+    write_the_map(&mut w, out, &settings::map_name(&outputs.named(l.id)))
 }
 
 /// Runs `passes` with the pass manager (each verified after it runs) and prints each one's counts.

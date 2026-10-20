@@ -484,12 +484,12 @@ dependencies = [
 [[package]]
 name = "primase-bytes"
 version = "0.1.0"
-source = "git+https://github.com/kalmarv/primase.git?rev=4e3a7208#4e3a7208c86c7ef1ccc7edc4b5a15500c5974397"
+source = "git+https://github.com/kalmarv/primase.git?rev=e9712712#e97127124a35b5feb07a9f08df84e3e895fedc10"
 
 [[package]]
 name = "primase-cache"
 version = "0.1.0"
-source = "git+https://github.com/kalmarv/primase.git?rev=4e3a7208#4e3a7208c86c7ef1ccc7edc4b5a15500c5974397"
+source = "git+https://github.com/kalmarv/primase.git?rev=e9712712#e97127124a35b5feb07a9f08df84e3e895fedc10"
 dependencies = [
  "sha2",
 ]
@@ -497,7 +497,7 @@ dependencies = [
 [[package]]
 name = "primase-compress"
 version = "0.1.0"
-source = "git+https://github.com/kalmarv/primase.git?rev=4e3a7208#4e3a7208c86c7ef1ccc7edc4b5a15500c5974397"
+source = "git+https://github.com/kalmarv/primase.git?rev=e9712712#e97127124a35b5feb07a9f08df84e3e895fedc10"
 dependencies = [
  "flate2",
  "libloading 0.9.0",
@@ -508,7 +508,7 @@ dependencies = [
 [[package]]
 name = "primase-core"
 version = "0.1.0"
-source = "git+https://github.com/kalmarv/primase.git?rev=4e3a7208#4e3a7208c86c7ef1ccc7edc4b5a15500c5974397"
+source = "git+https://github.com/kalmarv/primase.git?rev=e9712712#e97127124a35b5feb07a9f08df84e3e895fedc10"
 dependencies = [
  "serde",
  "serde_json",
@@ -518,7 +518,7 @@ dependencies = [
 [[package]]
 name = "primase-dds"
 version = "0.1.0"
-source = "git+https://github.com/kalmarv/primase.git?rev=4e3a7208#4e3a7208c86c7ef1ccc7edc4b5a15500c5974397"
+source = "git+https://github.com/kalmarv/primase.git?rev=e9712712#e97127124a35b5feb07a9f08df84e3e895fedc10"
 dependencies = [
  "primase-core",
  "thiserror",
@@ -527,7 +527,7 @@ dependencies = [
 [[package]]
 name = "primase-frostbite"
 version = "0.1.0"
-source = "git+https://github.com/kalmarv/primase.git?rev=4e3a7208#4e3a7208c86c7ef1ccc7edc4b5a15500c5974397"
+source = "git+https://github.com/kalmarv/primase.git?rev=e9712712#e97127124a35b5feb07a9f08df84e3e895fedc10"
 dependencies = [
  "primase-bytes",
  "primase-compress",
@@ -537,7 +537,7 @@ dependencies = [
 [[package]]
 name = "primase-glb"
 version = "0.1.0"
-source = "git+https://github.com/kalmarv/primase.git?rev=4e3a7208#4e3a7208c86c7ef1ccc7edc4b5a15500c5974397"
+source = "git+https://github.com/kalmarv/primase.git?rev=e9712712#e97127124a35b5feb07a9f08df84e3e895fedc10"
 dependencies = [
  "bytemuck",
  "primase-core",
@@ -548,7 +548,7 @@ dependencies = [
 [[package]]
 name = "primase-gltf"
 version = "0.1.0"
-source = "git+https://github.com/kalmarv/primase.git?rev=4e3a7208#4e3a7208c86c7ef1ccc7edc4b5a15500c5974397"
+source = "git+https://github.com/kalmarv/primase.git?rev=e9712712#e97127124a35b5feb07a9f08df84e3e895fedc10"
 dependencies = [
  "bytemuck",
  "primase-core",
@@ -562,12 +562,12 @@ dependencies = [
 [[package]]
 name = "primase-hash"
 version = "0.1.0"
-source = "git+https://github.com/kalmarv/primase.git?rev=4e3a7208#4e3a7208c86c7ef1ccc7edc4b5a15500c5974397"
+source = "git+https://github.com/kalmarv/primase.git?rev=e9712712#e97127124a35b5feb07a9f08df84e3e895fedc10"
 
 [[package]]
 name = "primase-image"
 version = "0.1.0"
-source = "git+https://github.com/kalmarv/primase.git?rev=4e3a7208#4e3a7208c86c7ef1ccc7edc4b5a15500c5974397"
+source = "git+https://github.com/kalmarv/primase.git?rev=e9712712#e97127124a35b5feb07a9f08df84e3e895fedc10"
 dependencies = [
  "png",
  "primase-core",
@@ -578,9 +578,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "primase-lighting"
+version = "0.1.0"
+source = "git+https://github.com/kalmarv/primase.git?rev=e9712712#e97127124a35b5feb07a9f08df84e3e895fedc10"
+dependencies = [
+ "primase-core",
+ "primase-meshops",
+]
+
+[[package]]
 name = "primase-meshops"
 version = "0.1.0"
-source = "git+https://github.com/kalmarv/primase.git?rev=4e3a7208#4e3a7208c86c7ef1ccc7edc4b5a15500c5974397"
+source = "git+https://github.com/kalmarv/primase.git?rev=e9712712#e97127124a35b5feb07a9f08df84e3e895fedc10"
 dependencies = [
  "primase-core",
  "thiserror",
@@ -589,7 +598,7 @@ dependencies = [
 [[package]]
 name = "primase-reskate"
 version = "0.1.0"
-source = "git+https://github.com/kalmarv/primase.git?rev=4e3a7208#4e3a7208c86c7ef1ccc7edc4b5a15500c5974397"
+source = "git+https://github.com/kalmarv/primase.git?rev=e9712712#e97127124a35b5feb07a9f08df84e3e895fedc10"
 dependencies = [
  "half",
  "primase-bytes",
@@ -611,9 +620,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "primase-skatebird"
+version = "0.1.0"
+source = "git+https://github.com/kalmarv/primase.git?rev=e9712712#e97127124a35b5feb07a9f08df84e3e895fedc10"
+dependencies = [
+ "primase-core",
+ "primase-unity",
+ "serde",
+ "serde_json",
+ "thiserror",
+]
+
+[[package]]
 name = "primase-texcodec"
 version = "0.1.0"
-source = "git+https://github.com/kalmarv/primase.git?rev=4e3a7208#4e3a7208c86c7ef1ccc7edc4b5a15500c5974397"
+source = "git+https://github.com/kalmarv/primase.git?rev=e9712712#e97127124a35b5feb07a9f08df84e3e895fedc10"
 dependencies = [
  "bcdec_rs",
  "half",
@@ -624,7 +645,7 @@ dependencies = [
 [[package]]
 name = "primase-unity"
 version = "0.1.0"
-source = "git+https://github.com/kalmarv/primase.git?rev=4e3a7208#4e3a7208c86c7ef1ccc7edc4b5a15500c5974397"
+source = "git+https://github.com/kalmarv/primase.git?rev=e9712712#e97127124a35b5feb07a9f08df84e3e895fedc10"
 dependencies = [
  "primase-compress",
  "primase-core",
@@ -640,7 +661,7 @@ dependencies = [
 [[package]]
 name = "primase-vertex"
 version = "0.1.0"
-source = "git+https://github.com/kalmarv/primase.git?rev=4e3a7208#4e3a7208c86c7ef1ccc7edc4b5a15500c5974397"
+source = "git+https://github.com/kalmarv/primase.git?rev=e9712712#e97127124a35b5feb07a9f08df84e3e895fedc10"
 dependencies = [
  "half",
  "thiserror",
@@ -649,7 +670,7 @@ dependencies = [
 [[package]]
 name = "primase-web"
 version = "0.1.0"
-source = "git+https://github.com/kalmarv/primase.git?rev=4e3a7208#4e3a7208c86c7ef1ccc7edc4b5a15500c5974397"
+source = "git+https://github.com/kalmarv/primase.git?rev=e9712712#e97127124a35b5feb07a9f08df84e3e895fedc10"
 dependencies = [
  "basisu_c_sys",
  "meshopt",
@@ -816,8 +837,10 @@ dependencies = [
  "primase-core",
  "primase-gltf",
  "primase-image",
+ "primase-lighting",
  "primase-meshops",
  "primase-reskate",
+ "primase-skatebird",
  "primase-unity",
  "primase-web",
  "serde_json",
