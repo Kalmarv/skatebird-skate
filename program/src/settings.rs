@@ -137,6 +137,16 @@ pub fn raise(
     RaiseOptions::new(name, lights)?.with_surfaces(surfaces)
 }
 
+/// Blended surfaces (not decals, not water) as alpha-tested cutouts at 0.5: Studio compiles a blended material to the
+/// stock decal/blend programs, which skate doesn't draw as world geometry (level12's canopies vanished).
+pub fn blended_surfaces() -> Result<primase_reskate::passes::PrepareReskateBlendedSurfaces, String>
+{
+    primase_reskate::passes::PrepareReskateBlendedSurfaces::new(
+        0.5,
+        primase_reskate::passes::BlendedSelection::All,
+    )
+}
+
 /// The map's (and the mod folder's) name for a level.
 pub fn map_name(level: &str) -> String {
     format!("SkateBIRD_{level}")

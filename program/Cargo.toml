@@ -6,15 +6,15 @@ publish = false
 
 # primase is a library this program uses, pinned by git revision (no path checkout, no fork): its public main, or while
 # a fix of the owner's is on its way to main, that fix's commit on primase-work (Caleb, 2026-10-19: "you can use a
-# branch idc, the fixes must land on primase main before it's done"). Now main 6feaa93f.
+# branch idc, the fixes must land on primase main before it's done"). Now main 96c686a1.
 [dependencies]
-primase-core = { git = "https://github.com/kalmarv/primase.git", rev = "6feaa93f" }
-primase-unity = { git = "https://github.com/kalmarv/primase.git", rev = "6feaa93f" }
-primase-meshops = { git = "https://github.com/kalmarv/primase.git", rev = "6feaa93f" }
-primase-image = { git = "https://github.com/kalmarv/primase.git", rev = "6feaa93f" }
-primase-reskate = { git = "https://github.com/kalmarv/primase.git", rev = "6feaa93f" }
-primase-gltf = { git = "https://github.com/kalmarv/primase.git", rev = "6feaa93f" }
-primase-web = { git = "https://github.com/kalmarv/primase.git", rev = "6feaa93f", features = ["ktx2"] }
+primase-core = { git = "https://github.com/kalmarv/primase.git", rev = "96c686a1" }
+primase-unity = { git = "https://github.com/kalmarv/primase.git", rev = "96c686a1" }
+primase-meshops = { git = "https://github.com/kalmarv/primase.git", rev = "96c686a1" }
+primase-image = { git = "https://github.com/kalmarv/primase.git", rev = "96c686a1" }
+primase-reskate = { git = "https://github.com/kalmarv/primase.git", rev = "96c686a1" }
+primase-gltf = { git = "https://github.com/kalmarv/primase.git", rev = "96c686a1" }
+primase-web = { git = "https://github.com/kalmarv/primase.git", rev = "96c686a1", features = ["ktx2"] }
 serde_json = "=1.0.154"
 zip = { version = "2", default-features = false, features = ["deflate"] }
 

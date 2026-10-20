@@ -20,9 +20,7 @@
 
 mod ambient;
 mod compile;
-mod cutout;
 mod level;
-mod pack;
 mod package;
 mod settings;
 mod unmaterialed;
@@ -500,14 +498,20 @@ fn convert(
         None => settings::LIGHTS,
     };
     // skate does not draw blended world geometry: blended surfaces (not decals) as cutouts
-    show("blended-as-cutout", &cutout::blended_as_cutout(&mut w));
+    run(&mut w, vec![Box::new(settings::blended_surfaces()?)])?;
     one_uv_set(&mut w)?;
     show("leave-out-unmaterialed", &unmaterialed::leave_out(&mut w)?);
     // skate's materials carry one wrap for all their textures: take the base colour's; and one mask image:
     // occlusion, roughness and metallic pack into it
     run(
         &mut w,
-        vec![Box::new(wrap::UnifyTextureWrap), Box::new(pack::PackOrm)],
+        vec![
+            Box::new(wrap::UnifyTextureWrap),
+            Box::new(primase_image::PackOrm::new(
+                primase_image::OrmSize::MetallicRoughness,
+                primase_image::MissingLevels::Generate,
+            )),
+        ],
     )?;
     // a normal map's scale is a material value the target has no slot for; it goes into the pixels
     show(
