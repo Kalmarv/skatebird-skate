@@ -48,7 +48,7 @@ pub fn mod_folder(
         serde_json::from_slice(&std::fs::read(&levels).map_err(|e| e.to_string())?)
             .map_err(|e| format!("{}: {e}", levels.display()))?;
     for row in doc["levels"].as_array_mut().into_iter().flatten() {
-        row["displayName"] = format!("SkateBIRD: {}", level.name).into();
+        row["displayName"] = display_name(level).into();
     }
     write(
         &levels,
@@ -76,12 +76,17 @@ pub fn mod_folder(
     Ok(out)
 }
 
+/// A level's name in skate.'s level list and on its page: `SkateBird | Bedroom 1` (Caleb, 2026-10-20).
+pub fn display_name(level: &Level) -> String {
+    format!("SkateBird | {}", capitalised(level.name))
+}
+
 /// The levels under open sky (rooftop, playground, skate heaven); the others are rooms.
 const OUTDOORS: [&str; 3] = ["level2", "level12", "level13"];
 
 /// The Thunderstore page of a level's package: what it is, its pictures, what is in it, how to install it.
 pub fn readme(level: &Level, name: &str) -> String {
-    let title = format!("SkateBIRD: {}", capitalised(level.name));
+    let title = display_name(level);
     format!(
         "# {title}
 
