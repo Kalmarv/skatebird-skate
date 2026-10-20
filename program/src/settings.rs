@@ -262,21 +262,28 @@ pub fn raise(
     RaiseOptions::new(name, lights)?.with_surfaces(surfaces)
 }
 
+/// The window glass: drawn clear (Caleb, 2026-10-19, of frosted windows: "Fully clear windows").
+pub const WINDOW_GLASS: [&str; 1] = ["ClearGlass"];
+
 /// Blended surfaces (not decals, not water) as alpha-tested cutouts at 0.5: Studio compiles a blended material to the
-/// stock decal/blend programs, which skate doesn't draw as world geometry (level12's canopies vanished). Glass (a
-/// uniform alpha below the cutoff, which a cutout drops: level1's glass tabletop vanished but collided) is drawn
-/// opaque as frosted glass instead, over a light grey (0.8 linear) at least 35% its own colour (Caleb, 2026-10-19:
-/// "I get it's glass but lets make it slightly more cloudy").
-pub fn blended_surfaces() -> Result<primase_reskate::passes::PrepareReskateBlendedSurfaces, String>
-{
-    primase_reskate::passes::PrepareReskateBlendedSurfaces::new(
-        0.5,
-        primase_reskate::passes::BlendedSelection::All,
-        primase_reskate::passes::UniformAlpha::Frost {
-            opacity: 0.35,
-            grey: 0.8,
-        },
-    )
+/// stock decal/blend programs, which skate doesn't draw as world geometry (level12's canopies vanished). Window glass
+/// ([`WINDOW_GLASS`]) cuts out below the cutoff, so the windows are clear; other glass (a uniform alpha below the
+/// cutoff: level1's glass tabletop, which collides) is drawn opaque as frosted glass, over a light grey (0.8 linear)
+/// at least 35% its own colour (Caleb, 2026-10-19: "I get it's glass but lets make it slightly more cloudy").
+pub fn blended_surfaces() -> Result<Vec<Box<dyn Pass>>, String> {
+    use primase_reskate::passes::{BlendedSelection, PrepareReskateBlendedSurfaces, UniformAlpha};
+    let windows = BlendedSelection::Named(WINDOW_GLASS.iter().map(|s| (*s).to_owned()).collect());
+    Ok(vec![
+        Box::new(PrepareReskateBlendedSurfaces::new(0.5, windows, UniformAlpha::Cutout)?),
+        Box::new(PrepareReskateBlendedSurfaces::new(
+            0.5,
+            BlendedSelection::All,
+            UniformAlpha::Frost {
+                opacity: 0.35,
+                grey: 0.8,
+            },
+        )?),
+    ])
 }
 
 /// skate's one texture-coordinate set, as the program chooses it: a primitive stored without the set its texture

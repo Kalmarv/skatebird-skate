@@ -542,7 +542,7 @@ fn convert(
         None => settings::LIGHTS,
     };
     // skate does not draw blended world geometry: blended surfaces (not decals) as cutouts
-    run(&mut w, vec![Box::new(settings::blended_surfaces()?)])?;
+    run(&mut w, settings::blended_surfaces()?)?;
     one_uv_set(&mut w)?;
     // a part with no material (an empty Unity material slot) has no surface skate can draw
     run(
