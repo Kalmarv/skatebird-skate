@@ -16,14 +16,21 @@ travel), on primase main.
 - Matching method: fixed views (`data/skatebird-views.json`); SkateBIRD camera fitted to skate's chase camera;
   SkateBIRD references `cache/skatebird/ref/<level>/` (no UI, player or NPC birds).
 ## Shipped
-- 0.2.0 test zips for Caleb (not published): releases/skatebird/0.2.0/SkateBIRD_<level>-0.2.0.zip x8 (16-30 MB), copy in
-  X:/modding-archive/skatebird/releases/0.2.0. primase main 062d6943 (everything on primase: markers, ambient fill,
-  shader waves 1-2 incl. the Voronoi bake of 10 materials on 6 levels, compile stage), build job 4f7def3f (21 min,
-  the Voronoi bake most of it), package 88fa3edb. Not loaded in game by me: Caleb tests it himself.
-- 0.1.0 test zips (superseded): releases/skatebird/0.1.0.
+- 0.3.0 release candidate (Caleb uploads to Thunderstore himself; not published by me): releases/skatebird/0.3.0/
+  SkateBIRD_<LevelName>-0.3.0.zip x8, icon.png in each where Caleb gave a screenshot (cache/skatebird/icons/<level>.png:
+  1, 2, 5, 7, 12, 13; office and server room still wanted). Program on primase main 95ba2b9a. Changes since 0.2.0:
+  level-name maps; mission-only objects, unlocks, the player's board and the camera's arrow left out; GrindableRail
+  chains as grind curves (136 in level1); room shells cast no shadow (ambient fill lights gone); office adds cubicle
+  surround walls, ceiling lights, window wall; server room its tower; office and server room ceilings not drawn;
+  big windows clear, other glass frosted; 5 travel points; level7 spawn dropped to the ground; overhead textured pause
+  map over the play space with only walls/ceilings left out; lab plugin fly mode (F6 / L3).
+- 0.2.0 / 0.1.0 test zips (superseded): releases/skatebird/0.2.0, 0.1.0.
 
-## In flight
-Nothing running.
+## In flight (2026-10-20 night, Caleb asleep: "you can launch skate yourself to finish testing")
+- Orca job f1af824f: build-0.3.1 levels 4, 5, 7, 12, 13 then package all 8 into releases/skatebird/0.3.0 (levels 1-3
+  already built in build-0.3.1 and packaged 22:33).
+- Orca job 64b20afe (after f1af824f): kit/run game, tools/ingame_levels.sh night-031, all 8 levels, shots in
+  cache/skatebird/runs/night-031. Check: office/server room starts lit, flashback spawn on the ground.
 
 ## Known gaps
 1. Fill lights show as bright spots where they sit near ceilings/walls (the writer gives every light specular 1).
@@ -31,10 +38,8 @@ Nothing running.
    the skater there.
 3. Materials: bedroom bowl floor/supports, playground gravel tiling, leaves sparser than SkateBIRD's.
 
-## Caleb's 0.2.0 test findings (open)
-Mostly bedroom 1 (level1). Caleb (2026-10-19): "I think lights, mission, grinds, waypoint cleanup and they're almost
-ready to release" (he takes the mod images himself). Status: lights wired (5), waypoints done (9), frosted glass
-wired (7), missions (1/3/4/10) and grinds (6) wait on primase-gta-lane.
+## Caleb's 0.2.0 / 0.3.0 test findings
+All in 0.3.0 except 8 (cup lid z-fight, Caleb: "not really that worried about it") and 2 (parked: lighting).
 1. Floating pretzels / "tape" on the line: mission collectibles (`SkateCollectible`, "Munch The Leftovers" snacks;
    shown only during their mission) with every `EnableOneAtRandom` candidate stacked (pretzel, donut).
 2. Floor colour differs (grey speckle in SkateBIRD, smooth maroon in skate): Caleb, "I think the floor might just be
@@ -68,18 +73,13 @@ wired (7), missions (1/3/4/10) and grinds (6) wait on primase-gta-lane.
    and `Main Camera / Mission Arrow` (levels 7, 12). Added to primase-gta-lane's mission-only drop.
 
 ## Next
-0. Waiting on primase-gta-lane (2026-10-19): the reader states SkateCollectible / PermanentUnlockingCollectible /
-   EnableOneAtRandom / MissionGiver / SkateboardGateway, with a pass dropping those subtrees and `Main Camera`'s
-   (MissionToggled world state kept); GrindableRail chains read and lowered to `skate.grind_curve`. Then pin, wire,
-   and on Caleb's go build 0.3.0 (level-name maps; tell Caleb to remove the SkateBIRD_levelN mods).
-1. Program pinned to primase main 949dcb01 (shadow casting, frost); 0.2.0 zips (062d6943) are what Caleb tests.
+1. Read night-031's shots; report to Caleb in the morning. Office and server room icons from him.
 2. Later, only when Caleb says go (via the modding coordinator): the conversion as one readable recipe, ~100-150
-   lines (read_level + read_markers + read_voronoi_programs, one Pipeline of typed passes from Unity lowering to ReSkate
-   preparation, write_map, compile_map); the tooling (shots, views, sheets, packaging) in its own folder or small binary crate, nothing fancy, so program/ is only the conversion; no
-   hand-printed reports (notices); raise-skate and bake-normal-scale as passes; markers from primase_skatebird's core
-   markers instead of level.rs.
+   lines; tooling in its own folder or small crate; markers from primase_skatebird's core markers instead of level.rs.
 
 ## Decided (Caleb's words; never dropped, only replaced by a newer decision)
+- 2026-10-20 · Night testing: "I'm going to sleep now so you can launch skate yourself to finish testing. I'll take ss tomorrow".
+- 2026-10-19 · Release: "I'm gonna release this version on thunder store, it's plenty good" (he uploads). Windows: "fully clear windows, opaque other glass. just the big windows clear". Server room: "just make the floors or whatever above not shadow cast". TOD: "default tod is noon, noon is fine".
 - 2026-10-19 · Release gate: "lights, mission, grinds, waypoint cleanup and they're almost ready to release"; mod images: "I'll take SS of the maps".
 - 2026-10-19 · Missions: "any mission only objects should be removed". Markers: "way too many mission markers" (now 5).
 - 2026-10-19 · Lighting: "make the room material allow light to pass through and just use skybox lighting"; "with the lighting change let's remove the ambient lights cause we won't need it" (replaces the "Fill lights" decision below).
