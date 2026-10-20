@@ -31,6 +31,11 @@ Nothing running.
    the skater there.
 3. Materials: bedroom bowl floor/supports, playground gravel tiling, leaves sparser than SkateBIRD's.
 
+## Caleb's 0.2.0 test findings (open)
+1. Floating pretzels / "tape" on the bedroom-1 line: mission collectibles (`SkateCollectible`, "Munch The Leftovers"
+   snacks; the game shows them only during their mission) with every `EnableOneAtRandom` candidate stacked (pretzel,
+   donut). Proposed: primase's SkateBIRD reader states both scripts; the program leaves mission collectibles out.
+
 ## Next
 1. 0.2.0 zips (primase 062d6943, everything on primase) to Caleb; he tests in game himself.
 2. Later, only when Caleb says go (via the modding coordinator): the conversion as one readable recipe, ~100-150
