@@ -16,6 +16,10 @@ travel), on primase main.
 - Matching method: fixed views (`data/skatebird-views.json`); SkateBIRD camera fitted to skate's chase camera;
   SkateBIRD references `cache/skatebird/ref/<level>/` (no UI, player or NPC birds).
 ## Shipped
+- 0.3.0 PUBLISHED on Thunderstore by Caleb (2026-10-20): little_don2-SkateBIRD_{Bedroom1, Rooftop, Office,
+  ServerRoom, Bedroom2, Flashback, Playground, SkateHeaven} 0.3.0 (checked on Thunderstore's API). In-game names
+  "SkateBird | <Level>"; pages from each zip's README (pictures in the public repo's media/); zips in
+  releases/skatebird/0.3.0 and X:/modding-archive/skatebird/releases/0.3.0.
 - 0.3.0 release candidate (Caleb uploads to Thunderstore himself; not published by me): releases/skatebird/0.3.0/
   SkateBIRD_<LevelName>-0.3.0.zip x8, icon.png in each where Caleb gave a screenshot (cache/skatebird/icons/<level>.png:
   1, 2, 5, 7, 12, 13; office and server room still wanted). Program on primase main 95ba2b9a. Changes since 0.2.0:
@@ -82,7 +86,7 @@ All in 0.3.0 except 8 (cup lid z-fight, Caleb: "not really that worried about it
    and `Main Camera / Mission Arrow` (levels 7, 12). Added to primase-gta-lane's mission-only drop.
 
 ## Next
-1. Office and server room icons from Caleb; a 0.3.1 build from the recipe when he wants the shadow change (a2) out.
+1. A 0.3.1 from the recipe program when Caleb wants the shadow change (a2) out; dark spots under big structures (bedroom 2 shelving, flashback table, playground structure) are open if he wants them.
 
 ## The program (2026-10-20, Caleb: "SkateBIRD can go now, it's basically done")
 - program/ is the recipe: src/recipe.rs (SkatebirdReader -> lower pipeline -> prepare pipeline -> convert into
