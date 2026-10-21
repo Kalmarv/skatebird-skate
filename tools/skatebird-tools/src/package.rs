@@ -66,6 +66,7 @@ pub fn mod_folder(
         ),
     });
     write(&out.join("README.md"), readme(level, name).as_bytes())?;
+    write(&out.join("CHANGELOG.md"), CHANGELOG.as_bytes())?;
     write(
         &out.join("manifest.json"),
         &serde_json::to_vec_pretty(&manifest).map_err(|e| e.to_string())?,
@@ -80,6 +81,19 @@ pub fn mod_folder(
 pub fn display_name(level: &Level) -> String {
     format!("SkateBird | {}", capitalised(level.name))
 }
+
+/// Every package's CHANGELOG.md (Thunderstore shows it on the package's page).
+pub const CHANGELOG: &str = "# Changelog
+
+## 0.3.1
+- Grind rails only on the ropes, cables, chains and ziplines. 0.3.0 made every SkateBIRD rail a skate. grind, ramp
+  copings included, and skate.'s grind rails are solid, so riders hit them at the top of ramps.
+- Objects the game itself draws without shadows stay without shadows.
+
+## 0.3.0
+- First release: the level rebuilt from SkateBIRD's own files, with its grind rails, lighting through the room, mission
+  pickups left out, the spawn and 5 fast-travel points.
+";
 
 /// The levels under open sky (rooftop, playground, skate heaven); the others are rooms.
 const OUTDOORS: [&str; 3] = ["level2", "level12", "level13"];

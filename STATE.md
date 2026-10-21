@@ -16,6 +16,11 @@ travel), on primase main.
 - Matching method: fixed views (`data/skatebird-views.json`); SkateBIRD camera fitted to skate's chase camera;
   SkateBIRD references `cache/skatebird/ref/<level>/` (no UI, player or NPC birds).
 ## Shipped
+- 0.3.1 (2026-10-21, Caleb uploads as each is ready): releases/skatebird/0.3.1 x8, same package names as 0.3.0. Grind
+  rails only on ropes, cables, chains and ziplines (program pass keep-skatebird-line-rails, groups by census in
+  choices::line_rails; renders scratch/skatebird/skatebird-coord/diag/rails/*_04.png); the recipe program on primase
+  main 5b7552d8 (a2 shadows). Build job 1a55c13c (32 min, playground 23 min). Archived X:/modding-archive/skatebird/
+  releases/0.3.1.
 - 0.3.0 PUBLISHED on Thunderstore by Caleb (2026-10-20): little_don2-SkateBIRD_{Bedroom1, Rooftop, Office,
   ServerRoom, Bedroom2, Flashback, Playground, SkateHeaven} 0.3.0 (checked on Thunderstore's API). In-game names
   "SkateBird | <Level>"; pages from each zip's README (pictures in the public repo's media/); zips in
@@ -86,13 +91,7 @@ All in 0.3.0 except 8 (cup lid z-fight, Caleb: "not really that worried about it
    and `Main Camera / Mission Arrow` (levels 7, 12). Added to primase-gta-lane's mission-only drop.
 
 ## Next
-0. 0.4.0 NOW (Caleb, 2026-10-20: "we need to remove the ones on ramps ... make a v 0.4 right away"; "ropes and
-   freestanding rails only"). Cause: skate's grind prisms are solid; SkateBIRD's GrindableRails run along every ramp
-   coping, so in 0.3.0 the prisms poke out of the ramp face at the lip (riders hit them going up). Coping test
-   (scripts/grind_vs_collision.py): at least half the rail line within 1 cm of a sloped collision surface. Bedroom 1
-   89 of 136 copings; Skate Heaven 215 of 365 (its SFox_Grind_Link chains: no collision of their own, their colliders
-   are disabled in the scene; only their grind prism). Waiting on primase-reskate-lane for the leave-out option; then
-   rebuild all 8, package 0.4.0. Not approved by Caleb before 0.3.0: coping rails were my inclusion.
+0. Done as 0.3.1 (Caleb: "maybe it should be 0.3.1 ... since it's just a fix").
 1. A 0.3.1 from the recipe program when Caleb wants the shadow change (a2) out; dark spots under big structures (bedroom 2 shelving, flashback table, playground structure) are open if he wants them.
 
 ## The program (2026-10-20, Caleb: "SkateBIRD can go now, it's basically done")

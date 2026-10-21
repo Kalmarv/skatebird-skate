@@ -78,6 +78,97 @@ pub fn hidden_ceilings(level: &str) -> Option<Box<dyn Pass>> {
     }))
 }
 
+/// The rails that stay grind rails, by level: the groups (bare-`/` GameObject paths) whose rails run along a line the
+/// game draws (`CurvedLine3D`), a chain (`SFox_Grind_Link`) or an object named a wire, cable, rope, chain, zipline or
+/// line, found by census of the game's objects (scratch scripts/rail_kinds.py, 2026-10-20). Every other rail is left
+/// out ([`crate::rails`]; Caleb: "just detect the actual ziplines/chains and only grind rail those"). Flashback has none.
+pub fn line_rails(level: &str) -> &'static [&'static str] {
+    match level {
+        "level1" => &[
+            "Partially Dynamic Level Elements/Back Of Overpass Table Magazine Span Rail/",
+            "Partially Dynamic Level Elements/Front Of Overpass To Bowl Rail/",
+            "Partially Dynamic Level Elements/Rope 1/",
+            "Partially Dynamic Level Elements/Rope From Big Vertical Ramp/",
+        ],
+        "level2" => &[
+            "Level Elements/Separate Building 1/Baked Houdini Objects/Tangled Mess O Wires 11/",
+            "Level Elements/Separate Building 1/Baked Houdini Objects/Tangled Mess O Wires 12/",
+            "Level Elements/Separate Building 1/Baked Houdini Objects/Tangled Mess O Wires 13/",
+            "Level Elements/Separate Building 1/Baked Houdini Objects/Tangled Mess O Wires 14/",
+            "Level Elements/Shorter Building/Baked Houdini Objects/Tangled Mess O Wires 1/",
+            "Level Elements/Shorter Building/Baked Houdini Objects/Tangled Mess O Wires 2/",
+            "Level Elements/Shorter Building/Baked Houdini Objects/Tangled Mess O Wires 3/",
+            "Level Elements/Shorter Building/Baked Houdini Objects/Tangled Mess O Wires 4/",
+            "Level Elements/Shorter Building/Baked Houdini Objects/Tangled Mess O Wires 5/",
+            "Level Elements/Shorter Building/Baked Houdini Objects/Tangled Mess O Wires 6/",
+            "Level Elements/Shorter Building/Baked Houdini Objects/Tangled Mess O Wires 7/",
+            "Level Elements/Taller Building/Baked Houdini Objects/Tangled Mess O Wires 10/",
+            "Level Elements/Taller Building/Baked Houdini Objects/Tangled Mess O Wires 8/",
+            "Level Elements/Taller Building/Baked Houdini Objects/Tangled Mess O Wires 9/",
+        ],
+        "level3" => &[
+            "Level Elements/CEO Office/Baked Houdini Objects/SFox_Cable_Run20/",
+            "Level Elements/CEO Office/Baked Houdini Objects/SFox_Cable_Run24/",
+            "Level Elements/CEO Office/Baked Houdini Objects/SFox_Cable_Run28 Right Curve/",
+            "Level Elements/CEO Office/Baked Houdini Objects/SFox_Grind_Link1/",
+            "Level Elements/CEO Office/Baked Houdini Objects/SFox_Grind_Link3/",
+            "Level Elements/CEO Office/Baked Houdini Objects/SFox_Grind_Link4/",
+            "Level Elements/CEO Office/Baked Houdini Objects/SFox_Grind_Link5/",
+            "Level Elements/CEO Office/Baked Houdini Objects/SFox_Grind_Link6/",
+            "Level Elements/Cubicle Park/Computers Side/Baked Houdini Prefabs/SFox_Grind_Link2/",
+            "Level Elements/Cubicle Park/Snack Bowl Side/Baked Houdini Prefabs/SFox_Grind_Link1 cubicle bowl side/",
+            "Level Elements/Cubicle Park/Snack Bowl Side/Baked Houdini Prefabs/SFox_Grind_Link4 cubicle bowl side/",
+            "Level Elements/Snack Bar/Baked Houdini Objects/SFox_Grind_Link1/",
+            "Partially Static Level Elements/Clip-line enabled DURING clip-line mission/SFox_Grind_Link2/",
+            "Partially Static Level Elements/Clip-line enabled after clip-line mission/SFox_Grind_Link2/",
+        ],
+        "level4" => &[
+            "Main Tower/Second Level/Baked Houdini Objects/SFox_Cable_Run1/",
+            "Main Tower/Second Level/Baked Houdini Objects/SFox_Cable_Run2/",
+            "Main Tower/Second Level/Baked Houdini Objects/SFox_Cable_Run3/",
+            "Main Tower/Second Level/Baked Houdini Objects/SFox_Cable_Run5/",
+            "Main Tower/Second Level/Baked Houdini Objects/sfox_grind_cable1/",
+            "Main Tower/Second Level/Baked Houdini Objects/sfox_grind_cable2/",
+            "Main Tower/Third Level/Baked Houdini Objects/sfox_grind_cable1/",
+        ],
+        "level5" => &[
+            "Level Elements/Bathroom/bathroom bird toy chain/",
+            "Level Elements/By The Door/ceiling to floor rope coil/",
+            "Missions - Bedroom 2/Streaming Profits/Mission Enabled/Contents/bed to waterfall money line/",
+            "Missions - Bedroom 2/Streaming Profits/Mission Enabled/Contents/couch to waterfall money line/",
+            "Missions - Bedroom 2/Streaming Profits/bed to waterfall no-money line/",
+            "Missions - Bedroom 2/Streaming Profits/couch to waterfall no-money line/",
+        ],
+        "level12" => &[
+            "Level Elements/Second Level/Bird added ropes/Rope After Mission/ceiling to floor rope coil/",
+            "Level Elements/Second Level/Bird added ropes/Rope During Mission/ceiling to floor rope coil/",
+            "Non-Static Level Elements/Bird Added Zipline 1/",
+            "Non-Static Level Elements/Bird Added Zipline 2/",
+        ],
+        "level13" => &[
+            "Level Contents/Connecting Grinds Etc Main Area/SFox_Grind_Link1 (1)/",
+            "Level Contents/Connecting Grinds Etc Main Area/SFox_Grind_Link1/",
+            "Level Contents/Connecting Grinds Etc Main Area/SFox_Grind_Link2 (1)/",
+            "Level Contents/Connecting Grinds Etc Main Area/SFox_Grind_Link2/",
+            "Level Contents/Connecting Grinds Etc Main Area/SFox_Grind_Link4 cubicle bowl side/",
+            "Level Contents/Connection To High Roof/SFox_Grind_Link2 (2)/",
+            "Level Contents/Connection To High Roof/SFox_Grind_Link2 (3)/",
+            "Level Contents/Heaven Is A Halfpipe/Book Based Funbox/SFox_Grind_Link2 (3)/",
+            "Level Contents/Heaven Is A Halfpipe/Book Based Funbox/SFox_Grind_Link2 (4)/",
+            "Level Contents/Heaven Is A Halfpipe/SFox_Grind_Link2 (3)/",
+            "Level Contents/Heaven Is A Halfpipe/SFox_Grind_Link2 (6)/",
+            "Level Contents/Heaven Is A Halfpipe/SFox_Grind_Link4 cubicle bowl side (2)/",
+            "Level Contents/Ivory Mega Ramp Maze Exterior/SFox_Grind_Link4 cubicle bowl side (1)/",
+            "Level Contents/Pizza Box Ramp Far End Surrounds/Golden Grid Cable Big Loop/sfox_grind_cable1/",
+            "Level Contents/Pizza Box Ramp Surrounds/Golden Cable Half 1/sfox_grind_cable1 (3)/",
+            "Level Contents/Pizza Box Ramp Surrounds/Golden Cable Half 2/sfox_grind_cable1 (2)/",
+            "Level Contents/Simple Magazine Half Pipes Surrounds/Grind Cable Short Hoop (1)/sfox_grind_cable1/",
+            "Level Contents/Simple Magazine Half Pipes Surrounds/Grind Cable Short Hoop/sfox_grind_cable1/",
+        ],
+        _ => &[],
+    }
+}
+
 /// The window glass, drawn clear (Caleb, 2026-10-19, of frosted windows: "Fully clear windows"; "just the big windows
 /// clear"): the bedrooms' ClearGlass.
 pub fn window_glass() -> BlendedSelection {

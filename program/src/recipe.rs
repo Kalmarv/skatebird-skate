@@ -28,6 +28,7 @@ use primase_reskate::passes::{
     PrepareReskateWrap, RaiseOptions, RaiseSkate, RepeatBlended, RepeatDecals, SamplingConflicts, SnapReskateMarkers,
     UniformAlpha, WaterExtent,
 };
+use primase_reskate::passes::grind_curves::GrindLeaveOut;
 use primase_reskate::tint::LowerTintReskate;
 use primase_reskate::{EncodingOptions, MapSink};
 use primase_skatebird::SkatebirdReader;
@@ -39,6 +40,7 @@ use primase_unity::{drawn::UnityDrawn, lower::LowerUnityPbr, lower_collision::Lo
 use primase_unity::lower_lights::LowerUnityLights;
 
 use crate::choices;
+use crate::rails::KeepSkatebirdLineRails;
 use crate::levels::{Level, map_name};
 
 use primase_core::convert::Result;
@@ -99,6 +101,10 @@ pub fn level(
         Box::new(NormalizeNormals),
         Box::new(TessellateColliders),
         Box::new(BakeNonrigid { mirrors: Mirrors::Bake }),
+        // only the ropes, cables, chains and ziplines stay grind rails (crate::rails)
+        Box::new(KeepSkatebirdLineRails {
+            groups: choices::line_rails(level.id).iter().map(|g| (*g).to_owned()).collect(),
+        }),
         // the game's start and reset positions as the spawn and 5 travel points spread over the play space (collision
         // soups up to 100 m wide; 10 m margin); a level without a start drops its fallback onto the collision below
         Box::new(PlaceSkatebirdMarkers {
@@ -132,11 +138,12 @@ pub fn level(
             // one wrap and one mask image per material: occlusion, roughness and metallic packed
             Box::new(PrepareReskateWrap::new(TextureSlot::BaseColor, 0)?),
             Box::new(PackOrm::new(OrmSize::MetallicRoughness, MissingLevels::Generate)),
-            // the game's grind rails as 30 mm grind curves on Studio's metal rail surface
+            // the rails left (ropes, cables, chains, ziplines) as 30 mm grind curves on Studio's metal rail surface
             Box::new(LowerReskateGrindCurves {
                 kinds: BTreeSet::from(["rail".to_owned()]),
                 radius: 0.03,
                 surface: "metal_rail".into(),
+                leave_out: GrindLeaveOut::Nothing,
             }),
             Box::new(BakeNormalScale),
             Box::new(RaiseSkate::new(

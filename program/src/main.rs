@@ -12,6 +12,7 @@
 //! shots are the tooling's (`tools/skatebird-tools`).
 
 mod choices;
+mod rails;
 mod recipe;
 
 use std::collections::BTreeMap;

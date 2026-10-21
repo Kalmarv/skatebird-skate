@@ -274,23 +274,24 @@ dependencies = [
 [[package]]
 name = "primase-bytes"
 version = "0.1.0"
-source = "git+https://github.com/kalmarv/primase.git?rev=5dcbce73#5dcbce7362cdfa5c0a61323c800ceb76c7bf9313"
+source = "git+https://github.com/kalmarv/primase.git?rev=5b7552d8#5b7552d8cbf598bf98a7632d77401a13265f822c"
 
 [[package]]
 name = "primase-compress"
 version = "0.1.0"
-source = "git+https://github.com/kalmarv/primase.git?rev=5dcbce73#5dcbce7362cdfa5c0a61323c800ceb76c7bf9313"
+source = "git+https://github.com/kalmarv/primase.git?rev=5b7552d8#5b7552d8cbf598bf98a7632d77401a13265f822c"
 dependencies = [
  "flate2",
  "libloading",
  "lz4_flex",
+ "ruzstd",
  "thiserror",
 ]
 
 [[package]]
 name = "primase-core"
 version = "0.1.0"
-source = "git+https://github.com/kalmarv/primase.git?rev=5dcbce73#5dcbce7362cdfa5c0a61323c800ceb76c7bf9313"
+source = "git+https://github.com/kalmarv/primase.git?rev=5b7552d8#5b7552d8cbf598bf98a7632d77401a13265f822c"
 dependencies = [
  "serde",
  "serde_json",
@@ -300,7 +301,7 @@ dependencies = [
 [[package]]
 name = "primase-dds"
 version = "0.1.0"
-source = "git+https://github.com/kalmarv/primase.git?rev=5dcbce73#5dcbce7362cdfa5c0a61323c800ceb76c7bf9313"
+source = "git+https://github.com/kalmarv/primase.git?rev=5b7552d8#5b7552d8cbf598bf98a7632d77401a13265f822c"
 dependencies = [
  "primase-core",
  "thiserror",
@@ -309,7 +310,7 @@ dependencies = [
 [[package]]
 name = "primase-dxbc"
 version = "0.1.0"
-source = "git+https://github.com/kalmarv/primase.git?rev=5dcbce73#5dcbce7362cdfa5c0a61323c800ceb76c7bf9313"
+source = "git+https://github.com/kalmarv/primase.git?rev=5b7552d8#5b7552d8cbf598bf98a7632d77401a13265f822c"
 dependencies = [
  "primase-shader",
  "thiserror",
@@ -318,7 +319,7 @@ dependencies = [
 [[package]]
 name = "primase-frostbite"
 version = "0.1.0"
-source = "git+https://github.com/kalmarv/primase.git?rev=5dcbce73#5dcbce7362cdfa5c0a61323c800ceb76c7bf9313"
+source = "git+https://github.com/kalmarv/primase.git?rev=5b7552d8#5b7552d8cbf598bf98a7632d77401a13265f822c"
 dependencies = [
  "primase-bytes",
  "primase-compress",
@@ -328,7 +329,7 @@ dependencies = [
 [[package]]
 name = "primase-glb"
 version = "0.1.0"
-source = "git+https://github.com/kalmarv/primase.git?rev=5dcbce73#5dcbce7362cdfa5c0a61323c800ceb76c7bf9313"
+source = "git+https://github.com/kalmarv/primase.git?rev=5b7552d8#5b7552d8cbf598bf98a7632d77401a13265f822c"
 dependencies = [
  "bytemuck",
  "primase-core",
@@ -339,7 +340,7 @@ dependencies = [
 [[package]]
 name = "primase-gltf"
 version = "0.1.0"
-source = "git+https://github.com/kalmarv/primase.git?rev=5dcbce73#5dcbce7362cdfa5c0a61323c800ceb76c7bf9313"
+source = "git+https://github.com/kalmarv/primase.git?rev=5b7552d8#5b7552d8cbf598bf98a7632d77401a13265f822c"
 dependencies = [
  "bytemuck",
  "primase-core",
@@ -353,12 +354,12 @@ dependencies = [
 [[package]]
 name = "primase-hash"
 version = "0.1.0"
-source = "git+https://github.com/kalmarv/primase.git?rev=5dcbce73#5dcbce7362cdfa5c0a61323c800ceb76c7bf9313"
+source = "git+https://github.com/kalmarv/primase.git?rev=5b7552d8#5b7552d8cbf598bf98a7632d77401a13265f822c"
 
 [[package]]
 name = "primase-image"
 version = "0.1.0"
-source = "git+https://github.com/kalmarv/primase.git?rev=5dcbce73#5dcbce7362cdfa5c0a61323c800ceb76c7bf9313"
+source = "git+https://github.com/kalmarv/primase.git?rev=5b7552d8#5b7552d8cbf598bf98a7632d77401a13265f822c"
 dependencies = [
  "png",
  "primase-core",
@@ -371,7 +372,7 @@ dependencies = [
 [[package]]
 name = "primase-meshops"
 version = "0.1.0"
-source = "git+https://github.com/kalmarv/primase.git?rev=5dcbce73#5dcbce7362cdfa5c0a61323c800ceb76c7bf9313"
+source = "git+https://github.com/kalmarv/primase.git?rev=5b7552d8#5b7552d8cbf598bf98a7632d77401a13265f822c"
 dependencies = [
  "primase-core",
  "thiserror",
@@ -380,7 +381,7 @@ dependencies = [
 [[package]]
 name = "primase-reskate"
 version = "0.1.0"
-source = "git+https://github.com/kalmarv/primase.git?rev=5dcbce73#5dcbce7362cdfa5c0a61323c800ceb76c7bf9313"
+source = "git+https://github.com/kalmarv/primase.git?rev=5b7552d8#5b7552d8cbf598bf98a7632d77401a13265f822c"
 dependencies = [
  "half",
  "primase-bytes",
@@ -404,7 +405,7 @@ dependencies = [
 [[package]]
 name = "primase-shader"
 version = "0.1.0"
-source = "git+https://github.com/kalmarv/primase.git?rev=5dcbce73#5dcbce7362cdfa5c0a61323c800ceb76c7bf9313"
+source = "git+https://github.com/kalmarv/primase.git?rev=5b7552d8#5b7552d8cbf598bf98a7632d77401a13265f822c"
 dependencies = [
  "thiserror",
 ]
@@ -412,7 +413,7 @@ dependencies = [
 [[package]]
 name = "primase-skatebird"
 version = "0.1.0"
-source = "git+https://github.com/kalmarv/primase.git?rev=5dcbce73#5dcbce7362cdfa5c0a61323c800ceb76c7bf9313"
+source = "git+https://github.com/kalmarv/primase.git?rev=5b7552d8#5b7552d8cbf598bf98a7632d77401a13265f822c"
 dependencies = [
  "primase-core",
  "primase-image",
@@ -427,7 +428,7 @@ dependencies = [
 [[package]]
 name = "primase-texcodec"
 version = "0.1.0"
-source = "git+https://github.com/kalmarv/primase.git?rev=5dcbce73#5dcbce7362cdfa5c0a61323c800ceb76c7bf9313"
+source = "git+https://github.com/kalmarv/primase.git?rev=5b7552d8#5b7552d8cbf598bf98a7632d77401a13265f822c"
 dependencies = [
  "bcdec_rs",
  "half",
@@ -438,7 +439,7 @@ dependencies = [
 [[package]]
 name = "primase-unity"
 version = "0.1.0"
-source = "git+https://github.com/kalmarv/primase.git?rev=5dcbce73#5dcbce7362cdfa5c0a61323c800ceb76c7bf9313"
+source = "git+https://github.com/kalmarv/primase.git?rev=5b7552d8#5b7552d8cbf598bf98a7632d77401a13265f822c"
 dependencies = [
  "primase-compress",
  "primase-core",
@@ -456,7 +457,7 @@ dependencies = [
 [[package]]
 name = "primase-vertex"
 version = "0.1.0"
-source = "git+https://github.com/kalmarv/primase.git?rev=5dcbce73#5dcbce7362cdfa5c0a61323c800ceb76c7bf9313"
+source = "git+https://github.com/kalmarv/primase.git?rev=5b7552d8#5b7552d8cbf598bf98a7632d77401a13265f822c"
 dependencies = [
  "half",
  "thiserror",
@@ -478,6 +479,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1fbf4db142a473a8d80c26bbf18454ed458bf8d26c8219c331daecfdbd079001"
 dependencies = [
  "proc-macro2",
+]
+
+[[package]]
+name = "ruzstd"
+version = "0.7.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fad02996bfc73da3e301efe90b1837be9ed8f4a462b6ed410aa35d00381de89f"
+dependencies = [
+ "twox-hash",
 ]
 
 [[package]]
@@ -578,6 +588,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "static_assertions"
+version = "1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a2eb9349b6444b326872e140eb1cf5e7c522154d69e7a0ffb0fb81c06b37543f"
+
+[[package]]
 name = "syn"
 version = "2.0.119"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -617,6 +633,16 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 3.0.9",
+]
+
+[[package]]
+name = "twox-hash"
+version = "1.6.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "97fee6b57c6a41524a810daee9286c02d7752c4253064d0b05472833a438f675"
+dependencies = [
+ "cfg-if",
+ "static_assertions",
 ]
 
 [[package]]
