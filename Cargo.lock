@@ -9,6 +9,65 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "320119579fcad9c21884f5c4861d16174d0e06250625266f50fe6898340abefa"
 
 [[package]]
+name = "aho-corasick"
+version = "1.1.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c982642fa9e8606056828ee9a8505737230110bb1099153c79efe865c59d12ba"
+dependencies = [
+ "memchr",
+]
+
+[[package]]
+name = "anstream"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "824a212faf96e9acacdbd09febd34438f8f711fb84e09a8916013cd7815ca28d"
+dependencies = [
+ "anstyle",
+ "anstyle-parse",
+ "anstyle-query",
+ "anstyle-wincon",
+ "colorchoice",
+ "is_terminal_polyfill",
+ "utf8parse",
+]
+
+[[package]]
+name = "anstyle"
+version = "1.0.14"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "940b3a0ca603d1eade50a4846a2afffd5ef57a9feac2c0e2ec2e14f9ead76000"
+
+[[package]]
+name = "anstyle-parse"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "52ce7f38b242319f7cabaa6813055467063ecdc9d355bbb4ce0c68908cd8130e"
+dependencies = [
+ "utf8parse",
+]
+
+[[package]]
+name = "anstyle-query"
+version = "1.1.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "40c48f72fd53cd289104fc64099abca73db4166ad86ea0b4341abe65af83dadc"
+dependencies = [
+ "windows-sys",
+]
+
+[[package]]
+name = "anstyle-wincon"
+version = "3.0.11"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "291e6a250ff86cd4a820112fb8898808a366d8f9f58ce16d1f538353ad55747d"
+dependencies = [
+ "anstyle",
+ "once_cell_polyfill",
+ "windows-sys",
+]
+
+[[package]]
 name = "arbitrary"
 version = "1.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -18,10 +77,37 @@ dependencies = [
 ]
 
 [[package]]
+name = "arrayvec"
+version = "0.7.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d3fb67a6e08acf24fdeccbac2cb6ac4305825bd1f117462e0e6f2f193345ad56"
+
+[[package]]
+name = "autocfg"
+version = "1.5.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f2032f911046de80f0a198e0901378627c33f59ea0ac00e363d481118bd70a53"
+
+[[package]]
 name = "bcdec_rs"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f09c37bc0e9f0924b7dae9988265ef3c76c88538f41a3b06caf4bed07cee5226"
+
+[[package]]
+name = "bit-set"
+version = "0.10.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "09ec2f926cc3060f09db9ebc5b52823d85268d24bb917e472c0c4bea35780a7d"
+dependencies = [
+ "bit-vec",
+]
+
+[[package]]
+name = "bit-vec"
+version = "0.9.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b71798fca2c1fe1086445a7258a4bc81e6e49dcd24c8d0dd9a1e57395b603f51"
 
 [[package]]
 name = "bitflags"
@@ -36,6 +122,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d2f6c7dbe95a6ed67ad9f18e57daf93a2f034c524b99fd2b76d18fdfeb6660aa"
 dependencies = [
  "hybrid-array",
+]
+
+[[package]]
+name = "block_compression"
+version = "0.10.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1fa36716e629480f3c38e3c5f85323c8f4f56c08f73fa7e91ed8a6dc0d75d571"
+dependencies = [
+ "bytemuck",
 ]
 
 [[package]]
@@ -65,10 +160,37 @@ dependencies = [
 ]
 
 [[package]]
+name = "bytes"
+version = "1.12.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fc652a48c352aef3ea3aed32080501cf3ef6ed5da78602a020c991775b0aff04"
+
+[[package]]
 name = "cfg-if"
 version = "1.0.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4e7648175b45a9a48536d676f68d918270699102aa8dab5496df06904c914600"
+
+[[package]]
+name = "cfg_aliases"
+version = "0.2.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f079e83a288787bcd14a6aea84cee5c87a67c5a3e660c30f557a3d24761b3527"
+
+[[package]]
+name = "codespan-reporting"
+version = "0.13.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "af491d569909a7e4dee0ad7db7f5341fef5c614d5b8ec8cf765732aba3cff681"
+dependencies = [
+ "unicode-width",
+]
+
+[[package]]
+name = "colorchoice"
+version = "1.0.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1d07550c9036bf2ae0c684c4297d503f838287c83c53686d05370d0e139ae570"
 
 [[package]]
 name = "cpufeatures"
@@ -131,6 +253,54 @@ dependencies = [
 ]
 
 [[package]]
+name = "dxbc-reader"
+version = "0.1.0"
+source = "git+https://github.com/Kalmarv/dx?rev=fecc8636a59acb038c7e798766a4160b031a6047#fecc8636a59acb038c7e798766a4160b031a6047"
+dependencies = [
+ "dxcontainer",
+]
+
+[[package]]
+name = "dxcontainer"
+version = "0.1.0"
+source = "git+https://github.com/Kalmarv/dx?rev=fecc8636a59acb038c7e798766a4160b031a6047#fecc8636a59acb038c7e798766a4160b031a6047"
+dependencies = [
+ "primase-foundations",
+ "thiserror",
+]
+
+[[package]]
+name = "dxil-reader"
+version = "0.1.0"
+source = "git+https://github.com/Kalmarv/dx?rev=fecc8636a59acb038c7e798766a4160b031a6047#fecc8636a59acb038c7e798766a4160b031a6047"
+dependencies = [
+ "dxcontainer",
+ "primase-foundations",
+]
+
+[[package]]
+name = "env_filter"
+version = "2.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "900d271a03799a1ee8d1ca9b19893b48ca674a9284fefcfb85f05e74ed314217"
+dependencies = [
+ "log",
+ "regex",
+]
+
+[[package]]
+name = "env_logger"
+version = "0.11.11"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "de671bd27a75a797dc9ae289ba1e77276e75e2026408aab65185384e2d5cd3f6"
+dependencies = [
+ "anstream",
+ "anstyle",
+ "env_filter",
+ "log",
+]
+
+[[package]]
 name = "equivalent"
 version = "1.0.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -163,6 +333,105 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "77ce24cb58228fbb8aa041425bb1050850ac19177686ea6e0f41a70416f56fdb"
 
 [[package]]
+name = "frostbite-formats"
+version = "0.1.0"
+source = "git+https://github.com/Kalmarv/frostbite-formats?rev=889692946a59d516d888f892135277f6a991bbe4#889692946a59d516d888f892135277f6a991bbe4"
+dependencies = [
+ "half",
+ "primase-foundations",
+ "sha1",
+ "thiserror",
+]
+
+[[package]]
+name = "futures"
+version = "0.3.34"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9a31d2a3fbaaeb2af2368bbdd904aa8e812d3c04a1ee10d3171f52d556e5d0a3"
+dependencies = [
+ "futures-channel",
+ "futures-core",
+ "futures-executor",
+ "futures-io",
+ "futures-sink",
+ "futures-task",
+ "futures-util",
+]
+
+[[package]]
+name = "futures-channel"
+version = "0.3.34"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b1f9e3d69d39e4862ffed03ed071a76f9a13ba1d9109d355b0f0aa6b15e393c4"
+dependencies = [
+ "futures-core",
+ "futures-sink",
+]
+
+[[package]]
+name = "futures-core"
+version = "0.3.34"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "92d699e522242e69e3003b94ecc1f960f3a5e015aa7c5d7486e65ad01dd94f5e"
+
+[[package]]
+name = "futures-executor"
+version = "0.3.34"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "031b47cf1a3c6cc8bc2fc76cd437f521619387907d469316e7c0bc278f1f5432"
+dependencies = [
+ "futures-core",
+ "futures-task",
+ "futures-util",
+]
+
+[[package]]
+name = "futures-io"
+version = "0.3.34"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "53c0fa8157de1303bfffdaa1cc2a673bfffb60102f76b0ef4441659124373fed"
+
+[[package]]
+name = "futures-macro"
+version = "0.3.34"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9fb9654ba8355388abeb8dcb4fc62f511300867002afc858860463bdd9fe0c44"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 3.0.9",
+]
+
+[[package]]
+name = "futures-sink"
+version = "0.3.34"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1944426bf7d03f1d14f708785e4b33efd750b36d48a157b836b3efc15ede8e1d"
+
+[[package]]
+name = "futures-task"
+version = "0.3.34"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cd417de3d1d015fc3bfd2b1ea46dfc7bab72ef86f1cc7cc9c78e728b34a6d1fd"
+
+[[package]]
+name = "futures-util"
+version = "0.3.34"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0d50a92467f8ba5dd6e3ee5d4bd04d73ab2e4e1c44474a0674821dfce14b79bc"
+dependencies = [
+ "futures-channel",
+ "futures-core",
+ "futures-io",
+ "futures-macro",
+ "futures-sink",
+ "futures-task",
+ "memchr",
+ "pin-project-lite",
+ "slab",
+]
+
+[[package]]
 name = "half"
 version = "2.7.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -170,6 +439,7 @@ checksum = "6ea2d84b969582b4b1864a92dc5d27cd2b77b622a8d79306834f1be5ba20d84b"
 dependencies = [
  "cfg-if",
  "crunchy",
+ "num-traits",
  "zerocopy",
 ]
 
@@ -178,6 +448,9 @@ name = "hashbrown"
 version = "0.17.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ed5909b6e89a2db4456e54cd5f673791d7eca6732202bbf2a9cc504fe2f9b84a"
+dependencies = [
+ "foldhash",
+]
 
 [[package]]
 name = "hybrid-array"
@@ -199,10 +472,78 @@ dependencies = [
 ]
 
 [[package]]
+name = "iridia"
+version = "0.1.0"
+source = "git+https://github.com/Kalmarv/iridia?rev=f92bf04716345c0572e897f8d2ca8ae369c880bb#f92bf04716345c0572e897f8d2ca8ae369c880bb"
+dependencies = [
+ "iridia-interface",
+ "primase-naga",
+ "sha2",
+ "thiserror",
+]
+
+[[package]]
+name = "iridia-dxbc"
+version = "0.1.0"
+source = "git+https://github.com/Kalmarv/iridia?rev=f92bf04716345c0572e897f8d2ca8ae369c880bb#f92bf04716345c0572e897f8d2ca8ae369c880bb"
+dependencies = [
+ "dxbc-reader",
+ "dxcontainer",
+ "iridia",
+ "primase-naga",
+]
+
+[[package]]
+name = "iridia-dxil"
+version = "0.1.0"
+source = "git+https://github.com/Kalmarv/iridia?rev=f92bf04716345c0572e897f8d2ca8ae369c880bb#f92bf04716345c0572e897f8d2ca8ae369c880bb"
+dependencies = [
+ "dxcontainer",
+ "dxil-reader",
+ "half",
+ "iridia",
+ "primase-foundations",
+ "primase-naga",
+]
+
+[[package]]
+name = "iridia-exec"
+version = "0.1.0"
+source = "git+https://github.com/Kalmarv/iridia?rev=f92bf04716345c0572e897f8d2ca8ae369c880bb#f92bf04716345c0572e897f8d2ca8ae369c880bb"
+dependencies = [
+ "half",
+ "iridia",
+ "iridia-interface",
+ "primase-foundations",
+ "primase-naga",
+ "thiserror",
+]
+
+[[package]]
+name = "iridia-interface"
+version = "0.1.0"
+source = "git+https://github.com/Kalmarv/iridia?rev=f92bf04716345c0572e897f8d2ca8ae369c880bb#f92bf04716345c0572e897f8d2ca8ae369c880bb"
+dependencies = [
+ "serde",
+]
+
+[[package]]
+name = "is_terminal_polyfill"
+version = "1.70.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a6cb138bb79a146c1bd460005623e142ef0181e3d0219cb493e02f7d08a35695"
+
+[[package]]
 name = "itoa"
 version = "1.0.18"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8f42a60cbdf9a97f5d2305f08a87dc4e09308d1276d28c869c684d7777685682"
+
+[[package]]
+name = "lazy_static"
+version = "1.5.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "20870f649af7073d53e38067b2a84312175d56ea15217e1b15bc83506ec50afb"
 
 [[package]]
 name = "libc"
@@ -221,6 +562,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "libm"
+version = "0.2.16"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b6d2cec3eae94f9f509c767b45932f1ada8350c4bdb85af2fcab4a3c14807981"
+
+[[package]]
 name = "log"
 version = "0.4.34"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -231,6 +578,15 @@ name = "lz4_flex"
 version = "0.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ecbdfe44b1bd960b68170b417450a628c43f7cf56bb3c5317e61cb230ee7f226"
+
+[[package]]
+name = "matchers"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d1525a2a28c7f4fa0fc98bb91ae755d1e2d1505079e05539e35bc876b5d65ae9"
+dependencies = [
+ "regex-automata",
+]
 
 [[package]]
 name = "memchr"
@@ -259,6 +615,55 @@ dependencies = [
 ]
 
 [[package]]
+name = "naga-types"
+version = "30.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "590afbf58a6f4f62873cd5cff4468061844bafa1cdf399cc954537c22d768d49"
+dependencies = [
+ "hashbrown",
+ "indexmap",
+ "rustc-hash",
+ "thiserror",
+]
+
+[[package]]
+name = "nu-ansi-term"
+version = "0.50.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7957b9740744892f114936ab4a57b3f487491bbeafaf8083688b16841a4240e5"
+dependencies = [
+ "windows-sys",
+]
+
+[[package]]
+name = "num-traits"
+version = "0.2.19"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "071dfc062690e90b734c0b2273ce72ad0ffa95f0c74596bc250dcfd960262841"
+dependencies = [
+ "autocfg",
+ "libm",
+]
+
+[[package]]
+name = "once_cell"
+version = "1.21.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9f7c3e4beb33f85d45ae3e3a1792185706c8e16d043238c593331cc7cd313b50"
+
+[[package]]
+name = "once_cell_polyfill"
+version = "1.70.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "384b8ab6d37215f3c5301a95a4accb5d64aa607f1fcb26a11b5303878451b4fe"
+
+[[package]]
+name = "pin-project-lite"
+version = "0.2.17"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a89322df9ebe1c1578d689c92318e070967d1042b512afbe49518723f4e6d5cd"
+
+[[package]]
 name = "png"
 version = "0.18.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -272,27 +677,23 @@ dependencies = [
 ]
 
 [[package]]
-name = "primase-bytes"
+name = "primase-animation"
 version = "0.1.0"
-source = "git+https://github.com/kalmarv/primase.git?rev=5b7552d8#5b7552d8cbf598bf98a7632d77401a13265f822c"
-
-[[package]]
-name = "primase-compress"
-version = "0.1.0"
-source = "git+https://github.com/kalmarv/primase.git?rev=5b7552d8#5b7552d8cbf598bf98a7632d77401a13265f822c"
+source = "git+https://github.com/Kalmarv/primase?rev=12bfe06875fb778aecb4ce530c3c1a34c1ff3ea2#12bfe06875fb778aecb4ce530c3c1a34c1ff3ea2"
 dependencies = [
- "flate2",
- "libloading",
- "lz4_flex",
- "ruzstd",
+ "primase-core",
+ "serde",
+ "serde_json",
  "thiserror",
 ]
 
 [[package]]
 name = "primase-core"
 version = "0.1.0"
-source = "git+https://github.com/kalmarv/primase.git?rev=5b7552d8#5b7552d8cbf598bf98a7632d77401a13265f822c"
+source = "git+https://github.com/Kalmarv/primase?rev=12bfe06875fb778aecb4ce530c3c1a34c1ff3ea2#12bfe06875fb778aecb4ce530c3c1a34c1ff3ea2"
 dependencies = [
+ "iridia-interface",
+ "primase-foundations",
  "serde",
  "serde_json",
  "thiserror",
@@ -301,37 +702,54 @@ dependencies = [
 [[package]]
 name = "primase-dds"
 version = "0.1.0"
-source = "git+https://github.com/kalmarv/primase.git?rev=5b7552d8#5b7552d8cbf598bf98a7632d77401a13265f822c"
+source = "git+https://github.com/Kalmarv/primase?rev=12bfe06875fb778aecb4ce530c3c1a34c1ff3ea2#12bfe06875fb778aecb4ce530c3c1a34c1ff3ea2"
 dependencies = [
  "primase-core",
  "thiserror",
 ]
 
 [[package]]
-name = "primase-dxbc"
+name = "primase-exactsum"
 version = "0.1.0"
-source = "git+https://github.com/kalmarv/primase.git?rev=5b7552d8#5b7552d8cbf598bf98a7632d77401a13265f822c"
+source = "git+https://github.com/Kalmarv/primase?rev=12bfe06875fb778aecb4ce530c3c1a34c1ff3ea2#12bfe06875fb778aecb4ce530c3c1a34c1ff3ea2"
+
+[[package]]
+name = "primase-foundations"
+version = "0.1.0"
+source = "git+https://github.com/Kalmarv/primase-foundations?rev=05dc616e7bd14cad63c4e5218be6e8b79cee60ce#05dc616e7bd14cad63c4e5218be6e8b79cee60ce"
 dependencies = [
- "primase-shader",
+ "flate2",
+ "half",
+ "libloading",
+ "lz4_flex",
+ "primase-oozextract",
+ "ruzstd",
  "thiserror",
 ]
 
 [[package]]
 name = "primase-frostbite"
 version = "0.1.0"
-source = "git+https://github.com/kalmarv/primase.git?rev=5b7552d8#5b7552d8cbf598bf98a7632d77401a13265f822c"
+source = "git+https://github.com/Kalmarv/primase?rev=12bfe06875fb778aecb4ce530c3c1a34c1ff3ea2#12bfe06875fb778aecb4ce530c3c1a34c1ff3ea2"
 dependencies = [
- "primase-bytes",
- "primase-compress",
- "thiserror",
+ "frostbite-formats",
+ "half",
+ "iridia",
+ "iridia-dxil",
+ "iridia-exec",
+ "iridia-interface",
+ "primase-core",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]
 name = "primase-glb"
 version = "0.1.0"
-source = "git+https://github.com/kalmarv/primase.git?rev=5b7552d8#5b7552d8cbf598bf98a7632d77401a13265f822c"
+source = "git+https://github.com/Kalmarv/primase?rev=12bfe06875fb778aecb4ce530c3c1a34c1ff3ea2#12bfe06875fb778aecb4ce530c3c1a34c1ff3ea2"
 dependencies = [
  "bytemuck",
+ "iridia-interface",
  "primase-core",
  "serde_json",
  "thiserror",
@@ -340,61 +758,101 @@ dependencies = [
 [[package]]
 name = "primase-gltf"
 version = "0.1.0"
-source = "git+https://github.com/kalmarv/primase.git?rev=5b7552d8#5b7552d8cbf598bf98a7632d77401a13265f822c"
+source = "git+https://github.com/Kalmarv/primase?rev=12bfe06875fb778aecb4ce530c3c1a34c1ff3ea2#12bfe06875fb778aecb4ce530c3c1a34c1ff3ea2"
 dependencies = [
  "bytemuck",
+ "iridia-interface",
+ "primase-animation",
  "primase-core",
+ "primase-foundations",
  "primase-glb",
  "primase-image",
+ "serde",
  "serde_json",
  "sha2",
  "thiserror",
 ]
 
 [[package]]
-name = "primase-hash"
-version = "0.1.0"
-source = "git+https://github.com/kalmarv/primase.git?rev=5b7552d8#5b7552d8cbf598bf98a7632d77401a13265f822c"
-
-[[package]]
 name = "primase-image"
 version = "0.1.0"
-source = "git+https://github.com/kalmarv/primase.git?rev=5b7552d8#5b7552d8cbf598bf98a7632d77401a13265f822c"
+source = "git+https://github.com/Kalmarv/primase?rev=12bfe06875fb778aecb4ce530c3c1a34c1ff3ea2#12bfe06875fb778aecb4ce530c3c1a34c1ff3ea2"
 dependencies = [
+ "iridia-interface",
  "png",
  "primase-core",
  "primase-dds",
+ "primase-foundations",
  "primase-meshops",
  "primase-texcodec",
  "thiserror",
+ "zune-core",
+ "zune-jpeg",
 ]
 
 [[package]]
 name = "primase-meshops"
 version = "0.1.0"
-source = "git+https://github.com/kalmarv/primase.git?rev=5b7552d8#5b7552d8cbf598bf98a7632d77401a13265f822c"
+source = "git+https://github.com/Kalmarv/primase?rev=12bfe06875fb778aecb4ce530c3c1a34c1ff3ea2#12bfe06875fb778aecb4ce530c3c1a34c1ff3ea2"
 dependencies = [
  "primase-core",
  "thiserror",
 ]
 
 [[package]]
+name = "primase-naga"
+version = "30.0.1"
+source = "git+https://github.com/Kalmarv/primase-naga?rev=8e6519c3eac6f08519c61c40cb6516ea95f6dde9#8e6519c3eac6f08519c61c40cb6516ea95f6dde9"
+dependencies = [
+ "arrayvec",
+ "bit-set",
+ "bitflags",
+ "cfg-if",
+ "cfg_aliases",
+ "codespan-reporting",
+ "half",
+ "hashbrown",
+ "indexmap",
+ "libm",
+ "log",
+ "naga-types",
+ "num-traits",
+ "once_cell",
+ "rustc-hash",
+ "thiserror",
+]
+
+[[package]]
+name = "primase-oozextract"
+version = "0.5.6"
+source = "git+https://github.com/Kalmarv/primase-oozextract?rev=58b98fa0d69569b69bc95891a784eddd2c22a69e#58b98fa0d69569b69bc95891a784eddd2c22a69e"
+dependencies = [
+ "bytemuck",
+ "bytes",
+ "futures",
+ "log",
+ "test-log",
+ "wide",
+]
+
+[[package]]
 name = "primase-reskate"
 version = "0.1.0"
-source = "git+https://github.com/kalmarv/primase.git?rev=5b7552d8#5b7552d8cbf598bf98a7632d77401a13265f822c"
+source = "git+https://github.com/Kalmarv/primase?rev=12bfe06875fb778aecb4ce530c3c1a34c1ff3ea2#12bfe06875fb778aecb4ce530c3c1a34c1ff3ea2"
 dependencies = [
+ "frostbite-formats",
  "half",
- "primase-bytes",
- "primase-compress",
+ "iridia-interface",
+ "primase-animation",
  "primase-core",
  "primase-dds",
+ "primase-exactsum",
+ "primase-foundations",
  "primase-frostbite",
  "primase-glb",
- "primase-hash",
  "primase-image",
  "primase-meshops",
  "primase-texcodec",
- "primase-vertex",
  "serde",
  "serde_json",
  "sha1",
@@ -403,64 +861,55 @@ dependencies = [
 ]
 
 [[package]]
-name = "primase-shader"
-version = "0.1.0"
-source = "git+https://github.com/kalmarv/primase.git?rev=5b7552d8#5b7552d8cbf598bf98a7632d77401a13265f822c"
-dependencies = [
- "thiserror",
-]
-
-[[package]]
 name = "primase-skatebird"
 version = "0.1.0"
-source = "git+https://github.com/kalmarv/primase.git?rev=5b7552d8#5b7552d8cbf598bf98a7632d77401a13265f822c"
+source = "git+https://github.com/Kalmarv/primase?rev=12bfe06875fb778aecb4ce530c3c1a34c1ff3ea2#12bfe06875fb778aecb4ce530c3c1a34c1ff3ea2"
 dependencies = [
+ "iridia",
+ "iridia-exec",
  "primase-core",
+ "primase-foundations",
  "primase-image",
  "primase-meshops",
- "primase-shader",
  "primase-unity",
  "serde",
  "serde_json",
  "thiserror",
+ "unity-formats",
 ]
 
 [[package]]
 name = "primase-texcodec"
 version = "0.1.0"
-source = "git+https://github.com/kalmarv/primase.git?rev=5b7552d8#5b7552d8cbf598bf98a7632d77401a13265f822c"
+source = "git+https://github.com/Kalmarv/primase?rev=12bfe06875fb778aecb4ce530c3c1a34c1ff3ea2#12bfe06875fb778aecb4ce530c3c1a34c1ff3ea2"
 dependencies = [
  "bcdec_rs",
+ "block_compression",
  "half",
  "primase-core",
+ "primase-foundations",
+ "rsx-reader",
  "thiserror",
 ]
 
 [[package]]
 name = "primase-unity"
 version = "0.1.0"
-source = "git+https://github.com/kalmarv/primase.git?rev=5b7552d8#5b7552d8cbf598bf98a7632d77401a13265f822c"
+source = "git+https://github.com/Kalmarv/primase?rev=12bfe06875fb778aecb4ce530c3c1a34c1ff3ea2#12bfe06875fb778aecb4ce530c3c1a34c1ff3ea2"
 dependencies = [
- "primase-compress",
+ "iridia",
+ "iridia-dxbc",
+ "iridia-exec",
+ "iridia-interface",
+ "primase-animation",
  "primase-core",
- "primase-dxbc",
+ "primase-foundations",
  "primase-image",
  "primase-meshops",
- "primase-shader",
  "primase-texcodec",
- "primase-vertex",
  "serde",
  "serde_json",
- "thiserror",
-]
-
-[[package]]
-name = "primase-vertex"
-version = "0.1.0"
-source = "git+https://github.com/kalmarv/primase.git?rev=5b7552d8#5b7552d8cbf598bf98a7632d77401a13265f822c"
-dependencies = [
- "half",
- "thiserror",
+ "unity-formats",
 ]
 
 [[package]]
@@ -482,12 +931,65 @@ dependencies = [
 ]
 
 [[package]]
+name = "regex"
+version = "1.13.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f020237b6c8eed93db2e2cb53c00c60a8e1bc73da7d073199a1180401450218d"
+dependencies = [
+ "aho-corasick",
+ "memchr",
+ "regex-automata",
+ "regex-syntax",
+]
+
+[[package]]
+name = "regex-automata"
+version = "0.4.18"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ad8553b9b26413251cbf30e620595c7a41b3887f03da04579c0e6b0d6a06b4b2"
+dependencies = [
+ "aho-corasick",
+ "memchr",
+ "regex-syntax",
+]
+
+[[package]]
+name = "regex-syntax"
+version = "0.8.11"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d6f6ff9a378485b298a5286656da665ba74413d36db0979633275d2e708145d4"
+
+[[package]]
+name = "rsx-reader"
+version = "0.1.0"
+source = "git+https://github.com/Kalmarv/dx?rev=fecc8636a59acb038c7e798766a4160b031a6047#fecc8636a59acb038c7e798766a4160b031a6047"
+dependencies = [
+ "primase-foundations",
+ "thiserror",
+]
+
+[[package]]
+name = "rustc-hash"
+version = "1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "08d43f7aa6b08d49f382cde6a7982047c3426db949b1424bc4b7ec9ae12c6ce2"
+
+[[package]]
 name = "ruzstd"
 version = "0.7.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fad02996bfc73da3e301efe90b1837be9ed8f4a462b6ed410aa35d00381de89f"
 dependencies = [
  "twox-hash",
+]
+
+[[package]]
+name = "safe_arch"
+version = "0.7.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "96b02de82ddbe1b636e6170c21be622223aea188ef2e139be0a5b219ec215323"
+dependencies = [
+ "bytemuck",
 ]
 
 [[package]]
@@ -558,6 +1060,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "sharded-slab"
+version = "0.1.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f40ca3c46823713e0d4209592e8d6e826aa57e928f09752619fc696c499637f6"
+dependencies = [
+ "lazy_static",
+]
+
+[[package]]
 name = "simd-adler32"
 version = "0.3.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -568,6 +1079,7 @@ name = "skatebird-export"
 version = "0.1.0"
 dependencies = [
  "primase-core",
+ "primase-foundations",
  "primase-gltf",
  "primase-image",
  "primase-meshops",
@@ -575,6 +1087,7 @@ dependencies = [
  "primase-skatebird",
  "primase-unity",
  "serde_json",
+ "unity-formats",
 ]
 
 [[package]]
@@ -586,6 +1099,12 @@ dependencies = [
  "skatebird-export",
  "zip",
 ]
+
+[[package]]
+name = "slab"
+version = "0.4.12"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0c790de23124f9ab44544d7ac05d60440adc586479ce501c1d6d7da3cd8c9cf5"
 
 [[package]]
 name = "static_assertions"
@@ -616,6 +1135,38 @@ dependencies = [
 ]
 
 [[package]]
+name = "test-log"
+version = "0.2.21"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9b9c218384242b5c89b68303ab6f6fc53a312d923f0c14dc6bb860c6aeee40f1"
+dependencies = [
+ "env_logger",
+ "test-log-macros",
+ "tracing-subscriber",
+]
+
+[[package]]
+name = "test-log-core"
+version = "0.2.21"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c26ef8b00e4d382e59f6a8ddb3cd790b3a5bb29f21a358a9a69ea2f29f13f27b"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.119",
+]
+
+[[package]]
+name = "test-log-macros"
+version = "0.2.21"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "944ad38adcbb71eaa682c56bceeb079e4ca82b4b3edc2a0fde5cb297b77dac8d"
+dependencies = [
+ "syn 2.0.119",
+ "test-log-core",
+]
+
+[[package]]
 name = "thiserror"
 version = "2.0.21"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -633,6 +1184,63 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 3.0.9",
+]
+
+[[package]]
+name = "thread_local"
+version = "1.1.10"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1ad99c4c6d32803332c548b1af0540b357b3f5fc0be8f6c6bfe8b2e6ae784070"
+dependencies = [
+ "cfg-if",
+]
+
+[[package]]
+name = "tracing"
+version = "0.1.44"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "63e71662fa4b2a2c3a26f570f037eb95bb1f85397f3cd8076caed2f026a6d100"
+dependencies = [
+ "pin-project-lite",
+ "tracing-core",
+]
+
+[[package]]
+name = "tracing-core"
+version = "0.1.36"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "db97caf9d906fbde555dd62fa95ddba9eecfd14cb388e4f491a66d74cd5fb79a"
+dependencies = [
+ "once_cell",
+ "valuable",
+]
+
+[[package]]
+name = "tracing-log"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ee855f1f400bd0e5c02d150ae5de3840039a3f54b025156404e34c23c03f47c3"
+dependencies = [
+ "log",
+ "once_cell",
+ "tracing-core",
+]
+
+[[package]]
+name = "tracing-subscriber"
+version = "0.3.23"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cb7f578e5945fb242538965c2d0b04418d38ec25c79d160cd279bf0731c8d319"
+dependencies = [
+ "matchers",
+ "nu-ansi-term",
+ "once_cell",
+ "regex-automata",
+ "sharded-slab",
+ "thread_local",
+ "tracing",
+ "tracing-core",
+ "tracing-log",
 ]
 
 [[package]]
@@ -658,10 +1266,59 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a2c754d6c33795a1c324727428e5a7dedb5b06195f9890bdbcba760d3e246563"
 
 [[package]]
+name = "unicode-width"
+version = "0.2.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b4ac048d71ede7ee76d585517add45da530660ef4390e49b098733c6e897f254"
+
+[[package]]
+name = "unity-formats"
+version = "0.1.0"
+source = "git+https://github.com/Kalmarv/unity-formats?rev=6c7d3d8c7ff09c473c2427f4cb1597e31f9bfd8e#6c7d3d8c7ff09c473c2427f4cb1597e31f9bfd8e"
+dependencies = [
+ "half",
+ "primase-foundations",
+ "serde",
+ "serde_json",
+ "thiserror",
+]
+
+[[package]]
+name = "utf8parse"
+version = "0.2.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "06abde3611657adf66d383f00b093d7faecc7fa57071cce2578660c9f1010821"
+
+[[package]]
+name = "valuable"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ba73ea9cf16a25df0c8caa16c51acb937d5712a8429db78a3ee29d5dcacd3a65"
+
+[[package]]
+name = "wide"
+version = "0.7.33"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0ce5da8ecb62bcd8ec8b7ea19f69a51275e91299be594ea5cc6ef7819e16cd03"
+dependencies = [
+ "bytemuck",
+ "safe_arch",
+]
+
+[[package]]
 name = "windows-link"
 version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f0805222e57f7521d6a62e36fa9163bc891acd422f971defe97d64e70d0a4fe5"
+
+[[package]]
+name = "windows-sys"
+version = "0.61.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ae137229bcbd6cdf0f7b80a31df61766145077ddf49416a728b02cb3921ff3fc"
+dependencies = [
+ "windows-link",
+]
 
 [[package]]
 name = "zerocopy"
@@ -720,4 +1377,19 @@ dependencies = [
  "crc32fast",
  "log",
  "simd-adler32",
+]
+
+[[package]]
+name = "zune-core"
+version = "0.5.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d56377fd46368984a170bc5aac5567e52ca5da874caa60bea39fcbca78fb658b"
+
+[[package]]
+name = "zune-jpeg"
+version = "0.5.15"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "27bc9d5b815bc103f142aa054f561d9187d191692ec7c2d1e2b4737f8dbd7296"
+dependencies = [
+ "zune-core",
 ]

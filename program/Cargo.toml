@@ -4,17 +4,17 @@ version = "0.1.0"
 edition = "2024"
 publish = false
 
-# primase is a library this program uses, pinned by git revision (no path checkout, no fork): its public main, or while
-# a fix of the owner's is on its way to main, that fix's commit on primase-work (Caleb, 2026-10-19: "you can use a
-# branch idc, the fixes must land on primase main before it's done"). Now main 5b7552d8.
+# primase is a library this program uses, pinned by git revision in the workspace Cargo.toml (no path checkout, no fork).
 [dependencies]
-primase-core = { git = "https://github.com/kalmarv/primase.git", rev = "5b7552d8" }
-primase-skatebird = { git = "https://github.com/kalmarv/primase.git", rev = "5b7552d8" }
-primase-unity = { git = "https://github.com/kalmarv/primase.git", rev = "5b7552d8" }
-primase-meshops = { git = "https://github.com/kalmarv/primase.git", rev = "5b7552d8" }
-primase-image = { git = "https://github.com/kalmarv/primase.git", rev = "5b7552d8" }
-primase-reskate = { git = "https://github.com/kalmarv/primase.git", rev = "5b7552d8" }
-primase-gltf = { git = "https://github.com/kalmarv/primase.git", rev = "5b7552d8" }
+primase-core.workspace = true
+primase-skatebird.workspace = true
+primase-unity.workspace = true
+primase-meshops.workspace = true
+primase-image.workspace = true
+primase-reskate.workspace = true
+primase-gltf.workspace = true
+primase-foundations.workspace = true
+unity-formats.workspace = true
 serde_json = "=1.0.154"
 
 [lib]

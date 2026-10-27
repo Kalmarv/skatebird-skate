@@ -12,12 +12,14 @@ use primase_core::state::ResolveState;
 use primase_core::{LodChoice, SelectLod};
 use primase_gltf::prepare::FillMissingTexcoords;
 use primase_image::{
-    BakeNormalScale, CapMode, CapTextures, MissingLevels, NormalDownscale, NormalizeNormals, OrmSize, PackOrm,
+    BakeNormalScale, Beyond, CapMode, CapTextures, MissingLevels, NormalDownscale, NormalizeNormals, OrmSize, PackOrm,
 };
 use primase_meshops::{
     BakeNonrigid, Mirrors, OmitMateriallessPrimitives, SpecializeMaterialVariants, TessellateColliders,
     UnusedVariants,
 };
+use primase_foundations::compress::oodle::Oodle;
+use primase_reskate::blend_order::ChainOrder;
 use primase_reskate::compile::{Compiled, Studio, compile_map};
 use primase_reskate::components::{CollisionSurfaces, CollisionWeld};
 use primase_reskate::passes::{
@@ -26,7 +28,7 @@ use primase_reskate::passes::{
     PrepareReskateCollision, PrepareReskateGrinds, PrepareReskateOverlays, PrepareReskatePauseMap,
     PrepareReskateTextures, PrepareReskateUvRepeats, PrepareReskateUvTransforms, PrepareReskateWater,
     PrepareReskateWrap, RaiseOptions, RaiseSkate, RepeatBlended, RepeatDecals, SamplingConflicts, SnapReskateMarkers,
-    UniformAlpha, WaterExtent,
+    UniformAlpha, Unclassified, WaterExtent,
 };
 use primase_reskate::passes::grind_curves::GrindLeaveOut;
 use primase_reskate::tint::LowerTintReskate;
@@ -35,7 +37,7 @@ use primase_skatebird::SkatebirdReader;
 use primase_skatebird::components::SkatebirdRole;
 use primase_skatebird::passes::voronoi::LowerSkatebirdVoronoi;
 use primase_skatebird::passes::{OmitSkatebirdMissionProps, PlaceSkatebirdMarkers};
-use primase_unity::player::Player;
+use unity_formats::player::Player;
 use primase_unity::{drawn::UnityDrawn, lower::LowerUnityPbr, lower_collision::LowerUnityCollision};
 use primase_unity::lower_lights::LowerUnityLights;
 
@@ -52,7 +54,7 @@ pub fn level(
     level: &Level,
     surfaces: &BTreeMap<String, String>,
     out: &Path,
-    studio: Option<&Studio>,
+    studio: Option<(&Studio, &Oodle)>,
 ) -> Result<(PathBuf, Option<Compiled>)> {
     let name = map_name(level.id);
     let mut reader = SkatebirdReader::new(player, level.id);
@@ -97,7 +99,8 @@ pub fn level(
         // variant in tier 3, a 2 x 2-cell block, at most 1,024 texels a cell
         Box::new(LowerSkatebirdVoronoi::new(vec!["DIRECTIONAL".to_owned()], 3, 2, 1024)?),
         Box::new(LowerUnityCollision),
-        Box::new(LowerUnityLights),
+        // URP intensity taken as candela (lux for a directional light), unchanged
+        Box::new(LowerUnityLights { candela_per_unit: 1.0 }),
         Box::new(NormalizeNormals),
         Box::new(TessellateColliders),
         Box::new(BakeNonrigid { mirrors: Mirrors::Bake }),
@@ -147,7 +150,7 @@ pub fn level(
             }),
             Box::new(BakeNormalScale),
             Box::new(RaiseSkate::new(
-                RaiseOptions::new(level.id, choices::LIGHTS)?.with_surfaces(surfaces.clone())?,
+                RaiseOptions::new(level.id, choices::LIGHTS, Unclassified::LeaveOut)?.with_surfaces(surfaces.clone())?,
             )),
             Box::new(LowerReskateShadows),
             // vertex colours as tinted copies where the source draws them (Houdini's SpecularVertexColor)
@@ -158,14 +161,14 @@ pub fn level(
             // the pause map: a 2,160 px textured view from above the play space, walls and ceilings left out
             Box::new(PrepareReskatePauseMap::new(PauseSource::Geometry {
                 height: 2160,
-                extent: PauseExtent::Collision { max_extent: 100.0 },
+                extent: PauseExtent::Collision { max_extent: 100.0, max_gap: None },
                 drawing: PauseDrawing { leave_out: choices::pause_leave_out(level.id), colour: PauseColour::Texture },
             })?),
-            Box::new(CapTextures::new(256)?.with_mode(CapMode { normals: NormalDownscale::Box, ..CapMode::default() })),
+            Box::new(CapTextures::new(256, CapMode { beyond: Beyond::Filter, normals: NormalDownscale::Box })?),
             Box::new(PrepareReskateTextures),
             Box::new(PrepareReskateUvRepeats::new(RepeatDecals::Omit, RepeatBlended::Cutout)),
             Box::new(PrepareReskateOverlays::new(0.004)?.for_encoding(&e)?),
-            Box::new(PrepareReskateBlendOrder::new(200.0)?.for_encoding(&e)?),
+            Box::new(PrepareReskateBlendOrder::new(200.0, ChainOrder::Tie)?.for_encoding(&e)?),
             Box::new(PrepareReskateCollision::new(CollisionSurfaces::Coalesce, CollisionWeld::Millimetre, &e)?),
             Box::new(PlanReskateBlendBudget::objects(1000)),
         ],
@@ -181,13 +184,13 @@ pub fn level(
     let map = out.join("map").join(&name);
 
     // ReSkate Studio compiles the map folder into a mod, against an empty stage folder (it refuses one in use).
-    let Some(studio) = studio else {
+    let Some((studio, oodle)) = studio else {
         return Ok((map, None));
     };
     let stage = out.join("stage");
     if stage.exists() {
         std::fs::remove_dir_all(&stage)?;
     }
-    let compiled = compile_map(studio, &map, &stage, &name, &choices::studio_compile())?;
+    let compiled = compile_map(studio, &map, &stage, &name, &choices::studio_compile(), oodle)?;
     Ok((map, Some(compiled)))
 }

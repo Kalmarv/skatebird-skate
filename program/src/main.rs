@@ -2,11 +2,11 @@
 //!
 //! ```text
 //! skatebird-export --typetrees <type tree package> --out <folder> [--game-data <SkateBIRD_Data>]
-//!                  [--studio <reskate_cli.exe> [--game <skate. install>]] [--jobs N] [LEVEL ...]
+//!                  [--studio <reskate_cli.exe> [--game <skate. install>] [--oodle <oo2core_9_win64.dll>]] [--jobs N] [LEVEL ...]
 //! ```
 //!
 //! Converts the levels named (every level of [`levels::LEVELS`] when none is), each into `<out>/<level>/`:
-//! `map/SkateBIRD_<Name>`, and with `--studio` its compile `stage/Patch` against `--game` (default `$RESKATE_GAME`).
+//! `map/SkateBIRD_<Name>`, and with `--studio` its compile `stage/Patch` against `--game` (default `$RESKATE_GAME`) and `--oodle` (default `<game>/oo2core_9_win64.dll`).
 //! Levels run `--jobs` at a time (3), each in its own process with its output in `<out>/<level>/build.log`; a level
 //! that fails is reported and the others still run, and the exit code says whether all did. Packaging, views and
 //! shots are the tooling's (`tools/skatebird-tools`).
@@ -19,19 +19,20 @@ use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
 use primase_reskate::compile::Studio;
-use primase_unity::TypeTreePackage;
-use primase_unity::player::Player;
+use primase_foundations::compress::oodle::{Oodle, Version};
+use unity_formats::TypeTreePackage;
+use unity_formats::player::Player;
 use skatebird_export::levels;
 
 use primase_core::convert::Result;
 
-const USAGE: &str = "usage: skatebird-export --typetrees <tpk> --out <folder> [--game-data <SkateBIRD_Data>] [--studio <reskate_cli.exe> [--game <skate. install>]] [--jobs N] [LEVEL ...]";
+const USAGE: &str = "usage: skatebird-export --typetrees <tpk> --out <folder> [--game-data <SkateBIRD_Data>] [--studio <reskate_cli.exe> [--game <skate. install>] [--oodle <oo2core_9_win64.dll>]] [--jobs N] [LEVEL ...]";
 
 /// Where Steam installs the game.
 const STEAM_DATA: &str = r"C:\Program Files (x86)\Steam\steamapps\common\SkateBIRD\SkateBIRD_Data";
 
 fn main() -> Result<()> {
-    let (mut typetrees, mut out, mut cli, mut game) = (None, None, None, None);
+    let (mut typetrees, mut out, mut cli, mut game, mut oodle) = (None, None, None, None, None);
     let (mut game_data, mut jobs, mut wanted) = (PathBuf::from(STEAM_DATA), 3usize, Vec::new());
     // the options as given, for the per-level children
     let mut pass_on = Vec::new();
@@ -43,7 +44,7 @@ fn main() -> Result<()> {
                 let n = value()?;
                 jobs = n.parse().ok().filter(|&n| n > 0).ok_or(format!("--jobs {n}: a count above 0"))?;
             }
-            "--typetrees" | "--out" | "--game-data" | "--studio" | "--game" => {
+            "--typetrees" | "--out" | "--game-data" | "--studio" | "--game" | "--oodle" => {
                 let v = value()?;
                 pass_on.extend([arg.clone(), v.clone()]);
                 let v = PathBuf::from(v);
@@ -52,6 +53,7 @@ fn main() -> Result<()> {
                     "--out" => out = Some(v),
                     "--game-data" => game_data = v,
                     "--studio" => cli = Some(v),
+                    "--oodle" => oodle = Some(v),
                     _ => game = Some(v),
                 }
             }
@@ -67,6 +69,16 @@ fn main() -> Result<()> {
         (Some(_), None) => return Err("--studio needs --game (or RESKATE_GAME)".into()),
         (None, _) => None,
     };
+    // the install's Oodle library, which the compile's finishing reads the game's data with
+    let oodle = match &studio {
+        Some(s) => {
+            let dll = oodle.unwrap_or_else(|| s.game.join("oo2core_9_win64.dll"));
+            // SAFETY: the caller names the game's own Oodle library.
+            #[allow(unsafe_code)]
+            Some(unsafe { Oodle::load(dll, Version::V9) }?)
+        }
+        None => None,
+    };
     let chosen = levels::chosen(&wanted)?;
     if jobs > 1 && chosen.len() > 1 {
         return in_children(&chosen, &pass_on, jobs, &out);
@@ -80,7 +92,7 @@ fn main() -> Result<()> {
         println!("== {} ({})", l.id, l.name);
         let started = std::time::Instant::now();
         let secs = || started.elapsed().as_secs_f64();
-        let line = match recipe::level(&player, &l, &surfaces, &out.join(l.id), studio.as_ref()) {
+        let line = match recipe::level(&player, &l, &surfaces, &out.join(l.id), studio.as_ref().zip(oodle.as_ref())) {
             Ok((map, None)) => format!("{}: ok in {:.0} s, map {}", l.id, secs(), map.display()),
             Ok((_, Some(c))) => format!(
                 "{}: ok in {:.0} s, map and Studio compile ({:.0} s, {} warnings, log {}): {}",
