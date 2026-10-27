@@ -5,12 +5,12 @@ members = ["program", "tools/skatebird-tools"]
 resolver = "3"
 
 [workspace.dependencies]
-primase-core = { git = "https://github.com/Kalmarv/primase", rev = "35e084541fcd4f5985335e6271583c695080492f" }
-primase-skatebird = { git = "https://github.com/Kalmarv/primase", rev = "35e084541fcd4f5985335e6271583c695080492f" }
-primase-unity = { git = "https://github.com/Kalmarv/primase", rev = "35e084541fcd4f5985335e6271583c695080492f" }
-primase-meshops = { git = "https://github.com/Kalmarv/primase", rev = "35e084541fcd4f5985335e6271583c695080492f" }
-primase-image = { git = "https://github.com/Kalmarv/primase", rev = "35e084541fcd4f5985335e6271583c695080492f" }
-primase-reskate = { git = "https://github.com/Kalmarv/primase", rev = "35e084541fcd4f5985335e6271583c695080492f" }
-primase-gltf = { git = "https://github.com/Kalmarv/primase", rev = "35e084541fcd4f5985335e6271583c695080492f" }
-primase-foundations = { git = "https://github.com/Kalmarv/primase-foundations", rev = "dc4369b73343f3e0d81adc47f2e504027efc1d5a", features = ["compress"] }
-unity-formats = { git = "https://github.com/Kalmarv/unity-formats", rev = "fa95acb5c6cc2f0d377b082fe353a74bcf45e9b1" }
+primase-core = { git = "https://github.com/Kalmarv/primase", rev = "ca841c989f6cb6cd78451660b0be78d8f23b5c21" }
+primase-skatebird = { git = "https://github.com/Kalmarv/primase", rev = "ca841c989f6cb6cd78451660b0be78d8f23b5c21" }
+primase-unity = { git = "https://github.com/Kalmarv/primase", rev = "ca841c989f6cb6cd78451660b0be78d8f23b5c21" }
+primase-meshops = { git = "https://github.com/Kalmarv/primase", rev = "ca841c989f6cb6cd78451660b0be78d8f23b5c21" }
+primase-image = { git = "https://github.com/Kalmarv/primase", rev = "ca841c989f6cb6cd78451660b0be78d8f23b5c21" }
+primase-reskate = { git = "https://github.com/Kalmarv/primase", rev = "ca841c989f6cb6cd78451660b0be78d8f23b5c21" }
+primase-gltf = { git = "https://github.com/Kalmarv/primase", rev = "ca841c989f6cb6cd78451660b0be78d8f23b5c21" }
+primase-foundations = { git = "https://github.com/Kalmarv/primase-foundations", rev = "b3a3d4b3a892b8342fda081ab4449bb57052a2f8", features = ["compress"] }
+unity-formats = { git = "https://github.com/Kalmarv/unity-formats", rev = "6f0a1fc6753f4f7fa75aed838c716580afc10de5" }
