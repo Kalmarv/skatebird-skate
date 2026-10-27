@@ -5,12 +5,12 @@ members = ["program", "tools/skatebird-tools"]
 resolver = "3"
 
 [workspace.dependencies]
-primase-core = { git = "https://github.com/Kalmarv/primase", rev = "f9778e42434899c489d13de17edc300d54f585c4" }
-primase-skatebird = { git = "https://github.com/Kalmarv/primase", rev = "f9778e42434899c489d13de17edc300d54f585c4" }
-primase-unity = { git = "https://github.com/Kalmarv/primase", rev = "f9778e42434899c489d13de17edc300d54f585c4" }
-primase-meshops = { git = "https://github.com/Kalmarv/primase", rev = "f9778e42434899c489d13de17edc300d54f585c4" }
-primase-image = { git = "https://github.com/Kalmarv/primase", rev = "f9778e42434899c489d13de17edc300d54f585c4" }
-primase-reskate = { git = "https://github.com/Kalmarv/primase", rev = "f9778e42434899c489d13de17edc300d54f585c4" }
-primase-gltf = { git = "https://github.com/Kalmarv/primase", rev = "f9778e42434899c489d13de17edc300d54f585c4" }
+primase-core = { git = "https://github.com/Kalmarv/primase", rev = "deed36b7cf3300dd32925fa09f2de08de4e7c21c" }
+primase-skatebird = { git = "https://github.com/Kalmarv/primase", rev = "deed36b7cf3300dd32925fa09f2de08de4e7c21c" }
+primase-unity = { git = "https://github.com/Kalmarv/primase", rev = "deed36b7cf3300dd32925fa09f2de08de4e7c21c" }
+primase-meshops = { git = "https://github.com/Kalmarv/primase", rev = "deed36b7cf3300dd32925fa09f2de08de4e7c21c" }
+primase-image = { git = "https://github.com/Kalmarv/primase", rev = "deed36b7cf3300dd32925fa09f2de08de4e7c21c" }
+primase-reskate = { git = "https://github.com/Kalmarv/primase", rev = "deed36b7cf3300dd32925fa09f2de08de4e7c21c" }
+primase-gltf = { git = "https://github.com/Kalmarv/primase", rev = "deed36b7cf3300dd32925fa09f2de08de4e7c21c" }
 primase-foundations = { git = "https://github.com/Kalmarv/primase-foundations", rev = "b3a3d4b3a892b8342fda081ab4449bb57052a2f8", features = ["compress"] }
 unity-formats = { git = "https://github.com/Kalmarv/unity-formats", rev = "6f0a1fc6753f4f7fa75aed838c716580afc10de5" }
