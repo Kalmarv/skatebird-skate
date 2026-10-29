@@ -5,12 +5,12 @@ members = ["program", "tools/skatebird-tools"]
 resolver = "3"
 
 [workspace.dependencies]
-primase-core = { git = "https://github.com/Kalmarv/primase", rev = "6c1f66ec1a6b42efded94a97c382a3df5fe748ce" }
-primase-skatebird = { git = "https://github.com/Kalmarv/primase", rev = "6c1f66ec1a6b42efded94a97c382a3df5fe748ce" }
-primase-unity = { git = "https://github.com/Kalmarv/primase", rev = "6c1f66ec1a6b42efded94a97c382a3df5fe748ce" }
-primase-meshops = { git = "https://github.com/Kalmarv/primase", rev = "6c1f66ec1a6b42efded94a97c382a3df5fe748ce" }
-primase-image = { git = "https://github.com/Kalmarv/primase", rev = "6c1f66ec1a6b42efded94a97c382a3df5fe748ce" }
-primase-reskate = { git = "https://github.com/Kalmarv/primase", rev = "6c1f66ec1a6b42efded94a97c382a3df5fe748ce" }
-primase-gltf = { git = "https://github.com/Kalmarv/primase", rev = "6c1f66ec1a6b42efded94a97c382a3df5fe748ce" }
+primase-core = { git = "https://github.com/Kalmarv/primase", rev = "dedbd96a8645b6f874ca27e86c77b55fe58d56be" }
+primase-skatebird = { git = "https://github.com/Kalmarv/primase", rev = "dedbd96a8645b6f874ca27e86c77b55fe58d56be" }
+primase-unity = { git = "https://github.com/Kalmarv/primase", rev = "dedbd96a8645b6f874ca27e86c77b55fe58d56be" }
+primase-meshops = { git = "https://github.com/Kalmarv/primase", rev = "dedbd96a8645b6f874ca27e86c77b55fe58d56be" }
+primase-image = { git = "https://github.com/Kalmarv/primase", rev = "dedbd96a8645b6f874ca27e86c77b55fe58d56be" }
+primase-reskate = { git = "https://github.com/Kalmarv/primase", rev = "dedbd96a8645b6f874ca27e86c77b55fe58d56be" }
+primase-gltf = { git = "https://github.com/Kalmarv/primase", rev = "dedbd96a8645b6f874ca27e86c77b55fe58d56be" }
 primase-foundations = { git = "https://github.com/Kalmarv/primase-foundations", rev = "f9cf4ece1de77fce9d703c63347dd70b728b7c0e", features = ["compress"] }
-unity-formats = { git = "https://github.com/Kalmarv/unity-formats", rev = "aa1c81aa3545ddcd22e611cdea6dfaac97010d34" }
+unity-formats = { git = "https://github.com/Kalmarv/unity-formats", rev = "85b2abebbf2bbb9f576595e7521f8d09ce9d3438" }
