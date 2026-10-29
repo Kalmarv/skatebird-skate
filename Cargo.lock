@@ -254,8 +254,8 @@ dependencies = [
 
 [[package]]
 name = "dxbc-reader"
-version = "0.3.0"
-source = "git+https://github.com/Kalmarv/dx?rev=e42b5ff7559e364c1c8a8977ece6460cd8797205#e42b5ff7559e364c1c8a8977ece6460cd8797205"
+version = "0.4.0"
+source = "git+https://github.com/Kalmarv/dx?rev=c32a3689c6bd26a0ee0777664091f4e04843927e#c32a3689c6bd26a0ee0777664091f4e04843927e"
 dependencies = [
  "dxcontainer",
  "thiserror",
@@ -263,8 +263,8 @@ dependencies = [
 
 [[package]]
 name = "dxcontainer"
-version = "0.3.0"
-source = "git+https://github.com/Kalmarv/dx?rev=e42b5ff7559e364c1c8a8977ece6460cd8797205#e42b5ff7559e364c1c8a8977ece6460cd8797205"
+version = "0.4.0"
+source = "git+https://github.com/Kalmarv/dx?rev=c32a3689c6bd26a0ee0777664091f4e04843927e#c32a3689c6bd26a0ee0777664091f4e04843927e"
 dependencies = [
  "primase-foundations",
  "thiserror",
@@ -272,8 +272,8 @@ dependencies = [
 
 [[package]]
 name = "dxil-reader"
-version = "0.3.0"
-source = "git+https://github.com/Kalmarv/dx?rev=e42b5ff7559e364c1c8a8977ece6460cd8797205#e42b5ff7559e364c1c8a8977ece6460cd8797205"
+version = "0.4.0"
+source = "git+https://github.com/Kalmarv/dx?rev=c32a3689c6bd26a0ee0777664091f4e04843927e#c32a3689c6bd26a0ee0777664091f4e04843927e"
 dependencies = [
  "dxcontainer",
  "primase-foundations",
@@ -336,8 +336,8 @@ checksum = "77ce24cb58228fbb8aa041425bb1050850ac19177686ea6e0f41a70416f56fdb"
 
 [[package]]
 name = "frostbite-formats"
-version = "0.2.1"
-source = "git+https://github.com/Kalmarv/frostbite-formats?rev=d962737ddee4b1d908f0f1625f84e17ddf0d6f46#d962737ddee4b1d908f0f1625f84e17ddf0d6f46"
+version = "0.3.0"
+source = "git+https://github.com/Kalmarv/frostbite-formats?rev=413a70b3f90c0c8bbb7377df09d1c3edcb743a86#413a70b3f90c0c8bbb7377df09d1c3edcb743a86"
 dependencies = [
  "half",
  "primase-foundations",
@@ -475,8 +475,8 @@ dependencies = [
 
 [[package]]
 name = "iridia"
-version = "0.3.0"
-source = "git+https://github.com/Kalmarv/iridia?rev=5d4eb58f4cfbae209ed972221dbdb1253b8c5d40#5d4eb58f4cfbae209ed972221dbdb1253b8c5d40"
+version = "0.4.0"
+source = "git+https://github.com/Kalmarv/iridia?rev=50664d509282ac30de6d84b5f6e82ce6d00ebe78#50664d509282ac30de6d84b5f6e82ce6d00ebe78"
 dependencies = [
  "iridia-interface",
  "primase-naga",
@@ -486,8 +486,8 @@ dependencies = [
 
 [[package]]
 name = "iridia-dxbc"
-version = "0.3.0"
-source = "git+https://github.com/Kalmarv/iridia?rev=5d4eb58f4cfbae209ed972221dbdb1253b8c5d40#5d4eb58f4cfbae209ed972221dbdb1253b8c5d40"
+version = "0.4.0"
+source = "git+https://github.com/Kalmarv/iridia?rev=50664d509282ac30de6d84b5f6e82ce6d00ebe78#50664d509282ac30de6d84b5f6e82ce6d00ebe78"
 dependencies = [
  "dxbc-reader",
  "dxcontainer",
@@ -497,8 +497,8 @@ dependencies = [
 
 [[package]]
 name = "iridia-dxil"
-version = "0.3.0"
-source = "git+https://github.com/Kalmarv/iridia?rev=5d4eb58f4cfbae209ed972221dbdb1253b8c5d40#5d4eb58f4cfbae209ed972221dbdb1253b8c5d40"
+version = "0.4.0"
+source = "git+https://github.com/Kalmarv/iridia?rev=50664d509282ac30de6d84b5f6e82ce6d00ebe78#50664d509282ac30de6d84b5f6e82ce6d00ebe78"
 dependencies = [
  "dxcontainer",
  "dxil-reader",
@@ -509,8 +509,8 @@ dependencies = [
 
 [[package]]
 name = "iridia-exec"
-version = "0.3.0"
-source = "git+https://github.com/Kalmarv/iridia?rev=5d4eb58f4cfbae209ed972221dbdb1253b8c5d40#5d4eb58f4cfbae209ed972221dbdb1253b8c5d40"
+version = "0.4.0"
+source = "git+https://github.com/Kalmarv/iridia?rev=50664d509282ac30de6d84b5f6e82ce6d00ebe78#50664d509282ac30de6d84b5f6e82ce6d00ebe78"
 dependencies = [
  "half",
  "iridia",
@@ -522,8 +522,8 @@ dependencies = [
 
 [[package]]
 name = "iridia-interface"
-version = "0.3.0"
-source = "git+https://github.com/Kalmarv/iridia?rev=5d4eb58f4cfbae209ed972221dbdb1253b8c5d40#5d4eb58f4cfbae209ed972221dbdb1253b8c5d40"
+version = "0.4.0"
+source = "git+https://github.com/Kalmarv/iridia?rev=50664d509282ac30de6d84b5f6e82ce6d00ebe78#50664d509282ac30de6d84b5f6e82ce6d00ebe78"
 dependencies = [
  "serde",
 ]
@@ -694,7 +694,7 @@ dependencies = [
 [[package]]
 name = "primase-animation"
 version = "0.1.0"
-source = "git+https://github.com/Kalmarv/primase?rev=be1140fc5a7d2f3be3c73e0727ccb84da49223ed#be1140fc5a7d2f3be3c73e0727ccb84da49223ed"
+source = "git+https://github.com/Kalmarv/primase?rev=6c1f66ec1a6b42efded94a97c382a3df5fe748ce#6c1f66ec1a6b42efded94a97c382a3df5fe748ce"
 dependencies = [
  "primase-core",
  "serde",
@@ -705,7 +705,7 @@ dependencies = [
 [[package]]
 name = "primase-core"
 version = "0.1.0"
-source = "git+https://github.com/Kalmarv/primase?rev=be1140fc5a7d2f3be3c73e0727ccb84da49223ed#be1140fc5a7d2f3be3c73e0727ccb84da49223ed"
+source = "git+https://github.com/Kalmarv/primase?rev=6c1f66ec1a6b42efded94a97c382a3df5fe748ce#6c1f66ec1a6b42efded94a97c382a3df5fe748ce"
 dependencies = [
  "iridia-interface",
  "primase-foundations",
@@ -717,7 +717,7 @@ dependencies = [
 [[package]]
 name = "primase-dds"
 version = "0.1.0"
-source = "git+https://github.com/Kalmarv/primase?rev=be1140fc5a7d2f3be3c73e0727ccb84da49223ed#be1140fc5a7d2f3be3c73e0727ccb84da49223ed"
+source = "git+https://github.com/Kalmarv/primase?rev=6c1f66ec1a6b42efded94a97c382a3df5fe748ce#6c1f66ec1a6b42efded94a97c382a3df5fe748ce"
 dependencies = [
  "primase-core",
  "thiserror",
@@ -726,12 +726,12 @@ dependencies = [
 [[package]]
 name = "primase-exactsum"
 version = "0.1.0"
-source = "git+https://github.com/Kalmarv/primase?rev=be1140fc5a7d2f3be3c73e0727ccb84da49223ed#be1140fc5a7d2f3be3c73e0727ccb84da49223ed"
+source = "git+https://github.com/Kalmarv/primase?rev=6c1f66ec1a6b42efded94a97c382a3df5fe748ce#6c1f66ec1a6b42efded94a97c382a3df5fe748ce"
 
 [[package]]
 name = "primase-foundations"
-version = "0.2.1"
-source = "git+https://github.com/Kalmarv/primase-foundations?rev=e895f966130651bd78c47505b53322cc3f58083a#e895f966130651bd78c47505b53322cc3f58083a"
+version = "0.3.0"
+source = "git+https://github.com/Kalmarv/primase-foundations?rev=f9cf4ece1de77fce9d703c63347dd70b728b7c0e#f9cf4ece1de77fce9d703c63347dd70b728b7c0e"
 dependencies = [
  "flate2",
  "half",
@@ -740,12 +740,13 @@ dependencies = [
  "oozextract",
  "ruzstd",
  "thiserror",
+ "zlib-rs",
 ]
 
 [[package]]
 name = "primase-frostbite"
 version = "0.1.0"
-source = "git+https://github.com/Kalmarv/primase?rev=be1140fc5a7d2f3be3c73e0727ccb84da49223ed#be1140fc5a7d2f3be3c73e0727ccb84da49223ed"
+source = "git+https://github.com/Kalmarv/primase?rev=6c1f66ec1a6b42efded94a97c382a3df5fe748ce#6c1f66ec1a6b42efded94a97c382a3df5fe748ce"
 dependencies = [
  "frostbite-formats",
  "half",
@@ -761,7 +762,7 @@ dependencies = [
 [[package]]
 name = "primase-glb"
 version = "0.1.0"
-source = "git+https://github.com/Kalmarv/primase?rev=be1140fc5a7d2f3be3c73e0727ccb84da49223ed#be1140fc5a7d2f3be3c73e0727ccb84da49223ed"
+source = "git+https://github.com/Kalmarv/primase?rev=6c1f66ec1a6b42efded94a97c382a3df5fe748ce#6c1f66ec1a6b42efded94a97c382a3df5fe748ce"
 dependencies = [
  "bytemuck",
  "iridia-interface",
@@ -773,7 +774,7 @@ dependencies = [
 [[package]]
 name = "primase-gltf"
 version = "0.1.0"
-source = "git+https://github.com/Kalmarv/primase?rev=be1140fc5a7d2f3be3c73e0727ccb84da49223ed#be1140fc5a7d2f3be3c73e0727ccb84da49223ed"
+source = "git+https://github.com/Kalmarv/primase?rev=6c1f66ec1a6b42efded94a97c382a3df5fe748ce#6c1f66ec1a6b42efded94a97c382a3df5fe748ce"
 dependencies = [
  "bytemuck",
  "iridia-interface",
@@ -791,7 +792,7 @@ dependencies = [
 [[package]]
 name = "primase-image"
 version = "0.1.0"
-source = "git+https://github.com/Kalmarv/primase?rev=be1140fc5a7d2f3be3c73e0727ccb84da49223ed#be1140fc5a7d2f3be3c73e0727ccb84da49223ed"
+source = "git+https://github.com/Kalmarv/primase?rev=6c1f66ec1a6b42efded94a97c382a3df5fe748ce#6c1f66ec1a6b42efded94a97c382a3df5fe748ce"
 dependencies = [
  "iridia-interface",
  "png",
@@ -808,7 +809,7 @@ dependencies = [
 [[package]]
 name = "primase-meshops"
 version = "0.1.0"
-source = "git+https://github.com/Kalmarv/primase?rev=be1140fc5a7d2f3be3c73e0727ccb84da49223ed#be1140fc5a7d2f3be3c73e0727ccb84da49223ed"
+source = "git+https://github.com/Kalmarv/primase?rev=6c1f66ec1a6b42efded94a97c382a3df5fe748ce#6c1f66ec1a6b42efded94a97c382a3df5fe748ce"
 dependencies = [
  "primase-core",
  "thiserror",
@@ -840,7 +841,7 @@ dependencies = [
 [[package]]
 name = "primase-reskate"
 version = "0.1.0"
-source = "git+https://github.com/Kalmarv/primase?rev=be1140fc5a7d2f3be3c73e0727ccb84da49223ed#be1140fc5a7d2f3be3c73e0727ccb84da49223ed"
+source = "git+https://github.com/Kalmarv/primase?rev=6c1f66ec1a6b42efded94a97c382a3df5fe748ce#6c1f66ec1a6b42efded94a97c382a3df5fe748ce"
 dependencies = [
  "frostbite-formats",
  "half",
@@ -865,7 +866,7 @@ dependencies = [
 [[package]]
 name = "primase-skatebird"
 version = "0.1.0"
-source = "git+https://github.com/Kalmarv/primase?rev=be1140fc5a7d2f3be3c73e0727ccb84da49223ed#be1140fc5a7d2f3be3c73e0727ccb84da49223ed"
+source = "git+https://github.com/Kalmarv/primase?rev=6c1f66ec1a6b42efded94a97c382a3df5fe748ce#6c1f66ec1a6b42efded94a97c382a3df5fe748ce"
 dependencies = [
  "iridia",
  "iridia-exec",
@@ -883,7 +884,7 @@ dependencies = [
 [[package]]
 name = "primase-texcodec"
 version = "0.1.0"
-source = "git+https://github.com/Kalmarv/primase?rev=be1140fc5a7d2f3be3c73e0727ccb84da49223ed#be1140fc5a7d2f3be3c73e0727ccb84da49223ed"
+source = "git+https://github.com/Kalmarv/primase?rev=6c1f66ec1a6b42efded94a97c382a3df5fe748ce#6c1f66ec1a6b42efded94a97c382a3df5fe748ce"
 dependencies = [
  "bcdec_rs",
  "block_compression",
@@ -897,7 +898,7 @@ dependencies = [
 [[package]]
 name = "primase-unity"
 version = "0.1.0"
-source = "git+https://github.com/Kalmarv/primase?rev=be1140fc5a7d2f3be3c73e0727ccb84da49223ed#be1140fc5a7d2f3be3c73e0727ccb84da49223ed"
+source = "git+https://github.com/Kalmarv/primase?rev=6c1f66ec1a6b42efded94a97c382a3df5fe748ce#6c1f66ec1a6b42efded94a97c382a3df5fe748ce"
 dependencies = [
  "iridia",
  "iridia-dxbc",
@@ -963,8 +964,8 @@ checksum = "d6f6ff9a378485b298a5286656da665ba74413d36db0979633275d2e708145d4"
 
 [[package]]
 name = "rsx-reader"
-version = "0.3.0"
-source = "git+https://github.com/Kalmarv/dx?rev=e42b5ff7559e364c1c8a8977ece6460cd8797205#e42b5ff7559e364c1c8a8977ece6460cd8797205"
+version = "0.4.0"
+source = "git+https://github.com/Kalmarv/dx?rev=c32a3689c6bd26a0ee0777664091f4e04843927e#c32a3689c6bd26a0ee0777664091f4e04843927e"
 dependencies = [
  "primase-foundations",
  "thiserror",
@@ -1275,8 +1276,8 @@ checksum = "b4ac048d71ede7ee76d585517add45da530660ef4390e49b098733c6e897f254"
 
 [[package]]
 name = "unity-formats"
-version = "0.1.0"
-source = "git+https://github.com/Kalmarv/unity-formats?rev=f6e02ee5ceab50e839d14f1cafe794812a0cfecf#f6e02ee5ceab50e839d14f1cafe794812a0cfecf"
+version = "0.2.0"
+source = "git+https://github.com/Kalmarv/unity-formats?rev=aa1c81aa3545ddcd22e611cdea6dfaac97010d34#aa1c81aa3545ddcd22e611cdea6dfaac97010d34"
 dependencies = [
  "half",
  "primase-foundations",
