@@ -40,6 +40,7 @@ use primase_skatebird::passes::{OmitSkatebirdMissionProps, PlaceSkatebirdMarkers
 use unity_formats::player::Player;
 use primase_unity::{drawn::UnityDrawn, lower::LowerUnityPbr, lower_collision::LowerUnityCollision};
 use primase_unity::lower_lights::LowerUnityLights;
+use primase_unity::colour::ColourSpace;
 
 use crate::choices;
 use crate::rails::KeepSkatebirdLineRails;
@@ -73,6 +74,12 @@ pub fn level(
         scene_warnings: None,
     };
 
+    // the colour space the player's programs read material colours in (its PlayerSettings)
+    let colour_space: ColourSpace = player
+        .colour_space()?
+        .ok_or("the player states no colour space (PlayerSettings m_ActiveColorSpace)")?
+        .into();
+
     // Run once on the level as read: SkateBIRD's own data lowered to core meanings.
     let mut lower: Vec<Box<dyn primase_core::pass::Pass>> = vec![
         // mission-only objects, unlocks, the player's own board and the HUD's mission arrow are not the level
@@ -94,10 +101,10 @@ pub fn level(
         }),
         Box::new(SelectLod { choice: LodChoice::Finest }),
         Box::new(UnityDrawn),
-        Box::new(LowerUnityPbr),
+        Box::new(LowerUnityPbr { colour_space }),
         // Bumped Specular Voronoi (gravel, carpet) baked from its own compiled shader: the forward pass's DIRECTIONAL
-        // variant in tier 3, a 2 x 2-cell block, at most 1,024 texels a cell
-        Box::new(LowerSkatebirdVoronoi::new(vec!["DIRECTIONAL".to_owned()], 3, 2, 1024)?),
+        // variant in tier 3, the player's colour space, a 2 x 2-cell block, at most 1,024 texels a cell
+        Box::new(LowerSkatebirdVoronoi::new(vec!["DIRECTIONAL".to_owned()], 3, colour_space, 2, 1024)?),
         Box::new(LowerUnityCollision),
         // URP intensity taken as candela (lux for a directional light), unchanged
         Box::new(LowerUnityLights { candela_per_unit: 1.0 }),
