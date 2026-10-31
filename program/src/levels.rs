@@ -63,15 +63,19 @@ pub fn chosen(wanted: &[String]) -> Result<Vec<Level>, String> {
 /// The map's (and the mod folder's, and the zip's) name for a level, by the game's name for it: `SkateBIRD_Rooftop`,
 /// `SkateBIRD_ServerRoom` (Caleb, 2026-10-19: the scene numbers confused).
 pub fn map_name(level: &str) -> String {
-    let name: String = LEVELS.iter().find(|l| l.id == level).map_or(level.to_owned(), |l| {
-        l.name
-            .split(' ')
-            .map(|w| {
-                let mut c = w.chars();
-                c.next().map_or(String::new(), |f| f.to_uppercase().chain(c).collect())
-            })
-            .collect()
-    });
+    let name: String = LEVELS
+        .iter()
+        .find(|l| l.id == level)
+        .map_or(level.to_owned(), |l| {
+            l.name
+                .split(' ')
+                .map(|w| {
+                    let mut c = w.chars();
+                    c.next()
+                        .map_or(String::new(), |f| f.to_uppercase().chain(c).collect())
+                })
+                .collect()
+        });
     format!("SkateBIRD_{name}")
 }
 

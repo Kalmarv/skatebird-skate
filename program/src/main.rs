@@ -18,11 +18,11 @@ mod recipe;
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
-use primase_reskate::compile::Studio;
 use primase_foundations::compress::oodle::{Oodle, Version};
+use primase_reskate::compile::Studio;
+use skatebird_export::levels;
 use unity_formats::TypeTreePackage;
 use unity_formats::player::Player;
-use skatebird_export::levels;
 
 use primase_core::convert::Result;
 
@@ -42,7 +42,11 @@ fn main() -> Result<()> {
         match arg.as_str() {
             "--jobs" => {
                 let n = value()?;
-                jobs = n.parse().ok().filter(|&n| n > 0).ok_or(format!("--jobs {n}: a count above 0"))?;
+                jobs = n
+                    .parse()
+                    .ok()
+                    .filter(|&n| n > 0)
+                    .ok_or(format!("--jobs {n}: a count above 0"))?;
             }
             "--typetrees" | "--out" | "--game-data" | "--studio" | "--game" | "--oodle" => {
                 let v = value()?;
@@ -57,14 +61,19 @@ fn main() -> Result<()> {
                     _ => game = Some(v),
                 }
             }
-            _ if arg.starts_with("--") => return Err(format!("unknown option {arg}; {USAGE}").into()),
+            _ if arg.starts_with("--") => {
+                return Err(format!("unknown option {arg}; {USAGE}").into());
+            }
             _ => wanted.push(arg),
         }
     }
     let (Some(typetrees), Some(out)) = (typetrees, out) else {
         return Err(USAGE.into());
     };
-    let studio = match (cli, game.or_else(|| std::env::var_os("RESKATE_GAME").map(PathBuf::from))) {
+    let studio = match (
+        cli,
+        game.or_else(|| std::env::var_os("RESKATE_GAME").map(PathBuf::from)),
+    ) {
         (Some(cli), Some(game)) => Some(Studio { cli, game }),
         (Some(_), None) => return Err("--studio needs --game (or RESKATE_GAME)".into()),
         (None, _) => None,
@@ -86,13 +95,22 @@ fn main() -> Result<()> {
     let surfaces: BTreeMap<String, String> = serde_json::from_slice(&std::fs::read(
         Path::new(env!("CARGO_MANIFEST_DIR")).join("../data/skatebird-surfaces.json"),
     )?)?;
-    let player = Player::open(&game_data, TypeTreePackage::parse(&std::fs::read(&typetrees)?)?)?;
+    let player = Player::open(
+        &game_data,
+        TypeTreePackage::parse(&std::fs::read(&typetrees)?)?,
+    )?;
     let mut lines = Vec::new();
     for l in chosen {
         println!("== {} ({})", l.id, l.name);
         let started = std::time::Instant::now();
         let secs = || started.elapsed().as_secs_f64();
-        let line = match recipe::level(&player, &l, &surfaces, &out.join(l.id), studio.as_ref().zip(oodle.as_ref())) {
+        let line = match recipe::level(
+            &player,
+            &l,
+            &surfaces,
+            &out.join(l.id),
+            studio.as_ref().zip(oodle.as_ref()),
+        ) {
             Ok((map, None)) => format!("{}: ok in {:.0} s, map {}", l.id, secs(), map.display()),
             Ok((_, Some(c))) => format!(
                 "{}: ok in {:.0} s, map and Studio compile ({:.0} s, {} warnings, log {}): {}",
@@ -113,7 +131,12 @@ fn main() -> Result<()> {
 
 /// Each level in its own process (the same options, that one level), `jobs` at a time, each one's output in
 /// `<out>/<level>/build.log`; then each level's result line.
-fn in_children(chosen: &[levels::Level], options: &[String], jobs: usize, out: &Path) -> Result<()> {
+fn in_children(
+    chosen: &[levels::Level],
+    options: &[String],
+    jobs: usize,
+    out: &Path,
+) -> Result<()> {
     let exe = std::env::current_exe()?;
     let started = std::time::Instant::now();
     let mut queue: std::collections::VecDeque<&levels::Level> = chosen.iter().collect();
@@ -146,15 +169,21 @@ fn in_children(chosen: &[levels::Level], options: &[String], jobs: usize, out: &
             let (l, log, _) = running.swap_remove(i);
             let prefix = format!("{}: ", l.id);
             let text = std::fs::read_to_string(&log).unwrap_or_default();
-            let line = text.lines().rfind(|line| line.starts_with(&prefix)).map_or_else(
-                || format!("{}: FAILED, exit {status}, see {}", l.id, log.display()),
-                str::to_owned,
-            );
+            let line = text
+                .lines()
+                .rfind(|line| line.starts_with(&prefix))
+                .map_or_else(
+                    || format!("{}: FAILED, exit {status}, see {}", l.id, log.display()),
+                    str::to_owned,
+                );
             println!("{line}");
             lines.push(line);
         }
     }
-    println!("== {:.0} s, {jobs} at a time", started.elapsed().as_secs_f64());
+    println!(
+        "== {:.0} s, {jobs} at a time",
+        started.elapsed().as_secs_f64()
+    );
     lines.sort();
     summary(lines)
 }

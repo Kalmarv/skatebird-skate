@@ -46,7 +46,8 @@ fn main() -> Result<()> {
 /// Each built level as an installable mod folder (`<out>/<level>/mod/SkateBIRD_<level>`) and its zip in `--dest`
 /// ([`package`]).
 fn package(args: Vec<String>) -> Result<()> {
-    let (mut out, mut dest, mut version, mut icons, mut wanted) = (None, None, None, None, Vec::new());
+    let (mut out, mut dest, mut version, mut icons, mut wanted) =
+        (None, None, None, None, Vec::new());
     let mut args = args.into_iter();
     while let Some(arg) = args.next() {
         let mut value = || args.next().ok_or(USAGE);
@@ -75,7 +76,11 @@ fn package(args: Vec<String>) -> Result<()> {
             _ => None,
         };
         if png.is_none() {
-            println!("{}: no icon ({})", l.id, shot.map_or("no --icons".into(), |p| format!("{} missing", p.display())));
+            println!(
+                "{}: no icon ({})",
+                l.id,
+                shot.map_or("no --icons".into(), |p| format!("{} missing", p.display()))
+            );
         }
         let folder = package::mod_folder(&out.join(l.id), &l, &name, &version, png.as_deref())?;
         let zip = dest.join(format!("{name}-{version}.zip"));

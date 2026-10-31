@@ -54,9 +54,16 @@ impl Pass for KeepSkatebirdLineRails {
         }
         // a group only one mission state has (the clip line during and after its mission) is gone once the state is
         // resolved: counted, not refused
-        let gone = self.groups.iter().filter(|g| !matched.contains(g.as_str())).count();
+        let gone = self
+            .groups
+            .iter()
+            .filter(|g| !matched.contains(g.as_str()))
+            .count();
         if gone > 0 {
-            log.count("stated groups with no rail in the level as stored", gone as u64);
+            log.count(
+                "stated groups with no rail in the level as stored",
+                gone as u64,
+            );
         }
         Ok(())
     }
@@ -85,8 +92,14 @@ mod tests {
     #[test]
     fn only_the_stated_groups_stay_rails() {
         let mut w = World::new();
-        let rope = rail(&mut w, "Partially Dynamic Level Elements/Rope 1/Extra Rail 2");
-        let coping = rail(&mut w, "Level Elements/Under Main Table/quarter - 3_5h 4d 5w - cardboard (20)/Rail");
+        let rope = rail(
+            &mut w,
+            "Partially Dynamic Level Elements/Rope 1/Extra Rail 2",
+        );
+        let coping = rail(
+            &mut w,
+            "Level Elements/Under Main Table/quarter - 3_5h 4d 5w - cardboard (20)/Rail",
+        );
         let pass = KeepSkatebirdLineRails {
             groups: BTreeSet::from(["Partially Dynamic Level Elements/Rope 1/".to_owned()]),
         };
@@ -106,6 +119,9 @@ mod tests {
         let mut log = PassLog::default();
         pass.run(&mut w, &mut log).unwrap();
         assert!(w.get::<Curve>(rope).is_none());
-        assert_eq!(log.counts["stated groups with no rail in the level as stored"], 1);
+        assert_eq!(
+            log.counts["stated groups with no rail in the level as stored"],
+            1
+        );
     }
 }

@@ -180,7 +180,11 @@ pub fn window_glass() -> BlendedSelection {
 pub fn pause_leave_out(level: &str) -> PauseLeaveOut {
     let prefixes: &[&str] = match level {
         "level1" => &["Level Elements/Bounds/"],
-        "level3" => &["Level Bounds/Longer Wall", "Level Bounds/Shorter Wall", "Level Elements/Ceiling Lights/"],
+        "level3" => &[
+            "Level Bounds/Longer Wall",
+            "Level Bounds/Shorter Wall",
+            "Level Elements/Ceiling Lights/",
+        ],
         "level4" => &["Room Bounds/Wall"],
         "level5" => &["Bounds/"],
         "level7" => &["Brick Bedroom/Bounds/"],

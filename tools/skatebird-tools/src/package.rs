@@ -140,7 +140,8 @@ fn capitalised(name: &str) -> String {
     name.split(' ')
         .map(|w| {
             let mut c = w.chars();
-            c.next().map_or(String::new(), |f| f.to_uppercase().chain(c).collect())
+            c.next()
+                .map_or(String::new(), |f| f.to_uppercase().chain(c).collect())
         })
         .collect::<Vec<_>>()
         .join(" ")
@@ -149,7 +150,9 @@ fn capitalised(name: &str) -> String {
 /// A screenshot (PNG) as the mod's picture: its centre square, averaged down to [`ICON_SIZE`] (each icon pixel the
 /// mean of the source pixels it covers, weighted by coverage), opaque, as a PNG.
 pub fn icon(png: &[u8]) -> Result<Vec<u8>, String> {
-    let image = primase_image::read_png(png).map_err(|e| format!("icon: {e}"))?.image;
+    let image = primase_image::read_png(png)
+        .map_err(|e| format!("icon: {e}"))?
+        .image;
     let (w, h) = (image.width as usize, image.height as usize);
     let rgba: Vec<f64> = match &image.samples {
         primase_image::Samples::U8(s) => s.iter().map(|&v| f64::from(v)).collect(),
@@ -157,7 +160,9 @@ pub fn icon(png: &[u8]) -> Result<Vec<u8>, String> {
     };
     let side = w.min(h);
     if side < ICON_SIZE as usize {
-        return Err(format!("icon: a {w} x {h} screenshot is smaller than {ICON_SIZE} px"));
+        return Err(format!(
+            "icon: a {w} x {h} screenshot is smaller than {ICON_SIZE} px"
+        ));
     }
     let (x0, y0) = ((w - side) / 2, (h - side) / 2);
     let n = ICON_SIZE as usize;
@@ -278,9 +283,15 @@ mod tests {
         .unwrap();
         let out = primase_image::read_png(&icon(&png).unwrap()).unwrap().image;
         assert_eq!((out.width, out.height), (ICON_SIZE, ICON_SIZE));
-        let primase_image::Samples::U8(s) = out.samples else { panic!("8-bit") };
+        let primase_image::Samples::U8(s) = out.samples else {
+            panic!("8-bit")
+        };
         let at = |x: usize, y: usize| &s[(y * 256 + x) * 4..][..4];
-        assert_eq!(at(0, 0), [255, 0, 0, 255], "left edge: red, no green margin, opaque");
+        assert_eq!(
+            at(0, 0),
+            [255, 0, 0, 255],
+            "left edge: red, no green margin, opaque"
+        );
         assert_eq!(at(255, 255), [0, 0, 255, 255], "right edge: blue");
         assert_eq!(at(127, 10), [255, 0, 0, 255]);
         assert_eq!(at(128, 10), [0, 0, 255, 255]);
