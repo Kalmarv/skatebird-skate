@@ -1,6 +1,7 @@
 [package]
 name = "skatebird-export"
-version = "0.1.0"
+version.workspace = true
+repository = "https://github.com/Kalmarv/skatebird-skate"
 edition = "2024"
 publish = false
 
@@ -23,3 +24,7 @@ path = "src/lib.rs"
 [[bin]]
 name = "skatebird-export"
 path = "src/main.rs"
+
+[package.metadata.dist]
+# not on crates.io, but each release has its binary
+dist = true

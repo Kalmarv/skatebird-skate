@@ -43,7 +43,7 @@ To build them, clone the repository. It is one Cargo workspace with two packages
 | `skatebird-export` (`program/`) | The conversion: reads each level, writes its ReSkate map and compiles it with ReSkate Studio |
 | `skatebird-tools` (`tools/skatebird-tools/`) | Release packaging, skate. view commands, comparison sheets and the SkateBIRD screenshot runner |
 
-Neither package is published to crates.io, and no binary release has been made yet: build both from the checkout with `cargo`. Once a release is made, binaries for Windows and Linux (x86_64) are attached to it on the [releases page](https://github.com/Kalmarv/skatebird-skate/releases). primase and its format crates are pinned by git revision in the workspace `Cargo.toml`.
+Neither package is published to crates.io. Each [release](https://github.com/Kalmarv/skatebird-skate/releases/latest) has both binaries for Windows and Linux (x86_64), each archive with its `.sha256`; or build them from the checkout with `cargo`. primase and its format crates are pinned by git revision in the workspace `Cargo.toml`.
 
 ### Usage
 
