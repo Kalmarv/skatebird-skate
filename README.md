@@ -80,4 +80,4 @@ passed on main, CI's release job (`.github/release.py`) builds the binaries, tag
 
 1. Bump the package's `version` when a change is worth releasing: a patch (0.x.Y) for fixes, a minor (0.X.0) for
    new features or changed behaviour. Run `cargo check` so `Cargo.lock` follows.
-2. Push to main. Never make a release by hand.
+2. Push to main. Never tag or create a Release yourself.
