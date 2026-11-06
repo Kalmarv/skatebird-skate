@@ -77,7 +77,7 @@ pub fn mod_folder(
     Ok(out)
 }
 
-/// A level's name in skate.'s level list and on its page: `SkateBird | Bedroom 1` (Caleb, 2026-10-20).
+/// A level's name in skate.'s level list and on its page: `SkateBird | Bedroom 1`.
 pub fn display_name(level: &Level) -> String {
     format!("SkateBird | {}", capitalised(level.name))
 }

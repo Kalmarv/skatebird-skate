@@ -61,7 +61,7 @@ pub fn chosen(wanted: &[String]) -> Result<Vec<Level>, String> {
 }
 
 /// The map's (and the mod folder's, and the zip's) name for a level, by the game's name for it: `SkateBIRD_Rooftop`,
-/// `SkateBIRD_ServerRoom` (Caleb, 2026-10-19: the scene numbers confused).
+/// `SkateBIRD_ServerRoom` (the scene numbers alone are confusing).
 pub fn map_name(level: &str) -> String {
     let name: String = LEVELS
         .iter()

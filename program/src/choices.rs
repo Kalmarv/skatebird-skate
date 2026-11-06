@@ -10,13 +10,13 @@ use primase_reskate::passes::{BlendedSelection, LightCalibration, PauseLeaveOut}
 /// raise-skate's light calibration: SkateBIRD's lights are in Unity built-in units, relative to its sun (intensity 1),
 /// not physical candela, so primase's standard calibration (3.007e-4, fitted to GTA's physical lights) leaves its
 /// interiors black. 10,000 times the standard, chosen by in-game comparison of x100, x1000 and x10000 on the office,
-/// server room and bedroom 2 (run light1; Caleb, 2026-10-19: "x10000").
+/// server room and bedroom 2 (2026-10-19).
 pub const LIGHTS: LightCalibration = LightCalibration::Scale(3.007);
 
 /// The spawn of a level with no starting reset position, in the core frame with the scene yaw: level7 (flashback),
 /// where the game starts the player at its `Player Birb` placement, Unity (0, 1.189, 0) facing yaw 172.9341. It stood
-/// on a mission object the map leaves out, so it drops onto the collision below (Caleb, 2026-10-19: "flash back you
-/// spawn in the air").
+/// on a mission object the map leaves out, so it drops onto the collision below instead of starting in
+/// the air.
 pub fn fallback_spawn(level: &str) -> Option<([f64; 3], f64)> {
     (level == "level7").then_some(([0.0, 1.189, 0.0], 180.0 - 172.9341))
 }
@@ -29,7 +29,7 @@ pub fn fallback_spawn(level: &str) -> Option<([f64; 3], f64)> {
 fn room_shell(level: &str) -> &'static [&'static str] {
     match level {
         "level1" => &["Level Elements/Bounds/"],
-        // Caleb, 2026-10-19, of 0.3.0: "office still has a mesh we need to [not] shadow cast"
+        // in 0.3.0 more of the office still shadowed the start than its bounds
         "level3" => &[
             "Level Bounds/",
             // the cubicles' tall carpeted surround walls shade the start (sky rays from it: 8 of 48 blocked by them)
@@ -40,7 +40,7 @@ fn room_shell(level: &str) -> &'static [&'static str] {
             "Level Elements/CEO Office/CEO Office Bounds/",
         ],
         // the server tower's stacked floors shadow the start beneath them black (skate has little bounce light):
-        // Caleb, 2026-10-19: "just make the floors or whatever above not shadow cast"
+        // so the floors above cast no shadow
         "level4" => &["Room Bounds/", "Main Tower/"],
         "level5" => &["Bounds/"],
         "level7" => &["Brick Bedroom/Bounds/"],
@@ -48,10 +48,9 @@ fn room_shell(level: &str) -> &'static [&'static str] {
     }
 }
 
-/// The room shell casts no shadow, so skate's sun and sky light the room inside (Caleb, 2026-10-19: "make the room
-/// material allow light to pass through and just use skybox lighting"; it replaces 0.2.0's ambient fill lights). The
-/// program's choice, added to what the scene itself leaves non-casting (Caleb: the Unity reader's castShadows Off kept,
-/// the program's choices on top). `lower-reskate-shadows` gives them non-casting skate materials.
+/// The room shell casts no shadow, so skate's sun and sky light the room inside (it replaces 0.2.0's ambient fill lights).
+/// The program's choice, added to what the scene itself leaves non-casting (the Unity reader's castShadows Off is kept,
+/// the program's choices go on top). `lower-reskate-shadows` gives them non-casting skate materials.
 pub fn shell_casts_no_shadow(level: &str) -> Result<Option<Box<dyn Pass>>, String> {
     let shell = room_shell(level);
     if shell.is_empty() {
@@ -64,7 +63,7 @@ pub fn shell_casts_no_shadow(level: &str) -> Result<Option<Box<dyn Pass>>, Strin
 }
 
 /// The ceilings the maps don't draw: the office's and the server room's, high out of reach, cast no shadow but drew
-/// as black slabs overhead, lit only from below (Caleb, 2026-10-19: "looks fine... until you look up"); their
+/// as black slabs overhead, lit only from below; their
 /// collision stays. The other ceilings are low and lit, and stay.
 pub fn hidden_ceilings(level: &str) -> Option<Box<dyn Pass>> {
     let prefixes: &[&str] = match level {
@@ -80,8 +79,8 @@ pub fn hidden_ceilings(level: &str) -> Option<Box<dyn Pass>> {
 
 /// The rails that stay grind rails, by level: the groups (bare-`/` GameObject paths) whose rails run along a line the
 /// game draws (`CurvedLine3D`), a chain (`SFox_Grind_Link`) or an object named a wire, cable, rope, chain, zipline or
-/// line, found by census of the game's objects (scratch scripts/rail_kinds.py, 2026-10-20). Every other rail is left
-/// out ([`crate::rails`]; Caleb: "just detect the actual ziplines/chains and only grind rail those"). Flashback has none.
+/// line, found by census of the game's objects (2026-10-20). Every other rail is left
+/// out ([`crate::rails`]). Flashback has none.
 pub fn line_rails(level: &str) -> &'static [&'static str] {
     match level {
         "level1" => &[
@@ -169,8 +168,7 @@ pub fn line_rails(level: &str) -> &'static [&'static str] {
     }
 }
 
-/// The window glass, drawn clear (Caleb, 2026-10-19, of frosted windows: "Fully clear windows"; "just the big windows
-/// clear"): the bedrooms' ClearGlass.
+/// The window glass drawn clear rather than frosted (only the big windows): the bedrooms' ClearGlass.
 pub fn window_glass() -> BlendedSelection {
     BlendedSelection::Named(BTreeSet::from(["ClearGlass".to_owned()]))
 }
@@ -199,8 +197,8 @@ pub fn pause_leave_out(level: &str) -> PauseLeaveOut {
 
 /// The Studio compile of a level's map: resident (`--no-stream`: these levels are small, so no WorldPartition cells
 /// and none of Studio's own vista proxies, which hung the GPU on large maps), the game's own geometry at every distance
-/// (`--no-lods`: SkateBIRD has no LODs, Studio's would be decimations), no baked GI, compiled at noon (Caleb,
-/// 2026-10-20: "default tod is noon, noon is fine").
+/// (`--no-lods`: SkateBIRD has no LODs, Studio's would be decimations), no baked GI, compiled at noon (the default
+/// time of day).
 pub fn studio_compile() -> CompileChoices {
     CompileChoices {
         streaming: Some(Streaming::Resident),

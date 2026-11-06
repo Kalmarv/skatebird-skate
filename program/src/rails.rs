@@ -3,12 +3,12 @@
 //! groups stay rails; the others lose their curve, counted. The program's own pass, ahead of primase.
 //!
 //! Why: skate.'s grind prism is solid and hung under the line, so a rail on a ramp's coping pokes out of the ramp face at
-//! the lip, where riders hit it going up (Caleb, 2026-10-20, of 0.3.0). SkateBIRD's rails are snap points with no
+//! the lip, where riders hit it going up (seen in 0.3.0). SkateBIRD's rails are snap points with no
 //! collision, and its data does not tell a coping from a rope: its `isTwoSided` / `isRaisedPipe` flags are left at their
 //! defaults in most levels, and copings, ledges and ropes alike may have no collider of their own. What the game does
 //! tell is what each rail runs along: a line it draws (`CurvedLine3D`), a chain (`SFox_Grind_Link`), or an object it
-//! names a wire, cable, rope, chain, zipline or line. Those groups, per level, are [`crate::choices::line_rails`]
-//! (Caleb: "just detect the actual ziplines/chains and only grind rail those").
+//! names a wire, cable, rope, chain, zipline or line. Those groups, per level, are [`crate::choices::line_rails`];
+//! only those get grind rails.
 
 use std::collections::BTreeSet;
 
