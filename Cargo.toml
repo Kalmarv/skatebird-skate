@@ -7,6 +7,7 @@ resolver = "3"
 [workspace.package]
 # one version for the repository: a release is its tag v<version> (CONTRIBUTING.md, Releasing)
 version = "0.1.0"
+license = "GPL-3.0-or-later"
 
 [workspace.dependencies]
 primase-core = { git = "https://github.com/Kalmarv/primase", rev = "a1ab8ebb7e18bd7b92df92c867d8e485740f2efe" }

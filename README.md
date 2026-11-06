@@ -69,4 +69,4 @@ Other options and commands:
 
 The scripts find the lab copy through `SKATEBIRD_LAB` (or `skatebird/lab` under `MODDING_CACHE`) and the tooling through `SKATEBIRD_TOOLS` (default: the checkout's `target/release`); `tools/ingame_levels.sh` also reads `RESKATE_TOOLS`, `BUILD` and `RUNS`. `docs/screenshot-runbook.md` describes the screenshot workflow, and `docs/KNOWLEDGE.md` collects the facts about the game data the conversion relies on.
 
-Run the tests with `cargo test --workspace`. The repository has no license file. SkateBIRD is by Glass Bottom Games; this is an unofficial fan port. [CONTRIBUTING.md](CONTRIBUTING.md) describes how releases are made.
+Run the tests with `cargo test --workspace`. The code is licensed under the GPL, version 3 or later ([LICENSE](LICENSE)). SkateBIRD is by Glass Bottom Games; this is an unofficial fan port. [CONTRIBUTING.md](CONTRIBUTING.md) describes how releases are made.
