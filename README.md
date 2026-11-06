@@ -1,6 +1,6 @@
 # SkateBIRD for skate.
 
-[![CI](https://img.shields.io/github/actions/workflow/status/Kalmarv/skatebird-skate/ci.yml?branch=main&label=CI)](https://github.com/Kalmarv/skatebird-skate/actions/workflows/ci.yml) [![release](https://img.shields.io/github/v/release/Kalmarv/skatebird-skate)](https://github.com/Kalmarv/skatebird-skate/releases/latest)
+[![CI](https://img.shields.io/github/actions/workflow/status/Kalmarv/skatebird-skate/ci.yml?branch=main&label=CI)](https://github.com/Kalmarv/skatebird-skate/actions/workflows/ci.yml)
 
 A converter that turns the eight skateable levels of SkateBIRD into maps for skate. that load with the ReSkate mod loader. It reads the levels from an installed copy of the game with the [primase](https://github.com/Kalmarv/primase) library, and the finished maps are published as packages on Thunderstore.
 
@@ -43,7 +43,7 @@ To build them, clone the repository. It is one Cargo workspace with two packages
 | `skatebird-export` (`program/`) | The conversion: reads each level, writes its ReSkate map and compiles it with ReSkate Studio |
 | `skatebird-tools` (`tools/skatebird-tools/`) | Release packaging, skate. view commands, comparison sheets and the SkateBIRD screenshot runner |
 
-Neither package is published to crates.io. Download both binaries for Windows or Linux (x86_64) from the [latest release](https://github.com/Kalmarv/skatebird-skate/releases/latest), or build them from the checkout with `cargo`. primase and its format crates are pinned by git revision in the workspace `Cargo.toml`.
+Neither package is published to crates.io, and no binary release has been made yet: build both from the checkout with `cargo`. Once a release is made, binaries for Windows and Linux (x86_64) are attached to it on the [releases page](https://github.com/Kalmarv/skatebird-skate/releases). primase and its format crates are pinned by git revision in the workspace `Cargo.toml`.
 
 ### Usage
 
@@ -67,6 +67,6 @@ Other options and commands:
 - `skatebird-tools sheets --refs <shots> --run <run> --out <folder>` writes side-by-side sheets of SkateBIRD and skate. shots.
 - `tools/skatebird_lab.sh` makes a lab copy of SkateBIRD with BepInEx and the plugin; `tools/skatebird_views.sh <level>[,<level>...] <outdir> [--chase]` then takes the reference shots through `skatebird-tools skatebird-shots`. In the lab copy, F6 or a controller's left stick press toggles fly mode.
 
-The shell scripts and the lab's default location assume the folder layout of the machine they were written on; set `SKATEBIRD_LAB` and `SKATEBIRD_TOOLS` to use other paths. `docs/screenshot-runbook.md` describes the screenshot workflow, and `docs/KNOWLEDGE.md` collects the facts about the game data the conversion relies on.
+The scripts find the lab copy through `SKATEBIRD_LAB` (or `skatebird/lab` under `MODDING_CACHE`) and the tooling through `SKATEBIRD_TOOLS` (default: the checkout's `target/release`); `tools/ingame_levels.sh` also reads `RESKATE_TOOLS`, `BUILD` and `RUNS`. `docs/screenshot-runbook.md` describes the screenshot workflow, and `docs/KNOWLEDGE.md` collects the facts about the game data the conversion relies on.
 
 Run the tests with `cargo test --workspace`. The repository has no license file. SkateBIRD is by Glass Bottom Games; this is an unofficial fan port. [CONTRIBUTING.md](CONTRIBUTING.md) describes how releases are made.
