@@ -1,6 +1,6 @@
 # Gameplay scale investigation
 
-Caleb wants the factor that feels natural for a human skater, with an easy program-level scale option.
+The goal is the factor that feels natural for a human skater, with an easy program-level scale option.
 The old 1:1 setting is a verification baseline, not the final gameplay decision.
 
 Run `python -X utf8 tools/measure_features.py level2` to read named collider candidates with UnityPy 1.25.4.
@@ -15,7 +15,7 @@ instances. Use ancestor transform IDs before treating those groups as individual
 
 Next measurement: select identifiable rooftop ramp instances and nearby riding surfaces, then rail/ledge and
 stair examples in other levels; record feature heights relative to those surfaces and gap endpoints. Compare
-to stock skate geometry or coordinator-provided benchmarks, with provenance. Propose a single factor only after
+to stock skate geometry or other benchmarks with known provenance. Propose a single factor only after
 those comparisons. Scaling 3.5 m to 1.75 m at 0.5 is arithmetic, not yet a gameplay recommendation.
 
 Keep scale unchanged for the first alpha-correction experiment so a rendering change has one intended cause.

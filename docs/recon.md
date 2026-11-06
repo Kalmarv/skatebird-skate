@@ -1,6 +1,6 @@
 # SkateBIRD recon (map-port feasibility)
 
-Recon date: 2026-10-18. Machine: DESKTOP-B92N5L6. Read-only inspection of the Steam install; nothing in the game
+Recon date: 2026-10-18. Read-only inspection of the Steam install; nothing in the game
 directory was modified.
 
 Install: `C:\Program Files (x86)\Steam\steamapps\common\SkateBIRD`
@@ -245,7 +245,7 @@ Geometry characteristics:
 | Claim | Source | Date |
 |---|---|---|
 | Developer/publisher Glass Bottom Games; released Sep 16, 2021; Windows/macOS/Linux | Steam store API `https://store.steampowered.com/api/appdetails?appids=971030` | accessed 2026-10-18 |
-| Engine: Unity; "Technologies: Unity Engine" tag | SteamDB app page `https://steamdb.info/app/971030/info/` (search-index snippet; direct fetch returns HTTP 403 to this agent) | accessed 2026-10-18 |
+| Engine: Unity; "Technologies: Unity Engine" tag | SteamDB app page `https://steamdb.info/app/971030/info/` (search-index snippet; direct fetch returned HTTP 403) | accessed 2026-10-18 |
 | Engine: Unity, build **2018.4.12.56772**, reference user Suicide_machine dated 2019-12-12; page last modified 2025-10-09 | PCGamingWiki `https://www.pcgamingwiki.com/wiki/SkateBIRD` (wikitext) | page 2025-10-09 |
 | Config at `HKCU\Software\Glass Bottom Games\SkateBIRD\`; saves at `%USERPROFILE%\AppData\LocalLow\Glass Bottom Games\SkateBIRD\saved_*.sav`; no Steam Cloud, Xbox cloud true | PCGamingWiki (same page) | 2025-10-09 |
 | DRM-free when launched directly (verified on Linux by a wiki contributor, 2025-10-09) | PCGamingWiki (same page) | 2025-10-09 |
@@ -259,7 +259,7 @@ The shipped build is 2019.4.20f1. Treat the wiki engine entry as correct only at
 ### Existing modding scene (web)
 
 - **No dedicated mod platform.** `https://thunderstore.io/c/skatebird/` → HTTP 404. Nexus Mods game page
-  (`https://www.nexusmods.com/games/skatebird`) → HTTP 403 to this agent and no indexed SkateBIRD mods found.
+  (`https://www.nexusmods.com/games/skatebird`) → HTTP 403 and no indexed SkateBIRD mods found.
 - **Steam Community**: 7 guides total, categories Secrets/Achievements/Walkthroughs — none about modding.
   `https://steamcommunity.com/app/971030/guides/`
 - **GitHub search** (`api.github.com/search/repositories?q=SkateBIRD`, 2026-10-18): 11 repos.
@@ -295,9 +295,9 @@ The shipped build is 2019.4.20f1. Treat the wiki engine entry as correct only at
 ## Method / reproducibility
 
 - Files inspected read-only with `find`/`stat`, Python 3.13 + `UnityPy 1.25.4`, `dnfile`, `pefile`
-  (installed under `C:/Users/kalmarv/ds-modding/tools/pylib`).
+  (installed into a private folder).
 - Unity version: raw bytes at 0x19 of `globalgamemanagers`; PE `VersionInfo` for both binaries.
 - Scene table: regex over `globalgamemanagers` for `Assets/...*.unity`; order == build index.
 - Package check: filesystem search for bundle/catalog extensions; metadata string scan of `Assembly-CSharp.dll`.
-- No game launch; no writes to the game install or to any other project. Analysis packages were pip-installed into
-  `C:/Users/kalmarv/ds-modding/tools/pylib` (pip may also have populated its default user cache).
+- No game launch; no writes to the game install or to any other project. Analysis packages were pip-installed into a private
+  folder (pip may also have populated its default user cache).

@@ -1,6 +1,6 @@
-# Durable knowledge (verified, reusable)
+# SkateBIRD game data and conversion facts
 
-Linked from `STATE.md`. Add only facts verified against files or runs, with the artifact that proves them.
+Facts about SkateBIRD's data and the conversion, each checked against the files or a run.
 
 ## SkateBIRD (Steam 971030)
 
@@ -52,13 +52,12 @@ Linked from `STATE.md`. Add only facts verified against files or runs, with the 
 ## The route (program/, primase pinned by git rev)
 
 ```
-cargo run --release -p skatebird-export -- --typetrees <modding>/cache/primase/pm-core/w9/typetrees.tpk     --out <modding>/cache/skatebird/build --studio <modding>/tools/ReSkateStudio-20261012/reskate_cli.exe [level2 ...]
+cargo run --release -p skatebird-export -- --typetrees typetrees.tpk --out build --studio <ReSkate Studio>/reskate_cli.exe [level2 ...]
 ```
 
 - Per level: `<out>/<level>/map/SkateBIRD_<Name>` (the map) and `<out>/<level>/stage/Patch` (Studio's compile). The
   route is `program/src/recipe.rs`; per-level choices `program/src/choices.rs`, the Studio compile's too
-  (`--no-stream --no-lods --no-gi --time-of-day noon`). Use `cargo run` (or check the exe's time): an agent shell has
-  no `CARGO_TARGET_DIR`, and a stale exe once ran a whole build.
+  (`--no-stream --no-lods --no-gi --time-of-day noon`). Use `cargo run` (or check the exe's time): a stale exe once ran a whole build.
 - `--no-stream` keeps these small levels resident: no WorldPartition cells, so none of Studio's own vista proxies,
   and the shared runner's vista guard (`check_no_studio_vistas.py`) passes (level2, 2026-10-19).
 - Type tree package: AssetRipper TPK covering 2019.4.20f1 exactly.
@@ -72,7 +71,8 @@ cargo run --release -p skatebird-export -- --typetrees <modding>/cache/primase/p
 - Load a level: `load levels/game/dingolevel_reskate_skatebird_<level>/dingolevel_reskate_skatebird_<level>`; the
   runner takes a screenshot at every `trainer where`. `skatebird-tools views skate-commands <level>` makes a run's
   commands; `skatebird-tools sheets --refs <ref> --run <run> --out <dir>` the side-by-sides.
-- Caleb's own install has 55 mods enabled; loading it produces a black HUB screen, so never judge a map there.
+- An install with many other mods enabled (55 in one case) loaded to a black HUB screen; judge a map with every other
+  mod disabled, as the runner does.
 
 ## Scripts in `tools/`
 
@@ -83,8 +83,8 @@ cargo run --release -p skatebird-export -- --typetrees <modding>/cache/primase/p
   `--chase`'s defaults was a one-off (tools/skatebird_chase_fit.py, in history at ff965de..e667417).
 - `unitypy_census.py` - the independent census used to gate the v21 container reader (an oracle; belongs in
   primase-oracles).
-- **Shell trap**: a child `bash` started from an agent's own shell is *WSL* bash (C:\WINDOWS\system32\bash.exe is
-  first on PATH). `orca job run -- bash ...` starts **Git Bash**; call `"$BASH"` inside scripts.
+- The scripts are Git Bash scripts; on a Windows machine that also has WSL, run them with Git Bash's `bash`
+  (`"$BASH"` inside scripts), not `C:\WINDOWS\system32\bash.exe`.
 - Write scripts with **LF line endings** (CRLF breaks `<<'EOF'` heredocs).
 
 ## Unity overlay meshes
@@ -120,7 +120,7 @@ cargo run --release -p skatebird-export -- --typetrees <modding>/cache/primase/p
   (`modding/refs/ReSkate/Extension/Trainer/trainer.cpp`, read-only reference). Commands can also be queued at launch
   with `RESKATE_STARTUP_COMMANDS`. Heading follows the mouse (`rel dx`), so turn until `where` reports the target.
 - **SkateBIRD** has no teleport or camera command in its ReflexCLI (`MissionManager.LoadLevel` only). The BepInEx 5
-  plugin `tools/skatebird-teleport-plugin` in the lab copy `cache/skatebird/lab` (made by `tools/skatebird_lab.sh`)
+  plugin `tools/skatebird-teleport-plugin` in the lab copy (`$SKATEBIRD_LAB`, made by `tools/skatebird_lab.sh`)
   loads scenes, teleports, and locks Camera.main at an exact world pose and vertical FOV with the HUD, the bird and
   the lens effects off; `tools/skatebird_views.sh` shoots every view of `data/skatebird-views.json` with it (runbook:
   "Exact camera views").
@@ -129,16 +129,3 @@ cargo run --release -p skatebird-export -- --typetrees <modding>/cache/primase/p
   them off but persist to the save). A camera away from the bird gets a fully blurred, warped frame unless they are
   off; the plugin turns them off on the runtime profile copy while the camera is locked.
 - Coordinates: Unity (x, y, z) -> skate scene (x, y, -z), yaw 180 - unity yaw, identical on both sides.
-
-## Machine/tool gotchas
-
-- This bash tool refuses to execute `.exe` files under `C:/Users/kalmarv/ds-modding` ("command not found");
-  run them through `powershell -NoProfile -Command "& '<path>' args..."` or `cmd /c`.
-- The Aerial screensaver (a fullscreen topmost window) covers the desktop and makes screen captures show
-  the wallpaper: `um win ps`, then `um win kill <pid>` on the Aerial entry that has a title.
-- `um win shot` (gfxcapture) times out on CEF/Steam windows; use GDI CopyFromScreen of the desktop instead.
-- Steam install: `Start-Process 'steam://install/<appid>'`, then click the Install button by client coords
-  (`um win drive --proc steamwebhelper "rect"` gives the client rect; screenshot at 1:1 to map pixels).
-- ReSkate launcher PLAY button: client 1440x840, button at about (1184, 658).
-- Windows Security / firewall prompts (`PickerHost`, UAC) block synthetic input to other windows (UIPI). Do not
-  close them (Caleb, 2026-10-18); work around them by targeting the game window/process after it has focus.

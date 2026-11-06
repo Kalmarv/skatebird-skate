@@ -22,18 +22,18 @@ below: the plugin puts Camera.main at an exact world pose and FOV, so nothing de
 ```bash
 # once (and after a game update or a plugin change): lab copy + BepInEx 5.4.23.5 + the plugin, built
 tools/skatebird_lab.sh            # --check only reports
-# one level's views; opens a game window, so only under the screen lock
-C:/Users/kalmarv/modding/kit/run game --job -- "$BASH" tools/skatebird_views.sh level2 C:/Users/kalmarv/modding/cache/skatebird/ref/level2
+# one level's views; opens a game window, so keep the desktop free while it runs
+tools/skatebird_views.sh level2 ref/level2
 ```
 
-- **Lab**: `C:\Users\kalmarv\modding\cache\skatebird\lab` = copies of `SkateBIRD.exe`, `UnityPlayer.dll`,
+- **Lab**: `$SKATEBIRD_LAB` = copies of `SkateBIRD.exe`, `UnityPlayer.dll`,
   `UnityCrashHandler64.exe`; junctions `SkateBIRD_Data`, `MonoBleedingEdge` into the Steam install (never recurse or
-  delete through them; remove one with `rmdir`); BepInEx 5.4.23.5 win x64 (zip pinned by sha256 in
-  `cache/skatebird/downloads`); `BepInEx/plugins/SkateBIRDTeleport.dll`. The game runs without Steam
+  delete through them; remove one with `rmdir`); BepInEx 5.4.23.5 win x64 (zip pinned by sha256, downloaded
+  beside the lab); `BepInEx/plugins/SkateBIRDTeleport.dll`. The game runs without Steam
   (`SteamClient.Init` failure is caught), and the save in LocalLow is shared with the Steam copy.
 - **Runner**: the program's `skatebird-shots` (`program/src/shots.rs`; `tools/skatebird_views.sh` checks the lab and
-  runs it, `SKATEBIRD_EXPORT` picks the build). It replaced `tools/skatebird_views.py` on 2026-10-19: job f7c1b3b5
-  (level2 `--chase`) gave the same requested poses and read-backs as the Python run's `ref/level2` to the last digit,
+  runs it, `SKATEBIRD_EXPORT` picks the build). It replaced `tools/skatebird_views.py` on 2026-10-19: a level2 `--chase`
+  run gave the same requested poses and read-backs as the Python run's `ref/level2` to the last digit,
   the same checks and NPC counts, and pixel-identical frames except 37 and 65 pixels of animation in two of them.
   `cargo test` runs the whole protocol against a stub plugin (`shots::tests`).
 - **Control**: the plugin reads `<lab>/control/command.json` and answers in `reply.json`; ops `load`, `screen`,
@@ -52,25 +52,24 @@ C:/Users/kalmarv/modding/kit/run game --job -- "$BASH" tools/skatebird_views.sh 
   with and without it) and `plugin.log`. Exit 1 if a read-back differs from the request (1 mm, 0.05 deg), the screen
   is not 1024x576, a menu is open, a screen canvas or one of those post effects is still on, or hiding the bird
   changes nothing in the control frame.
-- **Verified 2026-10-19** (job ff37a39b, level2, 43 s of run): 4 views, every read-back equal to the request
+- **Verified 2026-10-19** (level2, 43 s of run): 4 views, every read-back equal to the request
   (position to float precision, yaw/pitch/roll exact, projection FOV 60.000), 3 screen canvases and 29 player
   renderers hidden, post effects off: DepthOfField, LensDistortion, ChromaticAberration, Vignette (on: AmbientOcclusion,
   ColorGrading, Bloom); the bird control changed 12,615 pixels, and the shots looked at by eye are sharp, without
   HUD or bird. Left over in the hidden control frame: two pixel-sized pink dots where the bird's feet were (something
-  outside `Skateboard For Skating`, a decal or particle; not visible in the view shots). The first run (job d8bd98c9,
-  before the post-effect fix) was fully blurred by the depth of field.
+  outside `Skateboard For Skating`, a decal or particle; not visible in the view shots). The first run (before the
+  post-effect fix) was fully blurred by the depth of field.
 
 - **All levels, one launch**: `tools/skatebird_views.sh level1,level2,level3,level4,level5,level7,level12,level13 <root>
-  --chase` shoots each level into `<root>/<level>` (job 270b5027, 2026-10-19: 32 shots in 3m17s,
-  `cache/skatebird/ref/<level>`). Each shot also records the colliders within 0.2 m of the camera and the distance
+  --chase` shoots each level into `<root>/<level>` (2026-10-19: 32 shots in 3m17s). Each shot also records the colliders within 0.2 m of the camera and the distance
   to the collider below it (`cam_overlaps`, `cam_ground`; a camera in or against geometry fails its check). In that
   run the spawns of level3, level4 and level12 failed on `Camera Follow`, the game's camera target 1.5 m above the
   player; the plugin now ignores the player's, the camera's and the virtual cameras' follow/look-at colliders
-  (verified in job dad3987b: all 32 shots pass).
-- **NPCs hidden** (Caleb: skate. gets no skinned meshes, so no NPC birds): unless `--keep-npcs`, every
+  (verified: all 32 shots pass).
+- **NPCs hidden** (the skate. maps get no skinned meshes, so no NPC birds): unless `--keep-npcs`, every
   `BirbDecorator` but the player's (with all it renders: body, crest, clothing) and every other
-  `SkinnedMeshRenderer` is hidden; `poses.json` has `npcs_hidden` per level and the counts per shot. Job dad3987b
-  (2026-10-19, 3m50s) hid 15/15/9/54/15/1/15/6 renderers in level1/2/3/4/5/7/12/13: "Generic Scenery Birb" birds
+  `SkinnedMeshRenderer` is hidden; `poses.json` has `npcs_hidden` per level and the counts per shot. A run on
+  2026-10-19 (3m50s) hid 15/15/9/54/15/1/15/6 renderers in level1/2/3/4/5/7/12/13: "Generic Scenery Birb" birds
   everywhere but level7 (a skinned `bird` under `Level`) and level13 (the skinned `Seagull` of `Missions - Skate
   Heaven`). Compared with the shots before (same poses): outside the NPCs the frames are pixel-identical except
   animated things (clock hands, spinning collectibles, leaves, a sparkle); every changed region was looked at.
@@ -79,9 +78,8 @@ C:/Users/kalmarv/modding/kit/run game --job -- "$BASH" tools/skatebird_views.sh 
 
 `tools/skatebird_views.sh <level> <outdir> --chase` puts the camera where skate.'s third-person camera was at
 level2's spawn: D -0.3 (0.3 m *ahead* of the view point along its yaw), H 1.5 m up, pitch +1.2 (down), vertical FOV
-55.3, yaw offset 0. Fitted on 2026-10-19 by `tools/skatebird_chase_fit.sh` (job 0da1c4ce, 649 renders in one launch,
-13m41s; results `cache/skatebird/chase-fit/level2/fit.json`, side-by-sides `t1_where_1_pair.png`,
-`t2_where_1_pair.png`) against skate. shots `cache/skatebird/runs/t{1,2}/level2/where_1.png`:
+55.3, yaw offset 0. Fitted on 2026-10-19 by `tools/skatebird_chase_fit.sh` (649 renders in one launch,
+13m41s) against two skate. shots at level2's spawn (`where_1`):
 
 | target | D | H | L | P | dY | F | score (640 px) |
 |---|---|---|---|---|---|---|---|
@@ -105,14 +103,11 @@ level2's spawn: D -0.3 (0.3 m *ahead* of the view point along its yaw), H 1.5 m 
 ## TL;DR (one level, one shot)
 
 ```bash
-# 1. Display/lock check (game windows here are coordinated through the screen lock).
-orca lock status screen | head -1
-
-# 2. Launch windowed at 1920x1080 with the dev console enabled. This call blocks until the game exits.
+# 1. Launch windowed at 1920x1080 with the dev console enabled. This call blocks until the game exits.
 um win launch "C:\Program Files (x86)\Steam\steamapps\common\SkateBIRD\SkateBIRD.exe" -- \
   -screen-fullscreen 0 -screen-width 1920 -screen-height 1080 -devconsole
 
-# 3. From another shell: open the console, load the level.
+# 2. From another shell: open the console, load the level.
 um win drive --proc SkateBIRD "focus" "sleep 3000" \
   "key 0x70" "sleep 800" \
   "type MissionManager.LoadLevel rooftop" "key 0x0D"
@@ -289,7 +284,7 @@ Raw ffmpeg equivalent (use the **um-bundled** ffmpeg; the winget one on PATH has
 graph verified against a live desktop window; this is the same graph `um win shot` uses:
 
 ```bash
-FF="C:/Users/kalmarv/AppData/Local/universal-modder/ffmpeg/bin/ffmpeg.exe"
+FF="<universal-modder>/ffmpeg/bin/ffmpeg.exe"
 "$FF" -hide_banner -loglevel error -f lavfi \
   -i "gfxcapture=window_exe=SkateBIRD.exe:capture_cursor=0:max_framerate=60,hwdownload,format=bgra" \
   -frames:v 1 -y out/rooftop.png
@@ -351,7 +346,6 @@ The SkateBIRD side is `skatebird-tools skatebird-shots` (tools/skatebird-tools/s
   into normal gameplay and can open/close menus; omit it for repeat runs.
 - HUD toggle is persisted in `saved_bools.sav`; the script toggles it back, but a killed run can leave
   `__options_disable_ui = true`.
-- The desktop is shared: check `orca lock status screen`; do not drive the `Skate` window, and release the
-  display by killing SkateBIRD when done.
+- Do not drive a `Skate` window that is open at the same time, and close SkateBIRD when done.
 - Nothing here writes to the game install. Changes are limited to screenshots, the LocalLow save folder,
   and Unity's `HKCU\Software\Glass Bottom Games\SkateBIRD` registry key.
