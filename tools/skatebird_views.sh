@@ -5,8 +5,8 @@
 #   tools/skatebird_views.sh <level>[,<level>...] <outdir> [--chase] [--back D] [--eye H] [--fov F] [--pitch P]
 #                            [--yaw-offset Y] [--settle S] [--load-settle S] [--keep-post] [--keep-npcs] [--keep]
 #
-# It opens a game window, so run it under the screen lock:
-#   C:/Users/kalmarv/modding/kit/run game --job -- "$BASH" tools/skatebird_views.sh level2 C:/Users/kalmarv/modding/cache/skatebird/ref/level2 --chase
+# It opens a game window, so keep the desktop free while it runs:
+#   tools/skatebird_views.sh level2 ref/level2 --chase
 # All eight levels in one launch, each into <root>/<level>:
 #   ... tools/skatebird_views.sh level1,level2,level3,level4,level5,level7,level12,level13 <root> --chase
 #
@@ -18,7 +18,7 @@
 # -p skatebird-tools; SKATEBIRD_TOOLS to use another build). The plugin's protocol: tools/skatebird-teleport-plugin/Plugin.cs.
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-X=${SKATEBIRD_TOOLS:-/c/Users/kalmarv/modding/games/skatebird/target/release/skatebird-tools.exe}
+X=${SKATEBIRD_TOOLS:-$ROOT/target/release/skatebird-tools.exe}
 if [ $# -lt 2 ]; then
   awk 'NR > 1 && /^set -euo/ { exit } NR > 1 { sub(/^# ?/, ""); print }' "$0"
   exit 2

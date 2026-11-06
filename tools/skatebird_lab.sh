@@ -4,7 +4,7 @@
 #   tools/skatebird_lab.sh            create/refresh the lab, (re)build and install the plugin
 #   tools/skatebird_lab.sh --check    only report what the lab has
 #
-# The lab is C:/Users/kalmarv/modding/cache/skatebird/lab (override with SKATEBIRD_LAB): real copies of the install's
+# The lab is $SKATEBIRD_LAB (default $MODDING_CACHE/skatebird/lab): real copies of the install's
 # root files (SkateBIRD.exe, UnityPlayer.dll, UnityCrashHandler64.exe), junctions SkateBIRD_Data and MonoBleedingEdge
 # into the Steam install, BepInEx 5 (win x64, pinned release and sha256) and tools/skatebird-teleport-plugin in
 # BepInEx/plugins. Nothing is written into the Steam install. Never recurse into or delete through the junctions:
@@ -12,8 +12,8 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-GAME="C:/Program Files (x86)/Steam/steamapps/common/SkateBIRD"
-LAB="${SKATEBIRD_LAB:-C:/Users/kalmarv/modding/cache/skatebird/lab}"
+GAME="${SKATEBIRD_GAME:-C:/Program Files (x86)/Steam/steamapps/common/SkateBIRD}"
+LAB="${SKATEBIRD_LAB:-${MODDING_CACHE:?set SKATEBIRD_LAB (or MODDING_CACHE)}/skatebird/lab}"
 DL="$(dirname "$LAB")/downloads"
 BEPINEX_URL="https://github.com/BepInEx/BepInEx/releases/download/v5.4.23.5/BepInEx_win_x64_5.4.23.5.zip"
 BEPINEX_SHA256="82f9878551030f54657792c0740d9d51a09500eeae1fba21106b0c441e6732c4"

@@ -2,16 +2,18 @@
 # Every level in one skate. launch, through the shared runner (reskate-tools ingame.sh in copy mode with several mods:
 # each level's mod copied in, every other mod disabled, all restored after; crash reporting off). Each level is loaded
 # in turn, shot at the spawn and at each of its views (data/skatebird-views.json; every `trainer where` is a shot).
-#   kit/run game --job -- "$BASH" tools/ingame_levels.sh TAG [LEVEL ...]     (default: every level built)
-# BUILD: the program's build --out folder (default <modding>/cache/skatebird/build). Output: cache/skatebird/runs/TAG.
+#   tools/ingame_levels.sh TAG [LEVEL ...]     (default: every level built)
+# RESKATE_TOOLS: a reskate-tools checkout (default $MODDING_ROOT/reskate/reskate-tools). BUILD: the program's build
+# --out folder (default $MODDING_CACHE/skatebird/build). RUNS: where runs go (default $MODDING_CACHE/skatebird/runs);
+# output in $RUNS/TAG.
 set -u
 TAG=$1; shift
 W=$(cd "$(dirname "$0")/.." && pwd)
-E=/c/Users/kalmarv/modding/reskate/reskate-tools/ports/gta/engine
-B=${BUILD:-/c/Users/kalmarv/modding/cache/skatebird/build}
-R=/c/Users/kalmarv/modding/cache/skatebird/runs/$TAG
+E=${RESKATE_TOOLS:-${MODDING_ROOT:?set RESKATE_TOOLS (or MODDING_ROOT)}/reskate/reskate-tools}/ports/gta/engine
+B=${BUILD:-${MODDING_CACHE:?set BUILD (or MODDING_CACHE)}/skatebird/build}
+R=${RUNS:-${MODDING_CACHE:?set RUNS (or MODDING_CACHE)}/skatebird/runs}/$TAG
 # the tooling (cargo build --release -p skatebird-tools in the repo); SKATEBIRD_TOOLS to use another build
-X=${SKATEBIRD_TOOLS:-/c/Users/kalmarv/modding/games/skatebird/target/release/skatebird-tools.exe}
+X=${SKATEBIRD_TOOLS:-$W/target/release/skatebird-tools.exe}
 LEVELS=("$@"); [ ${#LEVELS[@]} -gt 0 ] || LEVELS=(level1 level2 level3 level4 level5 level7 level12 level13)
 SRCS=; NAMES=; CMDS="wait 100"; SECS=100
 for L in "${LEVELS[@]}"; do

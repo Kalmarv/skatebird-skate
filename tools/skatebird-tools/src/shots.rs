@@ -34,8 +34,6 @@ const POST_OFF: [&str; 5] = [
 /// The bird-hiding control fails when hiding the bird changes fewer pixels than this (by more than [`DIFF_LEVEL`]).
 const MIN_CHANGED: usize = 500;
 const DIFF_LEVEL: u32 = 24;
-/// The lab copy when `SKATEBIRD_LAB` is not set.
-const LAB: &str = "C:/Users/kalmarv/modding/cache/skatebird/lab";
 
 /// Where the camera goes relative to a view: `back` metres behind the view point along its yaw, `eye` metres above
 /// it, Unity `pitch` (positive looks down), vertical `fov`, `yaw_offset` added to the view's yaw.
@@ -102,9 +100,17 @@ impl Default for Options {
     }
 }
 
-/// The lab copy's folder: `SKATEBIRD_LAB`, or [`LAB`].
-pub fn lab() -> PathBuf {
-    std::env::var_os("SKATEBIRD_LAB").map_or_else(|| PathBuf::from(LAB), PathBuf::from)
+/// The lab copy's folder: `SKATEBIRD_LAB`, or `skatebird/lab` under `MODDING_CACHE`.
+pub fn lab() -> Result<PathBuf, String> {
+    if let Some(lab) = std::env::var_os("SKATEBIRD_LAB") {
+        return Ok(PathBuf::from(lab));
+    }
+    std::env::var_os("MODDING_CACHE")
+        .map(|cache| PathBuf::from(cache).join("skatebird/lab"))
+        .ok_or_else(|| {
+            "set SKATEBIRD_LAB to the lab copy's folder (tools/skatebird_lab.sh makes it)"
+                .to_owned()
+        })
 }
 
 /// The pose asked of the camera for one shot.
@@ -687,7 +693,7 @@ pub fn run(
     out: &Path,
     o: &Options,
 ) -> Result<Vec<(String, usize)>, String> {
-    let lab = lab();
+    let lab = lab()?;
     if !lab.join("BepInEx/plugins/SkateBIRDTeleport.dll").exists() {
         return Err(format!(
             "no lab plugin under {}; run tools/skatebird_lab.sh",
